@@ -113,12 +113,47 @@ const MuseSound = {
                 duration: 0 
             }));
             
-            this.updateState(tracks);
+            const tracksWithDuration = await this.fetchDurations(tracks);
+            this.updateState(tracksWithDuration);
             return true;
         },
 
+        async fetchDurations(tracks) {
+            if (tracks.length === 0) return tracks;
+            const ids = tracks.map(t => t.id).join(',');
+            const url = `https://www.googleapis.com/youtube/v3/videos?part=contentDetails&id=${ids}&key=${MuseSound.YOUTUBE_API_KEY}`;
+            
+            try {
+                const response = await fetch(url);
+                if (!response.ok) return tracks;
+                const data = await response.json();
+                
+                const durationMap = {};
+                data.items.forEach(item => {
+                    durationMap[item.id] = this.parseISO8601Duration(item.contentDetails.duration);
+                });
+                
+                return tracks.map(t => ({
+                    ...t,
+                    duration: durationMap[t.id] || 0
+                }));
+            } catch (e) {
+                console.error("Error fetching durations:", e);
+                return tracks;
+            }
+        },
+
+        parseISO8601Duration(duration) {
+            const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);
+            if (!match) return 0;
+            const hours = parseInt(match[1]) || 0;
+            const minutes = parseInt(match[2]) || 0;
+            const seconds = parseInt(match[3]) || 0;
+            return hours * 3600 + minutes * 60 + seconds;
+        },
+
         async fetchSingleVideo(videoId) {
-            const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${MuseSound.YOUTUBE_API_KEY}`;
+            const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet,contentDetails&id=${videoId}&key=${MuseSound.YOUTUBE_API_KEY}`;
             const response = await fetch(url);
             if (!response.ok) return false;
             
@@ -131,7 +166,7 @@ const MuseSound = {
                 title: item.snippet.title,
                 author: item.snippet.channelTitle,
                 thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                duration: 0
+                duration: this.parseISO8601Duration(item.contentDetails.duration)
             };
             
             this.updateState([track]);
@@ -154,7 +189,8 @@ const MuseSound = {
                 duration: 0
             }));
             
-            this.updateState(tracks);
+            const tracksWithDuration = await this.fetchDurations(tracks);
+            this.updateState(tracksWithDuration);
             return true;
         },
 
@@ -262,9 +298,9 @@ const MuseSound = {
             
             this.ytActive = false;
             
-            if (!this.ytPlayer || typeof this.ytPlayer.cueVideoById !== 'function') {
+            if (!this.ytPlayer || typeof this.ytPlayer.loadVideoById !== 'function') {
                 const waitForPlayer = setInterval(() => {
-                    if (this.ytPlayer && typeof this.ytPlayer.cueVideoById === 'function') {
+                    if (this.ytPlayer && typeof this.ytPlayer.loadVideoById === 'function') {
                         clearInterval(waitForPlayer);
                         this.doPlay(track);
                     }
@@ -278,8 +314,14 @@ const MuseSound = {
         
         doPlay(track) {
             this.ytActive = true;
-            this.ytPlayer.cueVideoById(track.id);
-            this.ytPlayer.playVideo();
+            this.ytPlayer.loadVideoById(track.id);
+            // Simulate extra play call for better reliability as requested
+            setTimeout(() => {
+                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                    this.ytPlayer.playVideo();
+                }
+            }, 150);
+
             MuseSound.ui.updateNowPlaying(track);
             this.updateMediaSession(track);
             MuseSound.ui.setLoading(false);
