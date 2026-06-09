@@ -8,7 +8,7 @@
 
 const MuseSound = {
     // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE ⚠️
-    YOUTUBE_API_KEY: 'VOTRE_CLE_API_ICI',
+    YOUTUBE_API_KEY: 'AIzaSyAVwOsusFT9y3w5qd_C0JoGz0DbUi22yGE',
 
     config: {},
 
