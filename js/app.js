@@ -15,10 +15,11 @@ const MuseSound = {
         isLoading: false,
         volume: !isNaN(parseInt(localStorage.getItem('MS_VOLUME'))) ? parseInt(localStorage.getItem('MS_VOLUME')) : 100,
         shuffle: localStorage.getItem('MS_SHUFFLE') === 'true',
-        repeat: localStorage.getItem('MS_REPEAT') || 'none', // 'none', 'one', 'all'
+        repeat: localStorage.getItem('MS_REPEAT') || 'none', // 'none', 'all', 'one'
         isCinemaMode: false,
-        shuffleHistory: []
-    },
+        shuffleHistory: [],
+        queue: JSON.parse(localStorage.getItem('MS_QUEUE')) || []
+        },
 
     init() {
         console.log("MuseSound V7.1 - UI Upgrades");
@@ -144,6 +145,12 @@ const MuseSound = {
             MuseSound.state.currentPlaylist = tracks;
             localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(tracks));
             MuseSound.state.shuffleHistory = [];
+            
+            // Clear queue on new import
+            MuseSound.state.queue = [];
+            localStorage.removeItem('MS_QUEUE');
+            MuseSound.ui.renderQueue();
+
             MuseSound.ui.renderPlaylist();
             
             if (tracks.length > 0) {
@@ -258,6 +265,33 @@ const MuseSound = {
             MuseSound.ui.setLoading(false);
         },
 
+        addToQueue(track) {
+            MuseSound.state.queue.push(track);
+            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+            MuseSound.ui.renderQueue();
+        },
+
+        playQueueTrack(index) {
+            const track = MuseSound.state.queue[index];
+            MuseSound.state.queue.splice(index, 1);
+            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+            MuseSound.state.currentIndex = -1;
+            this.doPlay(track);
+            MuseSound.ui.renderQueue();
+        },
+
+        removeFromQueue(index) {
+            MuseSound.state.queue.splice(index, 1);
+            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+            MuseSound.ui.renderQueue();
+        },
+
+        clearQueue() {
+            MuseSound.state.queue = [];
+            localStorage.removeItem('MS_QUEUE');
+            MuseSound.ui.renderQueue();
+        },
+
         toggle() {
             if (!this.ytPlayer) return;
             
@@ -274,6 +308,16 @@ const MuseSound = {
         },
 
         next(forceNext = false) { 
+            // Priorité à la file d'attente
+            if (MuseSound.state.queue.length > 0) {
+                const nextTrack = MuseSound.state.queue.shift();
+                localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+                MuseSound.ui.renderQueue();
+                MuseSound.state.currentIndex = -1;
+                this.doPlay(nextTrack);
+                return;
+            }
+
             if (MuseSound.state.currentPlaylist.length === 0) return;
             
             // Si on est en repeat ONE et que l'utilisateur n'a pas cliqué sur next (fin naturelle)
@@ -396,6 +440,11 @@ const MuseSound = {
                 this.updateShuffleRepeatUI();
             });
 
+            // Clear Queue
+            document.getElementById('clear-queue-btn')?.addEventListener('click', () => {
+                MuseSound.player.clearQueue();
+            });
+
             // Cinema Mode (Fullscreen)
             document.getElementById('fullscreen-btn')?.addEventListener('click', () => {
                 this.toggleFullscreen();
@@ -409,6 +458,7 @@ const MuseSound = {
 
             this.updateShuffleRepeatUI();
             this.updateVolumeUI();
+            this.renderQueue();
             this.renderPlaylist();
         },
 
@@ -459,6 +509,35 @@ const MuseSound = {
                         <div class="font-body-md text-on-surface truncate font-medium group-hover:text-primary ${i === MuseSound.state.currentIndex ? 'text-primary' : ''}">${this.escapeHtml(t.title)}</div>
                         <div class="font-label-md text-on-surface-variant truncate">${this.escapeHtml(t.author)}</div>
                     </div>
+                    <button class="opacity-0 group-hover:opacity-100 p-2 hover:bg-primary/20 rounded-full transition-all" 
+                            onclick="event.stopPropagation(); MuseSound.player.addToQueue(${JSON.stringify(t).replace(/"/g, '&quot;')})">
+                        <span class="material-symbols-outlined text-primary">playlist_add</span>
+                    </button>
+                </div>
+            `).join('');
+        },
+
+        renderQueue() {
+            const container = document.getElementById('queue-container');
+            const list = document.getElementById('queue-list');
+            if (!container || !list) return;
+
+            if (MuseSound.state.queue.length === 0) {
+                container.classList.add('hidden');
+                return;
+            }
+
+            container.classList.remove('hidden');
+            list.innerHTML = MuseSound.state.queue.map((t, i) => `
+                <div class="flex items-center gap-3 p-2 rounded-md hover:bg-surface-container-high cursor-pointer group transition-colors" onclick="MuseSound.player.playQueueTrack(${i})">
+                    <img src="${t.thumbnail}" class="w-8 h-8 rounded object-cover" onerror="this.src='https://placehold.co/32x32?text=Music'">
+                    <div class="flex-1 min-w-0">
+                        <div class="text-xs font-medium truncate group-hover:text-primary">${this.escapeHtml(t.title)}</div>
+                    </div>
+                    <button class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all" 
+                            onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                    </button>
                 </div>
             `).join('');
         },
