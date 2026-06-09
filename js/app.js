@@ -17,6 +17,7 @@ const MuseSound = {
         shuffle: localStorage.getItem('MS_SHUFFLE') === 'true',
         repeat: localStorage.getItem('MS_REPEAT') || 'none', // 'none', 'all', 'one'
         isCinemaMode: false,
+        uiMode: 'playlist', // 'playlist' or 'queue'
         shuffleHistory: [],
         queue: JSON.parse(localStorage.getItem('MS_QUEUE')) || []
         },
@@ -29,6 +30,22 @@ const MuseSound = {
         if (this.state.currentPlaylist.length > 0) {
             this.ui.renderPlaylist();
         }
+    },
+
+    showToast(message) {
+        const container = document.getElementById('toast-container');
+        if (!container) return;
+
+        const toast = document.createElement('div');
+        toast.className = 'bg-primary text-background px-4 py-2 rounded-lg shadow-lg font-bold text-sm animate-bounce';
+        toast.textContent = message;
+        
+        container.appendChild(toast);
+        setTimeout(() => {
+            toast.classList.remove('animate-bounce');
+            toast.classList.add('opacity-0', 'transition-opacity', 'duration-500');
+            setTimeout(() => toast.remove(), 500);
+        }, 2000);
     },
 
     importer: {
@@ -194,9 +211,11 @@ const MuseSound = {
                                 MuseSound.state.isPlaying = true;
                                 MuseSound.ui.updatePlayerControls();
                                 this.startProgressTracking();
+                                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                             } else if (event.data === YT.PlayerState.PAUSED) {
                                 MuseSound.state.isPlaying = false;
                                 MuseSound.ui.updatePlayerControls();
+                                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                             } else if (event.data === YT.PlayerState.ENDED) {
                                 // Fin naturelle -> on ne force pas le next
                                 MuseSound.player.next(false);
@@ -262,13 +281,40 @@ const MuseSound = {
             this.ytPlayer.cueVideoById(track.id);
             this.ytPlayer.playVideo();
             MuseSound.ui.updateNowPlaying(track);
+            this.updateMediaSession(track);
             MuseSound.ui.setLoading(false);
+        },
+
+        updateMediaSession(track) {
+            if (!('mediaSession' in navigator) || !track) return;
+            
+            navigator.mediaSession.metadata = new MediaMetadata({
+                title: track.title || 'Sans titre',
+                artist: track.author || 'Artiste inconnu',
+                album: 'MuseSound',
+                artwork: [
+                    { src: track.thumbnail, sizes: '96x96', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '128x128', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '192x192', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '256x256', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '512x512', type: 'image/jpeg' }
+                ]
+            });
+            
+            navigator.mediaSession.setActionHandler('play', () => this.toggle());
+            navigator.mediaSession.setActionHandler('pause', () => this.toggle());
+            navigator.mediaSession.setActionHandler('previoustrack', () => this.prev());
+            navigator.mediaSession.setActionHandler('nexttrack', () => this.next());
+            navigator.mediaSession.setActionHandler('stop', () => {
+                if (this.ytPlayer && this.ytActive) this.ytPlayer.pauseVideo();
+            });
         },
 
         addToQueue(track) {
             MuseSound.state.queue.push(track);
             localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
             MuseSound.ui.renderQueue();
+            MuseSound.showToast("Ajouté à la file d'attente");
         },
 
         playQueueTrack(index) {
@@ -299,8 +345,10 @@ const MuseSound = {
                 const state = this.ytPlayer.getPlayerState();
                 if (state === YT.PlayerState.PLAYING) {
                     this.ytPlayer.pauseVideo();
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
                 } else if (state === YT.PlayerState.PAUSED || state === YT.PlayerState.CUED) {
                     this.ytPlayer.playVideo();
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
                 }
             } else if (MuseSound.state.currentIndex >= 0) {
                 this.playTrack(MuseSound.state.currentIndex);
@@ -445,6 +493,10 @@ const MuseSound = {
                 MuseSound.player.clearQueue();
             });
 
+            // Tabs
+            document.getElementById('tab-playlist')?.addEventListener('click', () => this.showPlaylist());
+            document.getElementById('tab-queue')?.addEventListener('click', () => this.showQueue());
+
             // Cinema Mode (Fullscreen)
             document.getElementById('fullscreen-btn')?.addEventListener('click', () => {
                 this.toggleFullscreen();
@@ -460,6 +512,34 @@ const MuseSound = {
             this.updateVolumeUI();
             this.renderQueue();
             this.renderPlaylist();
+        },
+
+        showPlaylist() {
+            MuseSound.state.uiMode = 'playlist';
+            document.getElementById('playlist-container')?.classList.remove('hidden');
+            document.getElementById('queue-view')?.classList.add('hidden');
+            
+            document.getElementById('tab-playlist')?.classList.add('border-primary', 'text-primary');
+            document.getElementById('tab-playlist')?.classList.remove('border-transparent', 'text-on-surface-variant');
+            
+            document.getElementById('tab-queue')?.classList.remove('border-primary', 'text-primary');
+            document.getElementById('tab-queue')?.classList.add('border-transparent', 'text-on-surface-variant');
+            
+            this.renderPlaylist();
+        },
+
+        showQueue() {
+            MuseSound.state.uiMode = 'queue';
+            document.getElementById('playlist-container')?.classList.add('hidden');
+            document.getElementById('queue-view')?.classList.remove('hidden');
+            
+            document.getElementById('tab-queue')?.classList.add('border-primary', 'text-primary');
+            document.getElementById('tab-queue')?.classList.remove('border-transparent', 'text-on-surface-variant');
+            
+            document.getElementById('tab-playlist')?.classList.remove('border-primary', 'text-primary');
+            document.getElementById('tab-playlist')?.classList.add('border-transparent', 'text-on-surface-variant');
+            
+            this.renderQueue();
         },
 
         toggleFullscreen(forceClose = false) {
@@ -491,6 +571,9 @@ const MuseSound = {
             const countSpan = document.getElementById('track-count');
             if (countSpan) countSpan.textContent = MuseSound.state.currentPlaylist.length;
             
+            const durationSpan = document.getElementById('total-duration');
+            if (durationSpan) durationSpan.textContent = this.calculateTotalDuration(MuseSound.state.currentPlaylist);
+            
             if (MuseSound.state.currentPlaylist.length === 0) {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
@@ -518,28 +601,53 @@ const MuseSound = {
         },
 
         renderQueue() {
-            const container = document.getElementById('queue-container');
             const list = document.getElementById('queue-list');
-            if (!container || !list) return;
+            const badge = document.getElementById('queue-badge');
+            if (!list) return;
 
-            if (MuseSound.state.queue.length === 0) {
-                container.classList.add('hidden');
+            const count = MuseSound.state.queue.length;
+            if (badge) {
+                badge.textContent = count;
+                badge.classList.toggle('hidden', count === 0);
+            }
+
+            if (count === 0) {
+                list.innerHTML = `
+                    <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant opacity-50">
+                        <span class="material-symbols-outlined text-4xl mb-2">queue_play_next</span>
+                        <p class="text-sm">La file d'attente est vide.</p>
+                    </div>
+                `;
                 return;
             }
 
-            container.classList.remove('hidden');
             list.innerHTML = MuseSound.state.queue.map((t, i) => `
-                <div class="flex items-center gap-3 p-2 rounded-md hover:bg-surface-container-high cursor-pointer group transition-colors" onclick="MuseSound.player.playQueueTrack(${i})">
-                    <img src="${t.thumbnail}" class="w-8 h-8 rounded object-cover" onerror="this.src='https://placehold.co/32x32?text=Music'">
+                <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-colors" onclick="MuseSound.player.playQueueTrack(${i})">
+                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover" onerror="this.src='https://placehold.co/40x40?text=Music'">
                     <div class="flex-1 min-w-0">
-                        <div class="text-xs font-medium truncate group-hover:text-primary">${this.escapeHtml(t.title)}</div>
+                        <div class="text-sm font-medium truncate group-hover:text-primary">${this.escapeHtml(t.title)}</div>
+                        <div class="text-[10px] text-on-surface-variant truncate">${this.escapeHtml(t.author)}</div>
                     </div>
-                    <button class="opacity-0 group-hover:opacity-100 p-1 hover:text-red-400 transition-all" 
+                    <button class="opacity-0 group-hover:opacity-100 p-2 hover:text-red-400 transition-all" 
                             onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
                         <span class="material-symbols-outlined text-sm">close</span>
                     </button>
                 </div>
             `).join('');
+        },
+
+        calculateTotalDuration(tracks) {
+            const totalSeconds = tracks.reduce((sum, t) => sum + (t.duration || 0), 0);
+            if (totalSeconds === 0) return "";
+            
+            const hours = Math.floor(totalSeconds / 3600);
+            const minutes = Math.floor((totalSeconds % 3600) / 60);
+            const seconds = totalSeconds % 60;
+            
+            if (hours > 0) {
+                return `• ${hours}:${minutes < 10 ? '0' : ''}${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
+            }
+            return `• ${minutes}:${seconds < 10 ? '0' : ''}${seconds}`;
         },
         
         escapeHtml(str) {
