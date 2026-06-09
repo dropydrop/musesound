@@ -56,6 +56,152 @@
             background: #3d4a3d;
             border-radius: 2px;
         }
+
+        /* Cinema Mode Styles */
+        body.is-cinema-mode #main-header,
+        body.is-cinema-mode #playlist-container {
+            display: none;
+        }
+
+        body.is-cinema-mode footer {
+            position: fixed;
+            inset: 0;
+            height: 100vh;
+            width: 100vw;
+            background: radial-gradient(circle at center, #1e2020 0%, #121414 100%);
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            border: none;
+            z-index: 50;
+            gap: 2rem;
+            padding: 2rem;
+            transition: all 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode footer { gap: 4rem; }
+        }
+
+        body.is-cinema-mode footer > div:first-child {
+            flex-direction: column;
+            width: auto;
+            text-align: center;
+            gap: 1.5rem;
+        }
+
+        body.is-cinema-mode footer .current-art {
+            width: 220px;
+            height: 220px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.8);
+            display: block !important;
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode footer .current-art {
+                width: 400px;
+                height: 400px;
+            }
+        }
+
+        body.is-cinema-mode footer .current-title {
+            font-size: 1.25rem;
+            line-height: 1.2;
+            max-width: 90vw;
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode footer .current-title {
+                font-size: 2.25rem;
+                max-width: 70vw;
+            }
+        }
+
+        body.is-cinema-mode footer .current-artist {
+            font-size: 1rem;
+            opacity: 0.7;
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode footer .current-artist {
+                font-size: 1.5rem;
+            }
+        }
+
+        body.is-cinema-mode footer .hidden.sm\:block {
+            display: block !important;
+        }
+
+        body.is-cinema-mode footer > div:nth-child(2) {
+            max-width: 800px;
+            width: 95%;
+            gap: 2rem;
+        }
+
+        body.is-cinema-mode #play-pause-btn {
+            width: 70px;
+            height: 70px;
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode #play-pause-btn {
+                width: 90px;
+                height: 90px;
+            }
+        }
+
+        body.is-cinema-mode #play-pause-btn span {
+            font-size: 2.5rem;
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode #play-pause-btn span {
+                font-size: 3.5rem;
+            }
+        }
+
+        body.is-cinema-mode #prev-btn span, 
+        body.is-cinema-mode #next-btn span {
+            font-size: 2.5rem;
+        }
+
+        @media (min-width: 768px) {
+            body.is-cinema-mode #prev-btn span, 
+            body.is-cinema-mode #next-btn span {
+                font-size: 3rem;
+            }
+        }
+
+        body.is-cinema-mode footer > div:last-child {
+            position: absolute;
+            bottom: 2rem;
+            right: 2rem;
+            width: auto;
+        }
+
+        /* Landscape Mobile Optimization */
+        @media (max-height: 500px) and (orientation: landscape) {
+            body.is-cinema-mode footer {
+                flex-direction: row;
+                gap: 2rem;
+                padding: 1rem;
+            }
+            body.is-cinema-mode footer .current-art {
+                width: 120px;
+                height: 120px;
+            }
+            body.is-cinema-mode footer > div:first-child {
+                flex-direction: row;
+                text-align: left;
+                gap: 1rem;
+            }
+            body.is-cinema-mode footer .current-title {
+                font-size: 1rem;
+            }
+            body.is-cinema-mode footer > div:nth-child(2) {
+                gap: 0.5rem;
+            }
+        }
     </style>
 </head>
 <body class="bg-background text-on-surface font-body-md h-screen w-screen overflow-hidden flex flex-col">

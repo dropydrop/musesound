@@ -398,25 +398,32 @@ const MuseSound = {
 
             // Cinema Mode (Fullscreen)
             document.getElementById('fullscreen-btn')?.addEventListener('click', () => {
-                MuseSound.state.isCinemaMode = !MuseSound.state.isCinemaMode;
-                const header = document.getElementById('main-header');
-                const playlist = document.getElementById('playlist-container');
-                const fsBtn = document.getElementById('fullscreen-btn');
-                
-                if (MuseSound.state.isCinemaMode) {
-                    header.classList.add('hidden');
-                    playlist.classList.add('hidden');
-                    if (fsBtn) fsBtn.textContent = 'close_fullscreen';
-                } else {
-                    header.classList.remove('hidden');
-                    playlist.classList.remove('hidden');
-                    if (fsBtn) fsBtn.textContent = 'open_in_full';
+                this.toggleFullscreen();
+            });
+
+            document.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape' && MuseSound.state.isCinemaMode) {
+                    this.toggleFullscreen(true);
                 }
             });
 
             this.updateShuffleRepeatUI();
             this.updateVolumeUI();
             this.renderPlaylist();
+        },
+
+        toggleFullscreen(forceClose = false) {
+            MuseSound.state.isCinemaMode = forceClose ? false : !MuseSound.state.isCinemaMode;
+            const body = document.body;
+            const fsBtn = document.getElementById('fullscreen-btn');
+            
+            if (MuseSound.state.isCinemaMode) {
+                body.classList.add('is-cinema-mode');
+                if (fsBtn) fsBtn.textContent = 'close_fullscreen';
+            } else {
+                body.classList.remove('is-cinema-mode');
+                if (fsBtn) fsBtn.textContent = 'open_in_full';
+            }
         },
 
         setLoading(loading) {
