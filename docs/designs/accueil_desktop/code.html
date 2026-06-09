@@ -1,0 +1,397 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MuseSound - Home Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-surface-variant": "#bccbb9",
+                        "on-primary": "#003914",
+                        "surface-bright": "#37393a",
+                        "tertiary-fixed": "#e4e2e1",
+                        "surface-dim": "#121414",
+                        "primary-container": "#1db954",
+                        "inverse-surface": "#e2e2e2",
+                        "inverse-on-surface": "#2f3131",
+                        "on-primary-fixed-variant": "#005320",
+                        "background": "#121414",
+                        "secondary-container": "#4a4949",
+                        "surface-container-highest": "#333535",
+                        "surface-container-lowest": "#0c0f0f",
+                        "on-secondary": "#313030",
+                        "surface-variant": "#333535",
+                        "on-secondary-fixed": "#1c1b1b",
+                        "outline": "#869585",
+                        "on-secondary-fixed-variant": "#474646",
+                        "surface": "#121414",
+                        "inverse-primary": "#006e2d",
+                        "on-tertiary-container": "#383838",
+                        "surface-container-low": "#1a1c1c",
+                        "outline-variant": "#3d4a3d",
+                        "on-tertiary": "#303030",
+                        "on-error": "#690005",
+                        "secondary-fixed-dim": "#c8c6c5",
+                        "secondary": "#c8c6c5",
+                        "surface-tint": "#53e076",
+                        "surface-container-high": "#282a2b",
+                        "tertiary-fixed-dim": "#c8c6c5",
+                        "on-primary-fixed": "#002108",
+                        "on-background": "#e2e2e2",
+                        "on-surface": "#e2e2e2",
+                        "tertiary-container": "#a2a1a0",
+                        "primary": "#53e076",
+                        "secondary-fixed": "#e5e2e1",
+                        "on-error-container": "#ffdad6",
+                        "on-tertiary-fixed": "#1b1c1c",
+                        "on-secondary-container": "#bab8b7",
+                        "primary-fixed": "#72fe8f",
+                        "surface-container": "#1e2020",
+                        "tertiary": "#c8c6c5",
+                        "on-tertiary-fixed-variant": "#474746",
+                        "error-container": "#93000a",
+                        "error": "#ffb4ab",
+                        "primary-fixed-dim": "#53e076",
+                        "on-primary-container": "#004118"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "280px",
+                        "player-height": "96px",
+                        "grid-gutter": "24px",
+                        "container-padding": "24px",
+                        "stack-gap": "16px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "label-md": ["Geist"],
+                        "display-lg": ["Geist"],
+                        "body-lg": ["Geist"],
+                        "headline-lg": ["Geist"],
+                        "mono-label": ["Geist Mono"],
+                        "headline-md": ["Geist"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "mono-label": ["11px", { "lineHeight": "14px", "letterSpacing": "0.1em", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Minimalist Tech Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333535;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4949;
+        }
+        
+        /* Hide scrollbar for horizontal scrolling containers but keep functionality */
+        .hide-scroll::-webkit-scrollbar {
+            display: none;
+        }
+        .hide-scroll {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+
+        /* Subtle glow utilities */
+        .glow-active {
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.15);
+        }
+        
+        .play-fab {
+            opacity: 0;
+            transform: translateY(8px);
+            transition: all 0.3s ease;
+        }
+        
+        .group:hover .play-fab {
+            opacity: 1;
+            transform: translateY(0);
+        }
+    </style>
+</head>
+<body class="bg-background text-on-surface h-screen overflow-hidden flex font-body-md selection:bg-primary-container selection:text-on-primary-container">
+<!-- SideNavBar -->
+<nav class="w-sidebar-width h-full fixed left-0 top-0 bg-surface-dim flex flex-col py-6 gap-stack-gap z-20 border-r border-surface-container-highest">
+<!-- Header -->
+<div class="px-container-padding mb-4 flex items-center gap-3">
+<div class="w-10 h-10 rounded-full bg-surface-container-high overflow-hidden border border-surface-container-highest">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A close-up portrait of a young person with striking features, illuminated by cool, high-tech neon lighting in shades of cyan and deep blue. The lighting emphasizes a modern, cyberpunk or tech-savvy aesthetic, fitting for a premium digital platform user profile. The background is completely dark, ensuring the focus remains entirely on the face and the moody, futuristic lighting setup." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDFFBecM205Z_EObrU3EOjnbHRjOGQoNF8yrcP7jsxEm3FPlpANDwvHtD2uHLq7zP63s2G17-Tk_QFpaJDVNGvYiIprgfmNabqQ4iAWSEb9iuYoVbnhAIUH8PcF4L6ZJakD4TTtpKwLtjmdwh8db8RtDqKBeCI_UjkIyflynjfOE9rEhMy3TANpG9HGtijOigsCTHpPjsZQ3Z0XIJsJnVtF6Bwhno8aIefvyvFHQQFS_sy5_09Ej7GAXl-IuJvjPMHw0WOKOfOURJA"/>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary tracking-tight leading-none">MuseSound</h1>
+<span class="font-label-md text-label-md text-on-surface-variant">Premium Account</span>
+</div>
+</div>
+<!-- Main Navigation Tabs -->
+<div class="flex flex-col gap-1 w-full mt-2">
+<!-- Active Tab: Home -->
+<a class="flex items-center gap-4 py-3 text-primary border-l-4 border-primary pl-4 bg-surface-container-low/50 hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">home</span>
+<span class="font-body-lg text-body-lg font-medium">Home</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-on-surface-variant pl-5 hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined">search</span>
+<span class="font-body-lg text-body-lg font-medium">Search</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-on-surface-variant pl-5 hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined">library_music</span>
+<span class="font-body-lg text-body-lg font-medium">Your Library</span>
+</a>
+<a class="flex items-center gap-4 py-3 text-on-surface-variant pl-5 mt-4 hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined">add_box</span>
+<span class="font-body-lg text-body-lg font-medium">Create Playlist</span>
+</a>
+</div>
+<!-- Divider -->
+<div class="w-[calc(100%-48px)] mx-auto h-px bg-surface-container-highest my-2"></div>
+<!-- Footer Tabs (Library Items) -->
+<div class="flex flex-col gap-1 w-full overflow-y-auto hide-scroll flex-grow">
+<a class="flex items-center gap-4 py-2 text-on-surface-variant pl-5 hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200 group" href="#">
+<div class="w-8 h-8 rounded-sm bg-gradient-to-br from-indigo-500 to-purple-800 flex items-center justify-center group-hover:opacity-90">
+<span class="material-symbols-outlined text-white text-[16px]" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</div>
+<span class="font-body-md text-body-md">Liked Songs</span>
+</a>
+<a class="flex items-center gap-4 py-2 text-on-surface-variant pl-5 hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<div class="w-8 h-8 rounded-sm bg-surface-container-high flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface-variant text-[16px]">album</span>
+</div>
+<span class="font-body-md text-body-md">Albums</span>
+</a>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="fixed top-0 right-0 left-sidebar-width h-16 bg-transparent flex justify-between items-center px-container-padding backdrop-blur-md z-20">
+<!-- Search Bar -->
+<div class="relative w-80 group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full h-10 bg-surface-container-high rounded-full pl-10 pr-4 text-on-surface placeholder-on-surface-variant border-none focus:ring-1 focus:ring-primary focus:bg-surface-container transition-all font-body-md text-body-md" placeholder="What do you want to listen to?" type="text"/>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="w-8 h-8 rounded-full bg-surface-container-high overflow-hidden ml-2 cursor-pointer border border-transparent hover:border-primary transition-colors">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A small circular avatar image mirroring the main profile picture. A high-tech, cyberpunk-inspired portrait of a user lit by neon cyan lighting against a dark background, ensuring consistent identity representation across the interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDLeC0MertASozF_9oCEFfs1mtf5KMiS9C4J8kjaQOQDUMWFwxyy00PGG9ws6cV3zweERCDNlT4YYS53XkiZYuZLZMkT6qqiC1UFEH7SLzr1vEegVBoHVRTalkjSU0nc4qwr5g7XDji1Lsjgu2QX-XliqBEoXBMqPvp7fPO8qo5xPjX0o-N3TQZKMakVu4Zb1fsS6mULYjm25pvNr2TXOe29-OmA83G8UBHuZ-Xn6R-ee0Xys9dfSdcyoyLL3FAegfK8tl_lrU2sqQ"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-sidebar-width pt-20 pb-player-height flex-1 overflow-y-auto w-full relative z-10 px-container-padding">
+<!-- Welcome Hero Area -->
+<section class="mb-10 pt-4">
+<h2 class="font-display-lg text-display-lg text-on-surface mb-6">Good evening</h2>
+<!-- Bento Grid: Recently Played (Glassmorphism/High-end UI) -->
+<div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+<!-- Bento Item 1 -->
+<div class="group relative overflow-hidden rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 flex items-center pr-4 cursor-pointer border border-transparent hover:border-surface-container-highest">
+<div class="w-20 h-20 flex-shrink-0 relative">
+<img alt="Album Art" class="w-full h-full object-cover" data-alt="Abstract album cover art featuring deep, moody purples and neon green laser-like lines cutting through geometric shapes. The visual style is highly futuristic and sleek, fitting a modern electronic or synthwave music genre. The overall tone is dark and energetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDv1DkpmbT9QbaA8PWPhvS8_-dqpJgetg8mOu-xIUegoqRYUR8t4f6JoMzVgDOGyw9Q9nHZ3v7umFMOogkcOmKdVnkL_fJpbHUSwID9qQnN9MoGDmlY2UhWyxpxpPypRkiB7lygQYYR9oilVLhGi6UXWlqlV6k7t0kwTdVdPeM6Arpj-BduGcenLxLCpB9jFaBw6mkfvleEklnVrAghpxuoWPtrOYevcqQzq8VlGrJLCg5xWFzWqB6k0Er3SIa-wQndV53t3YgQt6Q"/>
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="ml-4 flex-1">
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">Neon Nights Synthwave</h3>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center play-fab shadow-lg">
+<span class="material-symbols-outlined text-black" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<!-- Bento Item 2 -->
+<div class="group relative overflow-hidden rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 flex items-center pr-4 cursor-pointer border border-transparent hover:border-surface-container-highest">
+<div class="w-20 h-20 flex-shrink-0 relative">
+<img alt="Album Art" class="w-full h-full object-cover" data-alt="A live concert scene captured from the crowd's perspective, focusing on a silhouette of a musician against a backdrop of intense, blinding white and green stage lights. The atmosphere is electric and chaotic, capturing the raw energy of a live performance in a dark, moody venue." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJOiBNl-NSM2KhFV7K75FoxKmiyCuHTYCpnRnDnS464j6JqTGhC1_v9GpjCKb35U0MlUXQIFWpSVzwtaES8i71d7MCI_7qCTSp4f9_w4d-sSv1I71_7QcS-MeUMqwIijeqnP9X7ErefP1FNQeu57gRe74tIBr74F8wkuRaKY6g7vHC3L__LUK8_Vy2RG0RmbUSipp0pVrsHJudzIRJwLQW-aOK2IDYX1arv2iKFI2nVE1aVl_X_k8WvuTUHhsHcVYfDfleeRYdP2Q"/>
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="ml-4 flex-1">
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">Live at The Roxy</h3>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center play-fab shadow-lg">
+<span class="material-symbols-outlined text-black" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<!-- Bento Item 3 -->
+<div class="group relative overflow-hidden rounded-lg bg-surface-container-low hover:bg-surface-container-high transition-all duration-300 flex items-center pr-4 cursor-pointer border border-transparent hover:border-surface-container-highest">
+<div class="w-20 h-20 flex-shrink-0 relative">
+<img alt="Album Art" class="w-full h-full object-cover" data-alt="A minimalist and moody photograph of a vintage microphone standing alone in a dimly lit, dark room. The lighting focuses solely on the metallic textures of the microphone, creating a sense of intimacy and anticipation. The aesthetic is clean, professional, and slightly nostalgic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAtMYridrpY6V8s61d3pHRtl1CwDCxd8zI8Unky36YLgolgZx6h0UEi1OINcz8x7mYlquZoZSvH2Ph1Bl8B7OXh5PVctVl4U0_tFLRCbO9Bnx2Po-8SX-hLbD4yg3LplhXfCK6NMOOlvbgKiQEzp9Qgy3MTHfw9vbswOKkxdoq9NbloGaOm1XwvYmlFOjWSZQevb82hW5jsnPA_v4lVEgyRc7nOPEETCL-taF8NBPkobk3Ra6OHRX1dx-ciI1rM3yx4RjpszoNd1bg"/>
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-white text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="ml-4 flex-1">
+<h3 class="font-body-lg text-body-lg font-semibold text-on-surface group-hover:text-primary transition-colors line-clamp-1">Deep Focus Beats</h3>
+</div>
+<div class="w-8 h-8 rounded-full bg-primary flex items-center justify-center play-fab shadow-lg">
+<span class="material-symbols-outlined text-black" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+</div>
+</section>
+<!-- Top Mixes (Horizontal Scroll) -->
+<section class="mb-10">
+<div class="flex items-end justify-between mb-6">
+<h2 class="font-headline-lg text-headline-lg text-on-surface hover:underline cursor-pointer transition-all">Your Top Mixes</h2>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface uppercase tracking-wider" href="#">Show All</a>
+</div>
+<div class="flex gap-grid-gutter overflow-x-auto pb-6 hide-scroll -mx-2 px-2">
+<!-- Card 1 -->
+<div class="w-[200px] flex-shrink-0 group cursor-pointer bg-surface rounded-lg p-4 hover:bg-surface-container-high transition-colors duration-300 border border-transparent hover:border-surface-container-highest relative">
+<div class="relative w-full aspect-square mb-4 rounded-md overflow-hidden shadow-lg">
+<img alt="Mix Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A dynamic shot of a DJ mixing desk in a dark club environment. The mixer is illuminated by glowing neon green and blue LEDs, emphasizing a high-tech, energetic dance music vibe. The surrounding area is submerged in deep shadows, focusing all attention on the glowing controls." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB9zqxS4XOw8MSIzdiYjHOAIPTKLHImXC2dMwETR1Lj3bCM6ksFb6vaccKWTFOaH01W_4eEsdwSuDGq-WX2WufixrTyp9joRju1L37gRREnPCsZFHIzSnzL3u99NcA_7DLZ-xFllhZXCFFkwHiMRhQODoaXsEUv2ICqlC7nXP09PgpLE1sKZ9fwwqoVq2dihiOh1OIUyOkqrIGOcziYmjjWpkQQx_UqamBK_kxDujrtUlDwFTKDlHu4R_VmJyKKFYQZAw5rg-faQFM"/>
+<div class="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-primary flex items-center justify-center play-fab shadow-xl">
+<span class="material-symbols-outlined text-black text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface mb-1 truncate">Electronic Mix</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 leading-relaxed">Daft Punk, Justice, The Chemical Brothers and more</p>
+</div>
+<!-- Card 2 -->
+<div class="w-[200px] flex-shrink-0 group cursor-pointer bg-surface rounded-lg p-4 hover:bg-surface-container-high transition-colors duration-300 border border-transparent hover:border-surface-container-highest relative">
+<div class="relative w-full aspect-square mb-4 rounded-md overflow-hidden shadow-lg">
+<img alt="Mix Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A close-up of a studio microphone surrounded by dark, acoustic foam panels. The lighting is low-key, with a subtle, cool rim light catching the metallic mesh of the mic, suggesting a professional, intimate recording session for vocals or podcasts." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCRLbVlH4KAdFwaXxiJWNQDUbD7Z5m9YTCQmbB3dsg4R2bWalo_s_oCWipEpHwdbv6x7OGB9HwH9jHx5do9DYL1oA01KnKU2QFi5_BhDH7Dt5aWIe_oSKssuszWlMB9f6odlD-NZjGRhmL-p4bjRp9e9ZB1BUx18m5MOgobrTEHvLtSR7cAZ_xN5yu6McGswb02Rf8TckKbviUCybYUXzjU29PFWB844-U1_8y7kVf0IAfXxOJ7s6Prxz5Q3OMVb62V-8YpJ5RoXhI"/>
+<div class="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-primary flex items-center justify-center play-fab shadow-xl">
+<span class="material-symbols-outlined text-black text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface mb-1 truncate">Chillout Lounge</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 leading-relaxed">Bonobo, Tycho, Nightmares on Wax and more</p>
+</div>
+<!-- Card 3 -->
+<div class="w-[200px] flex-shrink-0 group cursor-pointer bg-surface rounded-lg p-4 hover:bg-surface-container-high transition-colors duration-300 border border-transparent hover:border-surface-container-highest relative">
+<div class="relative w-full aspect-square mb-4 rounded-md overflow-hidden shadow-lg border-l-4 border-primary">
+<div class="absolute inset-0 bg-gradient-to-br from-gray-800 to-black z-10 opacity-60 mix-blend-multiply"></div>
+<img alt="Mix Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="An expansive, dark concert hall viewed from the stage, empty of people. Subtle beams of green laser light cut through a light haze in the air, creating a moody, atmospheric, and highly technical lighting environment typical of modern stage production design." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCJy04H5f9fgPC6kFbovsEtyzeJSmCxkGo468-VVw5Rgz3QPXB4l4FMpbGHXDYw9hbEOHt4Xlqc6h9Lq_nyfGwHfRx7tboASbqSNR9aPhQWvkkn0E_V1jGAk9tiXSSxeB682XKoBTlGUoPJKhTK-jHhJls7CtFSOJ198ZFdUFm3E9sEOs3xvUcX5JKZzznc1ej26_mHqMXjnQZbsMdvFvMOcv4ir2L_UYMZt8rX8r1tia-xOQRX-l7Nl-K51uDsCj2_WS5WaQ-Aa-w"/>
+<div class="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-primary flex items-center justify-center play-fab shadow-xl z-20">
+<span class="material-symbols-outlined text-black text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface mb-1 truncate">Techno Bunker</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 leading-relaxed">Amelie Lens, Charlotte de Witte, Adam Beyer</p>
+</div>
+<!-- Card 4 -->
+<div class="w-[200px] flex-shrink-0 group cursor-pointer bg-surface rounded-lg p-4 hover:bg-surface-container-high transition-colors duration-300 border border-transparent hover:border-surface-container-highest relative">
+<div class="relative w-full aspect-square mb-4 rounded-md overflow-hidden shadow-lg">
+<img alt="Mix Cover" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500" data-alt="A sleek, modern synthesizer keyboard photographed in macro, focusing on the intricate dials and keys. The scene is lit with striking, high-contrast green and dark teal lights, creating a highly technical, futuristic music production aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB0vrvU6ogKnQduHErUtih6Y8dx9JvIVmjsPq125fQW7IcsgTy2PRCHbhkzuLUBUEKj9_UNIJFZGztDRXHu4aF2IoLGZfboUnBkCkIPZ9B83YbIrjcgSkwtfDWlUwp_dfDbaCdR5QagMdavif8U6AR-vI5xVSaxY7ErGo4K4uGFhUf5SW4Ef7hi8WcGoM97m-vcW8P1Ns3WWzhQtMtUeuA6BYNnjqwjTjUUjVv8dcyb9hOyBs_NELN0Hej7GTPjqt3Ie__BcmFcHio"/>
+<div class="absolute bottom-2 right-2 w-12 h-12 rounded-full bg-primary flex items-center justify-center play-fab shadow-xl">
+<span class="material-symbols-outlined text-black text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<h4 class="font-body-lg text-body-lg font-bold text-on-surface mb-1 truncate">Synthwave Essentials</h4>
+<p class="font-body-md text-body-md text-on-surface-variant line-clamp-2 leading-relaxed">Kavinsky, The Midnight, FM-84</p>
+</div>
+</div>
+</section>
+</main>
+<!-- Bottom Player Bar -->
+<footer class="fixed bottom-0 left-0 right-0 h-player-height bg-surface-container-highest border-t border-surface-container-highest z-30 px-container-padding flex items-center justify-between shadow-[0_-4px_20px_rgba(0,0,0,0.5)]">
+<!-- Track Info (Left) -->
+<div class="flex items-center gap-4 w-[30%] min-w-[200px]">
+<div class="w-14 h-14 rounded-md overflow-hidden shadow-md group relative cursor-pointer border border-surface-container-highest">
+<img alt="Current Track Art" class="w-full h-full object-cover" data-alt="Abstract album cover art featuring deep, moody purples and neon green laser-like lines cutting through geometric shapes. Same as the recently played item, representing the currently playing track in the bottom navigation bar." src="https://lh3.googleusercontent.com/aida-public/AB6AXuApfBO8UmKi7rPGktEKukuVqjWPtsCKWIECrAuT0FxUCa3uDffibhM07EJ-VRxdEv_x_L_PWV-dimDFytYJrXR20M5xhWpBbcmZQgzwrWoX24bNFJuP39YL0fXFZ6bAn0DTy52Qa3kCtZ2aMOoUeEAfLyI4ZhXtj2wJCLBwcwlycbZUYktyxhxNxZ6xtkLbl6VMCmsXmN0fG_wL-JBEj1M19pulfiJVpGNCAVIeAtATOgqhIPPqQLVh7vUBry1ngbED4lKXUbp-dQI"/>
+<div class="absolute top-1 right-1 w-2 h-2 rounded-full bg-primary shadow-[0_0_8px_#1db954]"></div>
+<div class="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 flex items-center justify-center transition-opacity">
+<span class="material-symbols-outlined text-white text-xl">expand_less</span>
+</div>
+</div>
+<div class="flex flex-col justify-center overflow-hidden">
+<a class="font-body-md text-body-md text-primary font-medium hover:underline truncate" href="#">Neon Nights</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:text-on-surface hover:underline truncate" href="#">Synthwave Master</a>
+</div>
+<button class="ml-2 text-primary hover:scale-110 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+</div>
+<!-- Player Controls (Center) -->
+<div class="flex flex-col items-center justify-center w-[40%] max-w-[600px] gap-2">
+<!-- Buttons -->
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-xl">shuffle</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">skip_previous</span>
+</button>
+<button class="w-9 h-9 rounded-full bg-white flex items-center justify-center hover:scale-105 transition-transform shadow-lg group">
+<span class="material-symbols-outlined text-black text-2xl group-hover:text-primary transition-colors" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">skip_next</span>
+</button>
+<button class="text-primary hover:text-primary-container transition-colors relative">
+<span class="material-symbols-outlined text-xl">repeat</span>
+<span class="absolute -bottom-1 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-primary"></span>
+</button>
+</div>
+<!-- Progress Bar -->
+<div class="flex items-center gap-2 w-full group">
+<span class="font-mono-label text-mono-label text-on-surface-variant w-10 text-right">2:14</span>
+<div class="h-1 flex-1 bg-surface-container rounded-full overflow-hidden relative cursor-pointer">
+<div class="absolute top-0 left-0 h-full bg-on-surface group-hover:bg-primary transition-colors w-[45%] rounded-full"></div>
+</div>
+<span class="font-mono-label text-mono-label text-on-surface-variant w-10">4:30</span>
+</div>
+</div>
+<!-- Utilities (Right) -->
+<div class="flex items-center justify-end gap-4 w-[30%] min-w-[200px]">
+<button aria-label="Now Playing View" class="text-on-surface-variant hover:text-on-surface transition-colors hint--top">
+<span class="material-symbols-outlined text-xl">slideshow</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-xl">lyrics</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-xl">queue_music</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-xl">devices</span>
+</button>
+<!-- Volume Control -->
+<div class="flex items-center gap-2 group w-24">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-xl">volume_up</span>
+</button>
+<div class="h-1 flex-1 bg-surface-container rounded-full overflow-hidden relative cursor-pointer">
+<div class="absolute top-0 left-0 h-full bg-on-surface group-hover:bg-primary transition-colors w-[70%] rounded-full"></div>
+</div>
+</div>
+</div>
+</footer>
+</body></html>

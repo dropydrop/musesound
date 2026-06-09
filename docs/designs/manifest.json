@@ -1,0 +1,22 @@
+{
+  "short_name": "MuseSound",
+  "name": "MuseSound - Luminous Audio Streamer",
+  "icons": [
+    {
+      "src": "https://api.placeholder.com/192",
+      "type": "image/png",
+      "sizes": "192x192"
+    },
+    {
+      "src": "https://api.placeholder.com/512",
+      "type": "image/png",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": ".",
+  "background_color": "#121414",
+  "display": "standalone",
+  "scope": "/",
+  "theme_color": "#1db954",
+  "description": "A modern, high-fidelity audio streamer for YouTube and YouTube Music."
+}

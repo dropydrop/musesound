@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Queue - MuseSound</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS & Configuration -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "inverse-primary": "#006e2d",
+                "on-background": "#e3e2e2",
+                "primary-fixed": "#72fe8f",
+                "secondary-container": "#4a4949",
+                "on-tertiary": "#303030",
+                "outline": "#869585",
+                "error": "#ffb4ab",
+                "surface-container": "#1e2020",
+                "on-secondary": "#313030",
+                "outline-variant": "#3d4a3d",
+                "on-primary-container": "#004118",
+                "surface": "#121414",
+                "on-secondary-fixed-variant": "#474646",
+                "surface-dim": "#121414",
+                "surface-container-highest": "#343535",
+                "primary": "#53e076",
+                "on-primary": "#003914",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "surface-container-low": "#1a1c1c",
+                "on-secondary-container": "#bab8b7",
+                "surface-variant": "#343535",
+                "on-primary-fixed": "#002108",
+                "primary-fixed-dim": "#53e076",
+                "inverse-surface": "#e3e2e2",
+                "on-tertiary-container": "#383838",
+                "on-error-container": "#ffdad6",
+                "on-surface-variant": "#bccbb9",
+                "on-secondary-fixed": "#1c1b1b",
+                "secondary": "#c8c6c5",
+                "on-tertiary-fixed-variant": "#474746",
+                "primary-container": "#1db954",
+                "background": "#121414",
+                "on-primary-fixed-variant": "#005320",
+                "surface-container-lowest": "#0d0e0f",
+                "error-container": "#93000a",
+                "surface-container-high": "#292a2a",
+                "surface-tint": "#53e076",
+                "secondary-fixed": "#e5e2e1",
+                "on-tertiary-fixed": "#1b1c1c",
+                "secondary-fixed-dim": "#c8c6c5",
+                "inverse-on-surface": "#2f3131",
+                "tertiary-fixed": "#e4e2e1",
+                "tertiary": "#c8c6c5",
+                "on-surface": "#e3e2e2",
+                "tertiary-container": "#a2a1a0",
+                "surface-bright": "#38393a",
+                "on-error": "#690005"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "sm": "8px",
+                "lg": "24px",
+                "2xl": "48px",
+                "margin-desktop": "40px",
+                "margin-mobile": "16px",
+                "3xl": "64px",
+                "base": "4px",
+                "xl": "32px",
+                "xs": "4px",
+                "md": "16px",
+                "gutter": "24px",
+                "stack-lg": "32px",
+                "stack-md": "16px",
+                "stack-sm": "8px",
+                "container-margin-desktop": "32px",
+                "unit": "8px",
+                "container-margin-mobile": "16px"
+        },
+        "fontFamily": {
+                "headline-md": [
+                        "Geist"
+                ],
+                "headline-sm": [
+                        "Geist"
+                ],
+                "label-sm": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Geist"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "JetBrains Mono"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Geist"
+                ],
+                "title-md": ["Inter"],
+                "label-caps": ["Inter"],
+                "display-lg": ["Inter"],
+                "code-sm": ["Inter"]
+        },
+        "fontSize": {
+                "headline-md": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-sm": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-lg": [
+                        "40px",
+                        {
+                                "lineHeight": "48px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "500"}],
+                "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                "code-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+        }
+},
+    },
+  }
+</script>
+<style>
+        /* Hide scrollbar for clean app-like look */
+        ::-webkit-scrollbar { display: none; }
+        body { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen antialiased selection:bg-primary selection:text-on-primary">
+<!-- TopAppBar Component -->
+<header class="fixed top-0 w-full z-50 flex justify-between items-center px-gutter h-16 bg-surface/80 backdrop-blur-xl transition-all duration-300 ease-in-out">
+<button class="text-primary hover:opacity-80 transition-all duration-300 ease-in-out">
+<span class="material-symbols-outlined text-[24px]">menu</span>
+</button>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile tracking-tight text-primary">MuseSound</h1>
+<div class="w-8 h-8 rounded-full bg-surface-container-highest overflow-hidden ring-1 ring-outline-variant">
+<img alt="User Avatar" class="w-full h-full object-cover" data-alt="A close-up portrait of a young person set against a dark, moody charcoal background. Soft, dramatic studio lighting highlights their facial features, creating a cinematic and modern aesthetic. Subtle red neon reflections catch the edges of their silhouette, tying into a sleek, dark-mode design system. The overall mood is mysterious yet energetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBiYQGOwF276UD4ys98ooVOCM40R9lIKqm9iH1A3e6Tw8whGbeJlV9liyD-aG1DAm1DWE38cFCoGEEXFrxZGspwu8423W2BmTcGMOwYqXuaO9PAivT0Cpcsytoi11mhY0ZFgezZHN_SH2hFbjlD1u-gK-7BGA7rRNNsAwVFvUzwewnLi9h9fM8jX-_iqrdOBN9ZlO7dI4fP2eH30A1w9pIFqOpam2-yQ_42JN2c9ExUFBahG4L4ComYYFsq-nBuWO2V6DeAdp_8jvg"/>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="pt-20 pb-28 px-gutter space-y-stack-lg max-w-2xl mx-auto">
+<!-- Playing Now Section -->
+<section>
+<h2 class="font-title-md text-title-md text-on-surface mb-stack-sm px-unit">Playing Now</h2>
+<div class="bg-surface-container p-stack-md rounded-xl flex items-center space-x-stack-md shadow-[0_4px_30px_rgba(0,0,0,0.5)]">
+<div class="relative w-16 h-16 shrink-0">
+<img class="w-full h-full rounded-lg object-cover" data-alt="Abstract geometric album art featuring floating neon red and deep pink shapes against an infinite dark void. The scene is rendered in high-end 3D with realistic glassmorphic refractions and subtle glow effects. The aesthetic perfectly matches a dark-mode, electronic music app interface. The mood is immersive and futuristic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBlLsdj-WvOXMrGeuR3dHkn6C01VD_lmo4SsGbz7K4zI7iWzN630IgTkhQK1TCyYan6w8yXPV5TnRyaBP0Xz7IlncDP-iAW_b_CI139_8zQDni6uJgnvLsj3XtC6BHygnO59kMqQYEChameYISEccGPW4RAN2GXCrTYkqd4gmtwqqHYs3qevxDsUPQfBFKYzKrvW58KqWJ70yekeBf7uzMEYTT_86Ks34sYyvUYUZeQtd_WFrtIDgOyAP7ZpB9cGgG8Zc8joxaHv70"/>
+<div class="absolute inset-0 bg-black/40 rounded-lg flex items-center justify-center backdrop-blur-[2px]">
+<span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">pause</span>
+</div>
+</div>
+<div class="flex-1 min-w-0">
+<h3 class="font-title-md text-title-md text-primary truncate">Neon Horizon</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Synthwave Syndicate</p>
+</div>
+<div class="flex items-end justify-center h-4 space-x-0.5 opacity-80">
+<!-- Fake equalizer animation using inline styles for height -->
+<div class="w-1 bg-primary rounded-t-full" style="height: 100%; animation: pulse 1s ease-in-out infinite alternate;"></div>
+<div class="w-1 bg-primary rounded-t-full" style="height: 40%; animation: pulse 1.2s ease-in-out infinite alternate;"></div>
+<div class="w-1 bg-primary rounded-t-full" style="height: 80%; animation: pulse 0.8s ease-in-out infinite alternate;"></div>
+</div>
+</div>
+<!-- Progress Bar -->
+<div class="mt-stack-sm px-unit">
+<div class="h-1 bg-surface-container-highest rounded-full overflow-hidden w-full">
+<div class="h-full bg-primary w-1/3 rounded-full relative"></div>
+</div>
+<div class="flex justify-between mt-1 text-on-surface-variant font-code-sm text-code-sm">
+<span>1:24</span>
+<span>4:08</span>
+</div>
+</div>
+</section>
+<!-- Next in Queue Section -->
+<section>
+<div class="flex justify-between items-end mb-stack-sm px-unit">
+<h2 class="font-title-md text-title-md text-on-surface">Next in Queue</h2>
+<button class="font-label-caps text-label-caps text-primary hover:text-primary-fixed-dim transition-colors">CLEAR</button>
+</div>
+<div class="space-y-1">
+<!-- Queue Item 1 -->
+<div class="flex items-center p-stack-sm bg-surface rounded-lg group hover:bg-surface-container-high transition-colors cursor-pointer">
+<img class="w-12 h-12 rounded md object-cover mr-stack-md shrink-0" data-alt="A moody, atmospheric photograph of a dark city street at night, blurred to abstract shapes. Deep crimson taillights cut through the charcoal grey mist. The visual style is grainy, cinematic, and perfectly aligned with an underground electronic music aesthetic. The image is framed as a square album cover." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBngCMFSy_A8V1IzOHybRTkdQpvmY5zy-rl9ZRtOcKPIYVuNG3KytGgRWScSDzBupvwVqdBZklCPb2qHtVARF0JglMu-NHQpFfc1QcxOgtUy5zerWd8XXfwOodQCC8fj_xWQEB5D5tV5FN2UgzVYISmsUuDbCRcREaRJ26lsuA1AOUpI4iBbitQ2OMYZiqzKLcwhTaMNpcuY7ZUk-kNVLdKnRl-q2pSS00oJgAYvn9ROSAbWwLnJFULFDcGh871BsaQrYyncIfCSLY"/>
+<div class="flex-1 min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Midnight Drive</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">The Midnight Riders</p>
+</div>
+<div class="text-on-surface-variant font-code-sm text-code-sm mr-stack-md">3:42</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_handle</span>
+</button>
+</div>
+<!-- Queue Item 2 -->
+<div class="flex items-center p-stack-sm bg-surface rounded-lg group hover:bg-surface-container-high transition-colors cursor-pointer">
+<img class="w-12 h-12 rounded md object-cover mr-stack-md shrink-0" data-alt="A stark, minimalist 3D rendering of rippling liquid metal in dark graphite tones. A single, razor-thin line of intense glowing red bisects the composition. The lighting highlights the metallic textures against a pitch-black background. This visual creates a premium, high-tech album art feel suitable for a dark mode interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBciWpjjoJu6B6iDZQ7OMI5BsMGkpaRz-qdW6ohV2U9BH6sU5liKcROuP8sc8RpXfq4QaI3QWnccqHWwsDD41j80HUoaNOUyQwqOWFa5ylWv07PgVvvXPRQWtUgnUWKILE2kv-pCzMp5c01QMPIfZ3AmLuVM1NiHL3gGiKrEBKbMsZRNqjbyKRei9-PmMGerhOLILBynAfZj2wnygdKCgPfZvJ9b9ekgFe31wDVXFkzQyWcYEjyfsZ7wN_d0f4CL5bOfQmz8gLxipo"/>
+<div class="flex-1 min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Liquid State</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Echo Pulse</p>
+</div>
+<div class="text-on-surface-variant font-code-sm text-code-sm mr-stack-md">4:15</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_handle</span>
+</button>
+</div>
+<!-- Queue Item 3 -->
+<div class="flex items-center p-stack-sm bg-surface rounded-lg group hover:bg-surface-container-high transition-colors cursor-pointer">
+<div class="w-12 h-12 rounded md bg-surface-container-highest flex items-center justify-center mr-stack-md shrink-0 border border-surface-variant">
+<span class="material-symbols-outlined text-secondary">music_note</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate">Analog Dreams</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Voltage</p>
+</div>
+<div class="text-on-surface-variant font-code-sm text-code-sm mr-stack-md">2:58</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors cursor-grab active:cursor-grabbing">
+<span class="material-symbols-outlined">drag_handle</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Recently Played Section -->
+<section>
+<h2 class="font-title-md text-title-md text-on-surface mb-stack-sm px-unit">Recently Played</h2>
+<div class="space-y-1 opacity-75">
+<!-- History Item 1 -->
+<div class="flex items-center p-stack-sm bg-transparent rounded-lg hover:bg-surface transition-colors cursor-pointer">
+<img class="w-10 h-10 rounded object-cover mr-stack-sm shrink-0 grayscale hover:grayscale-0 transition-all" data-alt="A concert scene captured from the crowd, heavily underexposed so only the silhouette of the audience and a distant stage are visible. A single beam of muted red light cuts through the darkness. The image acts as a moody, atmospheric background element for an old album cover, perfectly fitting a dark interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC8G3yozJHUxyHiLGv4mk49_qD0vqn7am38HwpEAnXXPcGvv2QxG0AR47Sxu85S9H-3d1GiSdAWGVwH5uqE1192pZLRUWyR8O46jWDt8ccSo2xIZMV2e52G3OG_MCMB9TSrmA922M7KRg59eYKC0VilekRVZTiIl68GIE5Edk_s7PW8dwhzfZCDbYQ9kX6jzW_RbdyEbRrsbdSi04MmJ8NVD5bCcYELrk445BMj3Obp8kYDGKMYQgHxXWSjihuv5Tk-ZxMH9d0sqvo"/>
+<div class="flex-1 min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate text-sm">Static City</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate text-xs">Urban Noise</p>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors pl-stack-sm">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+<!-- History Item 2 -->
+<div class="flex items-center p-stack-sm bg-transparent rounded-lg hover:bg-surface transition-colors cursor-pointer">
+<div class="w-10 h-10 rounded bg-surface-container-low flex items-center justify-center mr-stack-sm shrink-0 border border-surface-variant">
+<span class="material-symbols-outlined text-surface-variant text-[20px]">album</span>
+</div>
+<div class="flex-1 min-w-0">
+<h4 class="font-title-md text-title-md text-on-surface truncate text-sm">Void Transmission</h4>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate text-xs">Deep Space Network</p>
+</div>
+<button class="text-on-surface-variant hover:text-primary transition-colors pl-stack-sm">
+<span class="material-symbols-outlined text-[20px]">more_vert</span>
+</button>
+</div>
+</div>
+</section>
+</main>
+<!-- BottomNavBar Component -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-stack-sm px-gutter bg-surface-container/90 backdrop-blur-xl rounded-t-xl shadow-sm border-t border-surface-container-high/50 max-w-2xl mx-auto left-0 right-0">
+<!-- Discover (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]">explore</span>
+<span class="font-label-caps text-label-caps">Discover</span>
+</button>
+<!-- Search (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]">search</span>
+<span class="font-label-caps text-label-caps">Search</span>
+</button>
+<!-- Library (Inactive) -->
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform w-16">
+<span class="material-symbols-outlined mb-1 text-[24px]">library_music</span>
+<span class="font-label-caps text-label-caps">Library</span>
+</button>
+<!-- Queue (Active) -->
+<button class="flex flex-col items-center justify-center text-primary font-bold scale-95 active:scale-90 transition-transform w-16">
+<div class="bg-primary/10 px-4 py-1 rounded-full mb-1">
+<span class="material-symbols-outlined text-[24px]" style="font-variation-settings: 'FILL' 1;">queue_music</span>
+</div>
+<span class="font-label-caps text-label-caps">Queue</span>
+</button>
+</nav>
+<style>
+        @keyframes pulse {
+            0% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+    </style>
+</body></html>

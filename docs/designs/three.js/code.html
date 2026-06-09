@@ -1,0 +1,150 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width,initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+    }
+  </style>
+</head>
+<body>
+<!-- STITCH_THREEJS_START:ANIMATION_24 class="fixed inset-0 w-full h-full bg-transparent" -->
+<div class="fixed inset-0 w-full h-full bg-transparent" style="display:block;">
+<script src="https://ajax.googleapis.com/ajax/libs/threejs/r125/three.min.js"></script>
+<div id="threejs-container-ANIMATION_24" style="width:100%;height:100%"></div>
+<script>
+(function() {
+  const container = document.getElementById('threejs-container-ANIMATION_24');
+  const devicePixelRatio = window.devicePixelRatio || 1;
+  /**
+ * MuseSound Core Logic - "Vibe Coding" Integration Layer
+ * 
+ * This script provides the functional bridge between the Luminous Tech designs
+ * and the YouTube Data API v3 / IFrame Player API.
+ */
+
+const MuseSound = {
+    // 1. CONFIGURATION & STATE
+    config: {
+        apiKey: 'YOUR_YOUTUBE_API_KEY', // Set in Settings screen
+        clientId: 'YOUR_GOOGLE_CLIENT_ID',
+        scopes: 'https://www.googleapis.com/auth/youtube.readonly'
+    },
+    state: {
+        isAuthenticated: false,
+        accessToken: null,
+        player: null, // YouTube IFrame Player instance
+        currentTrack: null,
+        queue: [],
+        history: []
+    },
+
+    // 2. AUTHENTICATION (OAuth 2.0)
+    auth: {
+        init() {
+            // Logic for Google Identity Services (GSI) initialization
+            console.log("Initializing MuseSound Auth...");
+        },
+        async login() {
+            // Implementation of the OAuth 2.0 flow
+            // Should be triggered by the "Continue with Google" button
+            console.log("Redirecting to Google Login...");
+        },
+        handleCallback(token) {
+            MuseSound.state.accessToken = token;
+            MuseSound.state.isAuthenticated = true;
+            this.updateUIAfterAuth();
+        },
+        updateUIAfterAuth() {
+            // Logic to switch from Login screens to Home/Library
+            console.log("User logged in. Syncing library...");
+            MuseSound.api.fetchLibrary();
+        }
+    },
+
+    // 3. DATA FETCHING (YouTube Data API v3)
+    api: {
+        async search(query) {
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&q=${encodeURIComponent(query)}&type=video&key=${MuseSound.config.apiKey}`;
+            const response = await fetch(url);
+            const data = await response.json();
+            return data.items;
+        },
+        async fetchLibrary() {
+            // Fetches user playlists and liked videos
+            console.log("Fetching user playlists...");
+        },
+        async getPlaylistItems(playlistId) {
+            // Fetches tracks within a specific playlist
+        }
+    },
+
+    // 4. AUDIO PLAYBACK (IFrame Player API)
+    player: {
+        init() {
+            // Injects the YouTube IFrame API script
+            const tag = document.createElement('script');
+            tag.src = "https://www.youtube.com/iframe_api";
+            document.head.appendChild(tag);
+        },
+        onReady(event) {
+            MuseSound.state.player = event.target;
+            console.log("YouTube Player Ready.");
+        },
+        loadVideo(videoId) {
+            if (MuseSound.state.player) {
+                MuseSound.state.player.loadVideoById(videoId);
+                this.updateNowPlayingUI(videoId);
+            }
+        },
+        play() { MuseSound.state.player?.playVideo(); },
+        pause() { MuseSound.state.player?.pauseVideo(); },
+        next() { /* Logic for queue management */ },
+        updateNowPlayingUI(videoId) {
+            // DOM manipulation to update the Audio Player screen
+            console.log(`Now playing: ${videoId}`);
+        }
+    },
+
+    // 5. UI ROUTING (Navigation Logic)
+    ui: {
+        navigateTo(screenId) {
+            // Logic to show/hide sections or redirect pages
+            document.querySelectorAll('.screen').forEach(s => s.classList.add('hidden'));
+            document.getElementById(screenId)?.classList.remove('hidden');
+        },
+        setupEventListeners() {
+            // Bind navigation buttons, play/pause, and search bar
+            console.log("Setting up UI listeners...");
+        }
+    }
+};
+
+// GLOBAL ENTRY POINT for YouTube API
+function onYouTubeIframeAPIReady() {
+    MuseSound.player.onReady({ target: new YT.Player('player-container', {
+        height: '0', width: '0', // Invisible player for audio-only feel
+        events: { 'onReady': MuseSound.player.onReady }
+    })});
+}
+
+// Initializing the app
+document.addEventListener('DOMContentLoaded', () => {
+    MuseSound.player.init();
+    MuseSound.ui.setupEventListeners();
+});
+
+})();
+</script>
+</div>
+<!-- STITCH_THREEJS_END:ANIMATION_24 -->
+</body>
+</html>

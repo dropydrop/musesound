@@ -1,0 +1,482 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Your Library - MuseSound</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Geist+Mono:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-surface-variant": "#bccbb9",
+                      "on-primary": "#003914",
+                      "surface-bright": "#37393a",
+                      "tertiary-fixed": "#e4e2e1",
+                      "surface-dim": "#121414",
+                      "primary-container": "#1db954",
+                      "inverse-surface": "#e2e2e2",
+                      "inverse-on-surface": "#2f3131",
+                      "on-primary-fixed-variant": "#005320",
+                      "background": "#121414",
+                      "secondary-container": "#4a4949",
+                      "surface-container-highest": "#333535",
+                      "surface-container-lowest": "#0c0f0f",
+                      "on-secondary": "#313030",
+                      "surface-variant": "#333535",
+                      "on-secondary-fixed": "#1c1b1b",
+                      "outline": "#869585",
+                      "on-secondary-fixed-variant": "#474646",
+                      "surface": "#121414",
+                      "inverse-primary": "#006e2d",
+                      "on-tertiary-container": "#383838",
+                      "surface-container-low": "#1a1c1c",
+                      "outline-variant": "#3d4a3d",
+                      "on-tertiary": "#303030",
+                      "on-error": "#690005",
+                      "secondary-fixed-dim": "#c8c6c5",
+                      "secondary": "#c8c6c5",
+                      "surface-tint": "#53e076",
+                      "surface-container-high": "#282a2b",
+                      "tertiary-fixed-dim": "#c8c6c5",
+                      "on-primary-fixed": "#002108",
+                      "on-background": "#e2e2e2",
+                      "on-surface": "#e2e2e2",
+                      "tertiary-container": "#a2a1a0",
+                      "primary": "#53e076",
+                      "secondary-fixed": "#e5e2e1",
+                      "on-error-container": "#ffdad6",
+                      "on-tertiary-fixed": "#1b1c1c",
+                      "on-secondary-container": "#bab8b7",
+                      "primary-fixed": "#72fe8f",
+                      "surface-container": "#1e2020",
+                      "tertiary": "#c8c6c5",
+                      "on-tertiary-fixed-variant": "#474746",
+                      "error-container": "#93000a",
+                      "error": "#ffb4ab",
+                      "primary-fixed-dim": "#53e076",
+                      "on-primary-container": "#004118"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "sidebar-width": "280px",
+                      "player-height": "96px",
+                      "grid-gutter": "24px",
+                      "container-padding": "24px",
+                      "stack-gap": "16px"
+              },
+              "fontFamily": {
+                      "body-md": [
+                              "Geist"
+                      ],
+                      "label-md": [
+                              "Geist"
+                      ],
+                      "display-lg": [
+                              "Geist"
+                      ],
+                      "body-lg": [
+                              "Geist"
+                      ],
+                      "headline-lg": [
+                              "Geist"
+                      ],
+                      "mono-label": [
+                              "Geist Mono"
+                      ],
+                      "headline-md": [
+                              "Geist"
+                      ]
+              },
+              "fontSize": {
+                      "body-md": [
+                              "14px",
+                              {
+                                      "lineHeight": "20px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "label-md": [
+                              "12px",
+                              {
+                                      "lineHeight": "16px",
+                                      "letterSpacing": "0.05em",
+                                      "fontWeight": "500"
+                              }
+                      ],
+                      "display-lg": [
+                              "48px",
+                              {
+                                      "lineHeight": "56px",
+                                      "letterSpacing": "-0.02em",
+                                      "fontWeight": "700"
+                              }
+                      ],
+                      "body-lg": [
+                              "16px",
+                              {
+                                      "lineHeight": "24px",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-lg": [
+                              "32px",
+                              {
+                                      "lineHeight": "40px",
+                                      "letterSpacing": "-0.01em",
+                                      "fontWeight": "600"
+                              }
+                      ],
+                      "mono-label": [
+                              "11px",
+                              {
+                                      "lineHeight": "14px",
+                                      "letterSpacing": "0.1em",
+                                      "fontWeight": "400"
+                              }
+                      ],
+                      "headline-md": [
+                              "24px",
+                              {
+                                      "lineHeight": "32px",
+                                      "fontWeight": "600"
+                              }
+                      ]
+              }
+      },
+          },
+        }
+      </script>
+<style>
+        body {
+            background-color: #121414;
+            color: #e2e2e2;
+        }
+        /* Custom scrollbar for webkit */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333535;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #4a4949;
+        }
+        
+        .glow-hover:hover {
+            box-shadow: 0 0 20px rgba(29, 185, 84, 0.15);
+        }
+        
+        .play-fab {
+            opacity: 0;
+            transform: translateY(8px);
+            transition: all 0.2s ease-out;
+        }
+        
+        .card-container:hover .play-fab {
+            opacity: 1;
+            transform: translateY(0);
+        }
+      </style>
+</head>
+<body class="bg-surface font-body-md text-on-surface antialiased overflow-hidden selection:bg-primary-container selection:text-on-primary-container">
+<!-- App Container -->
+<div class="flex h-screen w-full overflow-hidden">
+<!-- SideNavBar Component -->
+<aside class="w-sidebar-width h-full fixed left-0 top-0 bg-surface-dim flex flex-col py-6 gap-stack-gap z-20 hidden md:flex border-r border-surface-container-highest">
+<div class="px-container-padding mb-4">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">graphic_eq</span>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">MuseSound</h1>
+</div>
+</div>
+<!-- Primary Nav -->
+<nav class="flex flex-col gap-1 w-full">
+<!-- Inactive: Home -->
+<a class="flex items-center gap-4 py-3 pl-5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined text-2xl">home</span>
+<span class="font-body-md text-body-md font-medium">Home</span>
+</a>
+<!-- Inactive: Search -->
+<a class="flex items-center gap-4 py-3 pl-5 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined text-2xl">search</span>
+<span class="font-body-md text-body-md font-medium">Search</span>
+</a>
+<!-- Active: Your Library -->
+<a class="flex items-center gap-4 py-3 text-primary border-l-4 border-primary pl-4 bg-surface-container-lowest cursor-pointer transition-all duration-200" href="#">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">library_music</span>
+<span class="font-body-md text-body-md font-medium">Your Library</span>
+</a>
+<!-- Inactive: Create Playlist -->
+<a class="flex items-center gap-4 py-3 pl-5 mt-4 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-highest transition-colors cursor-pointer duration-200" href="#">
+<span class="material-symbols-outlined text-2xl">add_box</span>
+<span class="font-body-md text-body-md font-medium">Create Playlist</span>
+</a>
+</nav>
+<div class="h-px bg-surface-container-highest mx-6 my-2"></div>
+<!-- Library/Footer Nav -->
+<div class="flex-1 overflow-y-auto px-2">
+<nav class="flex flex-col gap-1">
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-on-surface rounded-md transition-colors cursor-pointer" href="#">
+<span class="material-symbols-outlined text-xl">favorite</span>
+<span class="font-body-md text-body-md">Liked Songs</span>
+</a>
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-on-surface rounded-md transition-colors cursor-pointer" href="#">
+<span class="material-symbols-outlined text-xl">album</span>
+<span class="font-body-md text-body-md">Albums</span>
+</a>
+<!-- Dummy items for scrolling visual -->
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-on-surface rounded-md transition-colors cursor-pointer" href="#">
+<span class="w-8 h-8 bg-surface-container-highest rounded flex items-center justify-center text-label-md">CM</span>
+<span class="font-body-md text-body-md">Chill Mix</span>
+</a>
+<a class="flex items-center gap-4 py-2 px-4 text-on-surface-variant hover:text-on-surface rounded-md transition-colors cursor-pointer" href="#">
+<span class="w-8 h-8 bg-surface-container-highest rounded flex items-center justify-center text-label-md">DW</span>
+<span class="font-body-md text-body-md">Discover Weekly</span>
+</a>
+</nav>
+</div>
+<!-- User Profile Area -->
+<div class="mt-auto px-container-padding pt-4">
+<div class="flex items-center gap-3 py-2 cursor-pointer group">
+<div class="w-10 h-10 rounded-full bg-surface-container-highest overflow-hidden border border-surface-container-highest group-hover:border-primary transition-colors">
+<img alt="User Profile" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuA_pyK9gvCeHagG-IWdXM_DnEvAcHPUX22FURx6hCxCAXCBSQkWOvgssfA5Sg1mJNeO8T8kMkVwRx_5-n1HmZF-V6dyHFs4TIuVnDIVMdS0PWAf7GMRprhq1yAG39cxYl0IcdrG2agyLNeGuv_7ARg0gMCYdjLgHj65-D6EAFw2qSuNa9o4CPcmmwq9lM1NdumNT3bW2KnEu0r67kxxBIhcQkzmeJmXYWWVLv2mhrxbRed_Hi_DQG_AYiqwcoM0_KQ4gRbkJqw-nRo"/>
+</div>
+<div>
+<p class="font-body-md text-body-md font-medium text-on-surface group-hover:text-primary transition-colors">Alex Chen</p>
+<p class="font-label-md text-label-md text-on-surface-variant">Premium Account</p>
+</div>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-[280px] h-[calc(100vh-96px)] relative overflow-hidden bg-background">
+<!-- TopNavBar Component -->
+<header class="fixed top-0 right-0 left-sidebar-width h-16 bg-background/80 backdrop-blur-md flex justify-between items-center px-container-padding z-10">
+<!-- Search on Left (per JSON) -->
+<div class="flex-1 max-w-md">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant group-focus-within:text-primary transition-colors">search</span>
+<input class="w-full bg-[#282828] text-on-surface font-body-md text-body-md rounded-full py-2 pl-10 pr-4 border border-transparent focus:border-primary focus:outline-none focus:ring-0 transition-all placeholder:text-on-surface-variant" placeholder="Search in your library..." type="text"/>
+</div>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-[#282828] transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 rounded-full bg-black/40 flex items-center justify-center text-on-surface-variant hover:text-on-surface hover:bg-[#282828] transition-all">
+<span class="material-symbols-outlined">settings</span>
+</button>
+</div>
+</header>
+<!-- Library Content Scrollable Area -->
+<div class="h-full overflow-y-auto pt-24 pb-32 px-container-padding">
+<!-- Page Header -->
+<div class="flex items-end justify-between mb-8">
+<div>
+<h2 class="font-display-lg text-display-lg text-on-surface mb-2">Your Library</h2>
+<div class="flex gap-4">
+<button class="px-4 py-1.5 rounded-full bg-surface-container-highest text-on-surface font-label-md text-label-md hover:bg-[#282828] transition-colors border border-transparent hover:border-outline-variant">Playlists</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-[#282828] transition-colors">Artists</button>
+<button class="px-4 py-1.5 rounded-full bg-surface-container text-on-surface-variant font-label-md text-label-md hover:bg-[#282828] transition-colors">Albums</button>
+</div>
+</div>
+<button class="flex items-center gap-2 bg-primary-container text-on-primary-container font-label-md text-label-md px-5 py-2.5 rounded-lg hover:bg-primary-fixed transition-colors">
+<span class="material-symbols-outlined text-xl">add</span>
+                        Create Playlist
+                    </button>
+</div>
+<!-- Pinned / Highlight Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-grid-gutter mb-12">
+<!-- Liked Songs Special Card -->
+<div class="col-span-1 lg:col-span-2 relative rounded-xl overflow-hidden group cursor-pointer h-64 bg-gradient-to-br from-indigo-900 to-surface-container-highest p-6 flex flex-col justify-end card-container glow-hover transition-all">
+<div class="absolute inset-0 opacity-20 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent pointer-events-none"></div>
+<div class="relative z-10 flex flex-col gap-2">
+<p class="font-body-lg text-body-lg text-on-surface/80 max-w-md line-clamp-2 mb-2">
+<span class="font-medium text-white">The Midnight</span> - Sunset, <span class="font-medium text-white">Daft Punk</span> - Digital Love, <span class="font-medium text-white">Kavinsky</span> - Nightcall...
+                            </p>
+<h3 class="font-headline-lg text-headline-lg text-on-surface">Liked Songs</h3>
+<p class="font-body-md text-body-md text-on-surface-variant">428 Liked Songs</p>
+</div>
+<button class="play-fab absolute bottom-6 right-6 w-14 h-14 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all z-20">
+<span class="material-symbols-outlined text-3xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<!-- Discover Weekly Card -->
+<div class="bg-[#181818] hover:bg-[#282828] rounded-xl p-4 flex flex-col gap-4 group cursor-pointer transition-colors card-container border border-transparent hover:border-surface-container-highest">
+<div class="relative aspect-square w-full rounded-md overflow-hidden shadow-lg">
+<img alt="Discover Weekly abstract art" class="w-full h-full object-cover" data-alt="A striking digital installation art piece featuring glowing, generative geometric shapes suspended in a vast, minimalist gallery space. The room is illuminated by high-key, soft white lighting that creates a bright, modern light-mode aesthetic. The artwork relies on a sophisticated palette of deep blacks and pristine whites, punctuated by intense accents of vibrant green. The mood is serene yet technologically advanced." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBtj7UjmShJvXlCX7eWChMGA9ZJTgYPwovajcIvmd7rHbpW4L73Q6gw5gRhw3jZZCswXKYnvgOkCBCClbFUWDR_4xeO9kxmzHydWX3q-wlo2LSmg2x4YFKQqiFp7r9z7gJo5amoEi2sUDt12PyZ2IlqXptGOGhtvg7FEhHlRIzMK2V_Qp2Fheee1_syXNjFeIELZ2Cs-YShBnAea81IASaXZqZQkdhYt50ootfM3wMKOmi-G4HkpkDtZogrcTy8_AFzYvWTOKZ0I7w"/>
+<button class="play-fab absolute bottom-2 right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface truncate">Discover Weekly</h4>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">New music updated every Monday.</p>
+</div>
+</div>
+</div>
+<!-- Standard Grid: Playlists & Artists -->
+<h3 class="font-headline-md text-headline-md text-on-surface mb-6">Recently Played</h3>
+<div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-6">
+<!-- Artist Item -->
+<div class="bg-[#181818] hover:bg-[#282828] rounded-xl p-4 flex flex-col gap-4 group cursor-pointer transition-colors card-container border border-transparent hover:border-surface-container-highest">
+<div class="relative aspect-square w-full rounded-full overflow-hidden shadow-lg mb-2">
+<img alt="Artist Profile" class="w-full h-full object-cover" data-alt="A high-contrast, moody portrait of an electronic music producer in a dimly lit studio environment. The scene features minimalist technical details, with a stark black background and subtle vibrant green edge lighting outlining the silhouette. The aesthetic is professional, sleek, and focused, resembling a high-end digital cockpit." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCuV6SonSVecx8dzdPE8qwClrs1GDuOmlickMVlgLnyv5vRUsW-8crDZCOVjg695cCEp6wN_JN_C5rNZ5PWjkUF7smGcivKYf__4UqqBS8KwhYqo_IkQmAe3F7R8dEBLB1zi3GhcjjlW88qXI6OHiXW85AH7LdBzDY4hQ4qxbjgmfMCDXL8EYQbvuo1prIkozX4f6kRSgo67JNCuZ_JNdqghPRxPimYruI_yRy2LG7mpL6-AFFD3mHLzrP0fJYgKZ7UIaZNmKLi_Y8"/>
+<button class="play-fab absolute bottom-2 right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div class="text-center">
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface truncate">Neon Vector</h4>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Artist</p>
+</div>
+</div>
+<!-- Playlist Item 1 -->
+<div class="bg-[#181818] hover:bg-[#282828] rounded-xl p-4 flex flex-col gap-4 group cursor-pointer transition-colors card-container border border-transparent hover:border-surface-container-highest">
+<div class="relative aspect-square w-full rounded-md overflow-hidden shadow-lg">
+<img alt="Deep Focus Playlist" class="w-full h-full object-cover" data-alt="An abstract visualization of deep focus and concentration. Minimalist tech aesthetic featuring dark space with precise, thin strokes of luminous green forming geometric waves. The background is a deep, high-contrast #121212 black. The overall mood is calm, immersive, and highly technical." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAg7p-kt_NJFcHZRvk2CqGqPeU8y5z-01Zej4tWJyjHiECmyVxO0TUhj1kaFzkUJHM9dpQhgfQ9ITCFvHQf55SlhgCJCC7o-QKc3yajsztybs-rsTpdcmwxQCBrv1SY79MJ9czjHgTntEQREbJeHxPEAeJUscYSZtTBRp41DOW5Gqd1hrcuBnnw3dP18WKl90roizNLvHP9q5VXJaUgKQeV1238Len8Op-G_25M0te87SDjlczfKNVtLaqXsjDD6DbKYj-6UrQpKao"/>
+<button class="play-fab absolute bottom-2 right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface truncate">Deep Focus</h4>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Ambient &amp; Post-Rock</p>
+</div>
+</div>
+<!-- Playlist Item 2 -->
+<div class="bg-[#181818] hover:bg-[#282828] rounded-xl p-4 flex flex-col gap-4 group cursor-pointer transition-colors card-container border border-transparent hover:border-surface-container-highest">
+<div class="relative aspect-square w-full rounded-md overflow-hidden shadow-lg">
+<img alt="Synthwave Playlist" class="w-full h-full object-cover" data-alt="A stylized 3D render of a futuristic cityscape at night, viewed from a low angle. The architecture consists of sleek, dark monolithic structures. The scene is illuminated by minimalist, thin neon accents in vibrant green (#1db954) against deep black shadows. The mood is cyberpunk and high-performance." src="https://lh3.googleusercontent.com/aida-public/AB6AXuC6o_FY9lv4S-l2liNe5TbONOM8JG6C7xZOUJmwsFrSk6o_kmrCDvkHxEGHCjuAelKNFEZyfCjYZ9vhi1TdgIRC6H36HUqUDjVkcz9ogQ8cUhux90SgUngUI8FWIWnMBYgrIDQgQNiFXThn3DOVewWqFa0sKMnCsWEp7osxWgBVMFpOSzOe88x0a1652Kb57KJWul9ozNmj6U1kzzArL67EZh9CDrT7-H-F1wlKqvTs7oqGXlrY8PHsDe_NZSBljb7aYhWQcbXqJIk"/>
+<button class="play-fab absolute bottom-2 right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface truncate">Night Drive</h4>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Synthwave &amp; Outrun</p>
+</div>
+</div>
+<!-- Album Item -->
+<div class="bg-[#181818] hover:bg-[#282828] rounded-xl p-4 flex flex-col gap-4 group cursor-pointer transition-colors card-container border border-transparent hover:border-surface-container-highest">
+<div class="relative aspect-square w-full rounded-md overflow-hidden shadow-lg">
+<img alt="Album Cover" class="w-full h-full object-cover" data-alt="A minimalist album cover design featuring a single, glowing green wireframe sphere suspended in absolute darkness. The aesthetic is clean, technical, and precise, utilizing negative space heavily. The lighting suggests an internal energy source emitting a subtle green glow over a matte black surface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAImfJ0I22W5jukVUarsVHO17at24Ux8Uoda9kpwKekSwox9gOVku_fJxUtUYNiyCaUBSPcVW2hYLB0ENV_9PKywDU4e_IPXUKThQWkOHapYWaE93Xo7fr5faGEdcfwSfrmYOEt8aA4qJ32vsbFKx7Pm31lB3FcKVMmJTaAx-bZwG-fd-HthOOpsPdDFJteiC9srPduKQ_KdTp8qRH_LL9acMagLR2lVgP3LjLatn-mmu7AxeNz7NptHZw9WIXKApNVAMwIrz9Xvh8"/>
+<button class="play-fab absolute bottom-2 right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface truncate">System Override</h4>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Dataflow</p>
+</div>
+</div>
+<!-- Playlist Item 3 -->
+<div class="bg-[#181818] hover:bg-[#282828] rounded-xl p-4 flex flex-col gap-4 group cursor-pointer transition-colors card-container border border-transparent hover:border-surface-container-highest hidden lg:flex">
+<div class="relative aspect-square w-full rounded-md overflow-hidden shadow-lg">
+<div class="w-full h-full bg-gradient-to-br from-surface-container-high to-surface flex items-center justify-center">
+<span class="material-symbols-outlined text-5xl text-on-surface-variant" style="font-variation-settings: 'wght' 200;">podcasts</span>
+</div>
+<button class="play-fab absolute bottom-2 right-2 w-12 h-12 bg-primary-container rounded-full flex items-center justify-center text-on-primary shadow-lg hover:scale-105 hover:bg-primary transition-all">
+<span class="material-symbols-outlined text-2xl" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</button>
+</div>
+<div>
+<h4 class="font-body-lg text-body-lg font-medium text-on-surface truncate">Design Details</h4>
+<p class="font-body-md text-body-md text-on-surface-variant truncate">Podcast • Brian Lovin</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Wide Player Controls Component (Fixed Bottom Bar) -->
+<footer class="fixed bottom-0 left-0 right-0 h-player-height bg-[#181818] border-t border-[#282828] z-30 flex items-center px-4 justify-between">
+<!-- Track Info (Left) -->
+<div class="flex items-center gap-4 w-1/3 min-w-[200px]">
+<div class="w-14 h-14 rounded overflow-hidden shadow-sm relative group cursor-pointer">
+<img alt="Current playing album art" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuDAWuT3M_SK6n7zH2BAEPCphszEyIzcokLaSxfoqixFXF0U3349G_jii_qwc3hm4y-POQOFWs-o-1r84lEVtOnd9uYsZPXN8gyi9z-oqoXgSJ2neeczzdJEnasjNOUQVNWtl0CM_zoILeKC7rUCsw7zvhTGXsjWfRCeXLJnI5DyF8pe5gL5dtynhZkI39mShi6akh0LEuVyjj1wackI3ShTyRQiHGV0zEYW88Ic9Ebd8pZftVykxOcqy0hP8IvPf5rB48ymxWGm9dU"/>
+<div class="absolute inset-0 bg-black/50 hidden group-hover:flex items-center justify-center">
+<span class="material-symbols-outlined text-white">expand_content</span>
+</div>
+</div>
+<div class="flex flex-col">
+<a class="font-body-md text-body-md text-on-surface hover:underline line-clamp-1" href="#">Midnight City</a>
+<a class="font-label-md text-label-md text-on-surface-variant hover:underline line-clamp-1" href="#">M83</a>
+</div>
+<button class="text-primary ml-2 hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">favorite</span>
+</button>
+</div>
+<!-- Player Controls (Center) -->
+<div class="flex flex-col items-center justify-center w-1/3 max-w-[600px] gap-2">
+<div class="flex items-center gap-6">
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">shuffle</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">skip_previous</span>
+</button>
+<button class="w-8 h-8 flex items-center justify-center bg-on-surface rounded-full text-[#121212] hover:scale-105 transition-transform">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">pause</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">skip_next</span>
+</button>
+<button class="text-on-surface-variant hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined">repeat</span>
+</button>
+</div>
+<div class="flex items-center gap-2 w-full group">
+<span class="font-mono-label text-mono-label text-on-surface-variant w-10 text-right">2:14</span>
+<div class="h-1 flex-1 bg-[#535353] rounded-full overflow-hidden cursor-pointer relative">
+<div class="h-full bg-primary w-1/3 rounded-full"></div>
+<!-- Thumb visible on group hover -->
+<div class="absolute top-1/2 -translate-y-1/2 left-1/3 -ml-1.5 w-3 h-3 bg-on-surface rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"></div>
+</div>
+<span class="font-mono-label text-mono-label text-on-surface-variant w-10">4:01</span>
+</div>
+</div>
+<!-- Utilities (Right) -->
+<div class="flex items-center justify-end gap-3 w-1/3 min-w-[200px] text-on-surface-variant">
+<button class="hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm">mic_external_on</span>
+</button>
+<button class="hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm">queue_music</span>
+</button>
+<button class="hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm">devices</span>
+</button>
+<div class="flex items-center gap-2 w-24 ml-2 group">
+<button class="hover:text-on-surface transition-colors">
+<span class="material-symbols-outlined text-sm">volume_up</span>
+</button>
+<div class="h-1 flex-1 bg-[#535353] rounded-full overflow-hidden cursor-pointer relative">
+<div class="h-full bg-primary w-2/3 rounded-full group-hover:bg-primary-fixed transition-colors"></div>
+<div class="absolute top-1/2 -translate-y-1/2 left-2/3 -ml-1.5 w-3 h-3 bg-on-surface rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-md"></div>
+</div>
+</div>
+<button class="hover:text-on-surface transition-colors ml-2">
+<span class="material-symbols-outlined text-sm">open_in_full</span>
+</button>
+</div>
+</footer>
+</body></html>

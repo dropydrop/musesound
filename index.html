@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html class="dark" lang="en">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>MuseSound - Low-Tech Player</title>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&amp;family=Geist+Mono:wght@400&amp;display=swap" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "primary": "#53e076",
+                        "background": "#121414",
+                        "surface": "#121414",
+                        "surface-container": "#1e2020",
+                        "surface-container-high": "#282a2b",
+                        "on-surface": "#e2e2e2",
+                        "on-surface-variant": "#bccbb9",
+                        "outline-variant": "#3d4a3d",
+                    },
+                    "fontFamily": {
+                        "body-md": ["Geist"],
+                        "headline-md": ["Geist"],
+                        "mono-label": ["Geist Mono"]
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        .glow-effect { box-shadow: 0 0 20px 0 rgba(83, 224, 118, 0.1); }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md h-screen w-screen overflow-hidden flex flex-col md:flex-row">
+
+    <!-- Sidebar / Navigation -->
+    <aside class="w-full md:w-80 bg-surface border-b md:border-b-0 md:border-r border-outline-variant p-6 flex flex-col gap-6 z-20">
+        <div class="flex items-center gap-3">
+            <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+            <h1 class="font-headline-md text-2xl font-bold text-primary">MuseSound</h1>
+        </div>
+
+        <!-- Import Section -->
+        <div class="flex flex-col gap-3">
+            <h2 class="text-sm font-bold uppercase tracking-wider text-on-surface-variant">Recherche & Import</h2>
+            <div class="flex flex-col gap-2">
+                <input id="playlist-url" type="text" placeholder="URL (Vidéo/Playlist) ou Mot-clé" class="bg-surface-container border-outline-variant rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+                <button id="btn-import" class="bg-primary text-background font-bold py-2 rounded-lg hover:opacity-90 transition-opacity">Écouter</button>
+            </div>
+        </div>
+
+        <!-- Now Playing (Desktop) -->
+        <div class="mt-auto hidden md:flex flex-col gap-4 p-4 bg-surface-container rounded-xl border border-outline-variant glow-effect">
+            <div class="aspect-square w-full rounded-lg bg-surface-container-high bg-cover bg-center current-art" style="background-image: url('')"></div>
+            <div>
+                <h3 class="font-bold truncate current-title">No track playing</h3>
+                <p class="text-sm text-on-surface-variant truncate current-artist">-</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- Main Content -->
+    <main class="flex-1 flex flex-col overflow-hidden relative">
+        <!-- Playlist Header -->
+        <header class="p-6 border-b border-outline-variant flex justify-between items-center bg-background/80 backdrop-blur-md z-10">
+            <h2 class="text-2xl font-bold">Current Playlist</h2>
+            <div class="text-sm text-on-surface-variant"><span id="track-count">0</span> tracks</div>
+        </header>
+
+        <!-- Playlist Items -->
+        <div id="playlist-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1 hide-scrollbar">
+            <!-- Tracks will be injected here -->
+            <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
+                <span class="material-symbols-outlined text-6xl mb-4">queue_music</span>
+                <p>No playlist imported yet.</p>
+            </div>
+        </div>
+
+        <!-- Player Controls (Mobile & Desktop Overlay) -->
+        <footer class="h-24 bg-surface-container border-t border-outline-variant px-6 flex items-center justify-between z-20">
+            <!-- Info -->
+            <div class="flex items-center gap-4 w-1/3">
+                <img class="w-12 h-12 rounded object-cover current-art bg-surface-container-high" src="">
+                <div class="hidden sm:block min-w-0">
+                    <div class="font-bold truncate current-title text-sm">No track</div>
+                    <div class="text-xs text-on-surface-variant truncate current-artist">-</div>
+                </div>
+            </div>
+
+            <!-- Controls -->
+            <div class="flex flex-col items-center gap-1 flex-1">
+                <div class="flex items-center gap-6">
+                    <button id="prev-btn" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-3xl">skip_previous</span></button>
+                    <button id="play-pause-btn" class="w-12 h-12 rounded-full bg-primary text-background flex items-center justify-center hover:scale-105 transition-transform"><span class="material-symbols-outlined text-3xl">play_arrow</span></button>
+                    <button id="next-btn" class="text-on-surface-variant hover:text-primary transition-colors"><span class="material-symbols-outlined text-3xl">skip_next</span></button>
+                </div>
+                <!-- Progress -->
+                <div class="w-full max-w-md flex items-center gap-2">
+                    <span class="text-[10px] font-mono-label w-8 text-right player-current-time">0:00</span>
+                    <div class="flex-1 h-1 bg-surface-container-high rounded-full overflow-hidden">
+                        <div class="player-progress-bar h-full bg-primary w-0"></div>
+                    </div>
+                    <span class="text-[10px] font-mono-label w-8 player-duration">0:00</span>
+                </div>
+            </div>
+
+            <!-- Volume/Utils -->
+            <div class="flex items-center justify-end gap-4 w-1/3 text-on-surface-variant">
+                <span class="material-symbols-outlined cursor-pointer hover:text-on-surface">volume_up</span>
+                <span class="material-symbols-outlined cursor-pointer hover:text-on-surface hidden sm:block">open_in_full</span>
+            </div>
+        </footer>
+    </main>
+
+    <!-- YouTube IFrame Player Fallback (Invisible) -->
+    <div id="yt-player-fallback" style="width: 0 !important; height: 0 !important; position: absolute; left: -9999px; opacity: 0; pointer-events: none;"></div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>

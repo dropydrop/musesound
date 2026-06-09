@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MuseSound - Now Playing</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Geist:wght@100..900&amp;family=Inter:wght@100..900&amp;family=JetBrains+Mono:wght@100..800&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+  tailwind.config = {
+    darkMode: "class",
+    theme: {
+      extend: {
+        "colors": {
+                "inverse-primary": "#006e2d",
+                "on-background": "#e3e2e2",
+                "primary-fixed": "#72fe8f",
+                "secondary-container": "#4a4949",
+                "on-tertiary": "#303030",
+                "outline": "#869585",
+                "error": "#ffb4ab",
+                "surface-container": "#1e2020",
+                "on-secondary": "#313030",
+                "outline-variant": "#3d4a3d",
+                "on-primary-container": "#004118",
+                "surface": "#121414",
+                "on-secondary-fixed-variant": "#474646",
+                "surface-dim": "#121414",
+                "surface-container-highest": "#343535",
+                "primary": "#53e076",
+                "on-primary": "#003914",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "surface-container-low": "#1a1c1c",
+                "on-secondary-container": "#bab8b7",
+                "surface-variant": "#343535",
+                "on-primary-fixed": "#002108",
+                "primary-fixed-dim": "#53e076",
+                "inverse-surface": "#e3e2e2",
+                "on-tertiary-container": "#383838",
+                "on-error-container": "#ffdad6",
+                "on-surface-variant": "#bccbb9",
+                "on-secondary-fixed": "#1c1b1b",
+                "secondary": "#c8c6c5",
+                "on-tertiary-fixed-variant": "#474746",
+                "primary-container": "#1db954",
+                "background": "#121414",
+                "on-primary-fixed-variant": "#005320",
+                "surface-container-lowest": "#0d0e0f",
+                "error-container": "#93000a",
+                "surface-container-high": "#292a2a",
+                "surface-tint": "#53e076",
+                "secondary-fixed": "#e5e2e1",
+                "on-tertiary-fixed": "#1b1c1c",
+                "secondary-fixed-dim": "#c8c6c5",
+                "inverse-on-surface": "#2f3131",
+                "tertiary-fixed": "#e4e2e1",
+                "tertiary": "#c8c6c5",
+                "on-surface": "#e3e2e2",
+                "tertiary-container": "#a2a1a0",
+                "surface-bright": "#38393a",
+                "on-error": "#690005"
+        },
+        "borderRadius": {
+                "DEFAULT": "0.125rem",
+                "lg": "0.25rem",
+                "xl": "0.5rem",
+                "full": "0.75rem"
+        },
+        "spacing": {
+                "sm": "8px",
+                "lg": "24px",
+                "2xl": "48px",
+                "margin-desktop": "40px",
+                "margin-mobile": "16px",
+                "3xl": "64px",
+                "base": "4px",
+                "xl": "32px",
+                "xs": "4px",
+                "md": "16px",
+                "gutter": "24px",
+                "stack-lg": "32px",
+                "stack-md": "16px",
+                "stack-sm": "8px",
+                "container-margin-desktop": "32px",
+                "unit": "8px",
+                "container-margin-mobile": "16px"
+        },
+        "fontFamily": {
+                "headline-md": [
+                        "Geist"
+                ],
+                "headline-sm": [
+                        "Geist"
+                ],
+                "label-sm": [
+                        "JetBrains Mono"
+                ],
+                "headline-lg": [
+                        "Geist"
+                ],
+                "body-lg": [
+                        "Inter"
+                ],
+                "label-md": [
+                        "JetBrains Mono"
+                ],
+                "body-md": [
+                        "Inter"
+                ],
+                "body-sm": [
+                        "Inter"
+                ],
+                "headline-lg-mobile": [
+                        "Geist"
+                ],
+                "title-md": ["Inter"],
+                "label-caps": ["Inter"],
+                "display-lg": ["Inter"],
+                "code-sm": ["Inter"]
+        },
+        "fontSize": {
+                "headline-md": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "letterSpacing": "-0.01em",
+                                "fontWeight": "600"
+                        }
+                ],
+                "headline-sm": [
+                        "24px",
+                        {
+                                "lineHeight": "32px",
+                                "fontWeight": "600"
+                        }
+                ],
+                "label-sm": [
+                        "12px",
+                        {
+                                "lineHeight": "16px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "headline-lg": [
+                        "40px",
+                        {
+                                "lineHeight": "48px",
+                                "letterSpacing": "-0.02em",
+                                "fontWeight": "700"
+                        }
+                ],
+                "body-lg": [
+                        "18px",
+                        {
+                                "lineHeight": "28px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "label-md": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "letterSpacing": "0.05em",
+                                "fontWeight": "500"
+                        }
+                ],
+                "body-md": [
+                        "16px",
+                        {
+                                "lineHeight": "24px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "body-sm": [
+                        "14px",
+                        {
+                                "lineHeight": "20px",
+                                "fontWeight": "400"
+                        }
+                ],
+                "headline-lg-mobile": [
+                        "32px",
+                        {
+                                "lineHeight": "40px",
+                                "fontWeight": "700"
+                        }
+                ],
+                "title-md": ["18px", { "lineHeight": "24px", "fontWeight": "500" }],
+                "label-caps": ["12px", { "lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600" }],
+                "display-lg": ["40px", { "lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                "code-sm": ["13px", { "lineHeight": "18px", "fontWeight": "400" }]
+        }
+},
+    },
+  }
+</script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: theme('colors.background');
+            color: theme('colors.on-background');
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 300, 'GRAD' 0, 'opsz' 24;
+        }
+        .icon-filled {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="h-screen w-full flex flex-col overflow-hidden relative">
+<!-- Hidden YouTube Player Container -->
+<div class="hidden" id="player-container"></div>
+<!-- Custom Player Header -->
+<header class="flex justify-between items-center p-gutter w-full z-40 bg-transparent shrink-0">
+<button aria-label="Collapse player" class="h-12 w-12 flex items-center justify-center text-on-surface hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-3xl">keyboard_arrow_down</span>
+</button>
+<span class="font-label-caps text-label-caps text-on-surface-variant tracking-widest uppercase">Now Playing</span>
+<button aria-label="Menu" class="h-12 w-12 flex items-center justify-center text-on-surface hover:opacity-80 transition-opacity">
+<span class="material-symbols-outlined text-3xl">more_vert</span>
+</button>
+</header>
+<!-- Main Player Canvas -->
+<main class="flex-1 flex flex-col items-center justify-start px-container-margin-mobile pt-stack-md pb-32 overflow-y-auto">
+<!-- Album Art -->
+<div class="w-full max-w-sm aspect-square rounded-2xl overflow-hidden shadow-2xl mb-stack-lg relative group">
+<div class="absolute inset-0 bg-surface-container-high/20 z-10 transition-opacity opacity-0 group-hover:opacity-100 flex items-center justify-center">
+<span class="material-symbols-outlined text-on-surface text-5xl bg-surface/50 rounded-full p-4 backdrop-blur-sm shadow-sm cursor-pointer">fullscreen</span>
+</div>
+<img alt="Album Cover" class="w-full h-full object-cover transition-transform duration-700 ease-out group-hover:scale-105" data-alt="A striking abstract digital art piece serving as a music album cover. The composition features smooth, flowing geometric waves glowing in vibrant red and soft peach tones against a deep, infinite charcoal black void. The lighting is ethereal, creating a sense of deep space and modern minimalist aesthetic suitable for an electronic or ambient music release." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4tvMuFK_Rs0f2xa4Y1cxzoUn2EF3ZEzlY0HFqXo6koBH2QnoS9HkJVzPfa547M_-M1_rpT-KAUHEwKRL85iFuoySqskg8G0HfIFIK7GUlIP83dHzR3OgDPSIZvPSTtJiTXMc9dshQ8Z8nYTCSgCLRdYe39LBqwzdxK4p7nCrkac6uZuqgjyE-ql1bm1Hy3qLMzw-5jlZUiXuzbLSLPY1J5WR9qtlYGSHgEWYpbB6KJ1EQaBClXtHhtrNAwt8Y9kjR5_Dox04jKFM"/>
+</div>
+<!-- Track Info -->
+<div class="w-full max-w-sm flex flex-col items-start mb-stack-lg">
+<div class="flex justify-between items-center w-full mb-unit">
+<div class="flex flex-col overflow-hidden">
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-on-surface truncate pr-4">Neon Horizon</h1>
+<h2 class="font-title-md text-title-md text-on-surface-variant truncate">Synthwave Collective</h2>
+</div>
+<button class="h-12 w-12 flex items-center justify-center text-primary shrink-0 hover:scale-110 transition-transform">
+<span class="material-symbols-outlined icon-filled text-2xl">favorite</span>
+</button>
+</div>
+</div>
+<!-- Progress Bar Area -->
+<div class="w-full max-w-sm flex flex-col mb-stack-lg group cursor-pointer">
+<div class="h-1.5 w-full bg-surface-variant rounded-full overflow-hidden relative">
+<div class="absolute top-0 left-0 h-full w-1/3 bg-primary rounded-full group-hover:bg-primary-fixed transition-colors"></div>
+</div>
+<div class="flex justify-between items-center mt-2 font-body-sm text-body-sm text-on-surface-variant">
+<span>1:24</span>
+<span>4:05</span>
+</div>
+</div>
+<!-- Playback Controls -->
+<div class="w-full max-w-sm flex items-center justify-between px-4">
+<button class="h-12 w-12 flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">shuffle</span>
+</button>
+<button class="h-16 w-16 flex items-center justify-center text-on-surface hover:text-primary transition-colors" id="prev-btn">
+<span class="material-symbols-outlined text-4xl">skip_previous</span>
+</button>
+<button class="h-20 w-20 rounded-full bg-primary flex items-center justify-center text-on-primary shadow-[0_0_30px_rgba(83,224,118,0.15)] hover:scale-105 active:scale-95 transition-all" id="play-pause-btn">
+<span class="material-symbols-outlined icon-filled text-5xl ml-1">play_arrow</span>
+</button>
+<button class="h-16 w-16 flex items-center justify-center text-on-surface hover:text-primary transition-colors" id="next-btn">
+<span class="material-symbols-outlined text-4xl">skip_next</span>
+</button>
+<button class="h-12 w-12 flex items-center justify-center text-on-surface hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-2xl">repeat</span>
+</button>
+</div>
+</main>
+<!-- Shared Component: BottomNavBar -->
+<nav class="bg-surface-container/90 dark:bg-surface-container/90 backdrop-blur-xl docked full-width bottom-0 rounded-t-xl bg-surface-container-high/50 shadow-sm fixed bottom-0 w-full z-50 flex justify-around items-center py-stack-sm px-gutter hidden md:hidden flex">
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform flex-1 h-12">
+<span class="material-symbols-outlined text-2xl mb-1">explore</span>
+<span class="font-label-caps text-label-caps">Discover</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform flex-1 h-12">
+<span class="material-symbols-outlined text-2xl mb-1">search</span>
+<span class="font-label-caps text-label-caps">Search</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform flex-1 h-12">
+<span class="material-symbols-outlined text-2xl mb-1">library_music</span>
+<span class="font-label-caps text-label-caps">Library</span>
+</button>
+<!-- Active Tab Mapping to Intent (Queue/Now Playing conceptually linked in this UI flow) -->
+<button class="flex flex-col items-center justify-center text-primary font-bold hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform flex-1 h-12">
+<span class="material-symbols-outlined icon-filled text-2xl mb-1">queue_music</span>
+<span class="font-label-caps text-label-caps">Queue</span>
+</button>
+</nav>
+<!-- Desktop Navigation Wrapper (Hidden on mobile, showing intent to satisfy "Responsive Pivot") -->
+<div class="hidden md:flex fixed left-0 top-0 h-full w-20 bg-surface-container/90 backdrop-blur-xl border-r border-surface-container-high/50 flex-col items-center py-stack-lg gap-8 z-50">
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim transition-colors h-16 w-16 rounded-xl hover:bg-surface-variant/50">
+<span class="material-symbols-outlined text-2xl">explore</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim transition-colors h-16 w-16 rounded-xl hover:bg-surface-variant/50">
+<span class="material-symbols-outlined text-2xl">search</span>
+</button>
+<button class="flex flex-col items-center justify-center text-secondary hover:text-primary-fixed-dim transition-colors h-16 w-16 rounded-xl hover:bg-surface-variant/50">
+<span class="material-symbols-outlined text-2xl">library_music</span>
+</button>
+<button class="flex flex-col items-center justify-center text-primary font-bold transition-colors h-16 w-16 rounded-xl bg-primary/10">
+<span class="material-symbols-outlined icon-filled text-2xl">queue_music</span>
+</button>
+</div>
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const playPauseBtn = document.getElementById('play-pause-btn');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const playIcon = playPauseBtn.querySelector('.material-symbols-outlined');
+
+        let isPlaying = true; // Initial state based on UI showing play icon but track playing visually
+
+        playPauseBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playIcon.textContent = isPlaying ? 'pause' : 'play_arrow';
+            playIcon.classList.toggle('ml-1', isPlaying === false); // Adjust padding for play icon
+            // SoundSync interaction hook:
+            // if (window.SoundSync && window.SoundSync.player) {
+            //     window.SoundSync.player.togglePlay();
+            // }
+        });
+
+        prevBtn.addEventListener('click', () => {
+            console.log('Previous track clicked');
+            // SoundSync interaction hook:
+            // if (window.SoundSync && window.SoundSync.player) {
+            //     window.SoundSync.player.previousTrack();
+            // }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            console.log('Next track clicked');
+            // SoundSync interaction hook:
+            // if (window.SoundSync && window.SoundSync.player) {
+            //     window.SoundSync.player.nextTrack();
+            // }
+        });
+        
+        // Placeholder for YouTube IFrame API integration
+        // window.onYouTubeIframeAPIReady = function() {
+        //     // Initialize player in #player-container
+        // };
+    });
+</script>
+</body></html>

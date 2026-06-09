@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Audio Player</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #f7f7f7;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      height: 100vh;
+      margin: 0;
+    }
+    .container {
+      background: #fff;
+      padding: 2rem 2.5rem;
+      border-radius: 10px;
+      box-shadow: 0 2px 12px rgba(0,0,0,0.08);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 1rem;
+    }
+    input[type="text"] {
+      width: 300px;
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 5px;
+      font-size: 1rem;
+    }
+    button {
+      padding: 0.5rem 1.5rem;
+      background: #ff0000;
+      color: #fff;
+      border: none;
+      border-radius: 5px;
+      font-size: 1rem;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #cc0000;
+    }
+    .error {
+      color: #d8000c;
+      background: #ffd2d2;
+      padding: 0.5rem 1rem;
+      border-radius: 5px;
+      font-size: 0.95rem;
+      display: none;
+    }
+    /* Hide the YouTube player visually but keep it functional */
+    #player {
+      width: 0 !important;
+      height: 0 !important;
+      pointer-events: none;
+      opacity: 0;
+      position: absolute;
+      left: -9999px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h2>YouTube Audio Player</h2>
+    <input type="text" id="youtube-url" placeholder="Paste YouTube video URL here" autocomplete="off">
+    <button id="play-audio">Play Audio</button>
+    <div class="error" id="error-msg"></div>
+  </div>
+  <div id="player"></div>
+
+  <script>
+    // Load YouTube IFrame API
+    var tag = document.createElement('script');
+    tag.src = "https://www.youtube.com/iframe_api";
+    var firstScriptTag = document.getElementsByTagName('script')[0];
+    firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+    let player;
+    let lastVideoId = null;
+
+    // Extract YouTube video ID from various URL formats
+    function extractVideoID(url) {
+      // Regex for various YouTube URL formats
+      const regex = /(?:youtube\.com\/(?:[^\/\n\s]+\/\S+\/|(?:v|e(?:mbed)?|shorts)\/|.*[?&]v=)|youtu\.be\/)([\w-]{11})/;
+      const match = url.match(regex);
+      return match ? match[1] : null;
+    }
+
+    function showError(msg) {
+      const errorDiv = document.getElementById('error-msg');
+      errorDiv.textContent = msg;
+      errorDiv.style.display = 'block';
+    }
+    function hideError() {
+      const errorDiv = document.getElementById('error-msg');
+      errorDiv.style.display = 'none';
+    }
+
+    function onYouTubeIframeAPIReady() {
+      player = new YT.Player('player', {
+        height: '0',
+        width: '0',
+        videoId: '',
+        playerVars: {
+          autoplay: 0,
+          controls: 0,
+          modestbranding: 1,
+          rel: 0,
+          fs: 0,
+          disablekb: 1,
+        },
+        events: {
+          'onReady': function() {},
+          'onError': function(event) {
+            showError('Failed to load video. Please check the URL.');
+          }
+        }
+      });
+    }
+    window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+    document.getElementById('play-audio').addEventListener('click', function() {
+      hideError();
+      const url = document.getElementById('youtube-url').value.trim();
+      const videoId = extractVideoID(url);
+      if (!videoId) {
+        showError('Invalid YouTube URL. Please enter a valid video link.');
+        return;
+      }
+      if (!player || typeof player.loadVideoById !== 'function') {
+        showError('YouTube Player is not ready yet. Please wait a moment.');
+        return;
+      }
+      if (lastVideoId !== videoId) {
+        player.loadVideoById(videoId);
+        lastVideoId = videoId;
+      } else {
+        player.playVideo();
+      }
+    });
+  </script>
+</body>
+</html> 

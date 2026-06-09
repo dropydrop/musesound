@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MuseSound - Search</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&amp;display=swap" rel="stylesheet"/>
+<style>
+        .material-symbols-outlined {
+            font-family: 'Material Symbols Outlined';
+            font-weight: normal;
+            font-style: normal;
+            font-size: 24px;
+            line-height: 1;
+            letter-spacing: normal;
+            text-transform: none;
+            display: inline-block;
+            white-space: nowrap;
+            word-wrap: normal;
+            direction: ltr;
+            -webkit-font-feature-settings: 'liga';
+            -webkit-font-smoothing: antialiased;
+        }
+        /* Custom scrollbar hiding for horizontal lists */
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Theme Configuration -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                "inverse-primary": "#006e2d",
+                "on-background": "#e3e2e2",
+                "primary-fixed": "#72fe8f",
+                "secondary-container": "#4a4949",
+                "on-tertiary": "#303030",
+                "outline": "#869585",
+                "error": "#ffb4ab",
+                "surface-container": "#1e2020",
+                "on-secondary": "#313030",
+                "outline-variant": "#3d4a3d",
+                "on-primary-container": "#004118",
+                "surface": "#121414",
+                "on-secondary-fixed-variant": "#474646",
+                "surface-dim": "#121414",
+                "surface-container-highest": "#343535",
+                "primary": "#53e076",
+                "on-primary": "#003914",
+                "tertiary-fixed-dim": "#c8c6c5",
+                "surface-container-low": "#1a1c1c",
+                "on-secondary-container": "#bab8b7",
+                "surface-variant": "#343535",
+                "on-primary-fixed": "#002108",
+                "primary-fixed-dim": "#53e076",
+                "inverse-surface": "#e3e2e2",
+                "on-tertiary-container": "#383838",
+                "on-error-container": "#ffdad6",
+                "on-surface-variant": "#bccbb9",
+                "on-secondary-fixed": "#1c1b1b",
+                "secondary": "#c8c6c5",
+                "on-tertiary-fixed-variant": "#474746",
+                "primary-container": "#1db954",
+                "background": "#121414",
+                "on-primary-fixed-variant": "#005320",
+                "surface-container-lowest": "#0d0e0f",
+                "error-container": "#93000a",
+                "surface-container-high": "#292a2a",
+                "surface-tint": "#53e076",
+                "secondary-fixed": "#e5e2e1",
+                "on-tertiary-fixed": "#1b1c1c",
+                "secondary-fixed-dim": "#c8c6c5",
+                "inverse-on-surface": "#2f3131",
+                "tertiary-fixed": "#e4e2e1",
+                "tertiary": "#c8c6c5",
+                "on-surface": "#e3e2e2",
+                "tertiary-container": "#a2a1a0",
+                "surface-bright": "#38393a",
+                "on-error": "#690005"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "16px",
+                    "stack-lg": "32px",
+                    "stack-md": "16px",
+                    "stack-sm": "8px",
+                    "container-margin-desktop": "32px",
+                    "unit": "8px",
+                    "container-margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "title-md": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "display-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "code-sm": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "400"}],
+                    "title-md": ["18px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "display-lg": ["40px", {"lineHeight": "48px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "code-sm": ["13px", {"lineHeight": "18px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+</head>
+<body class="bg-background text-on-background min-h-screen font-body-lg pb-[88px] selection:bg-primary selection:text-on-primary antialiased">
+<!-- Search Header -->
+<header class="sticky top-0 z-40 bg-surface/90 backdrop-blur-xl px-gutter py-stack-md transition-all duration-300 ease-in-out border-b border-transparent">
+<div class="flex items-center gap-stack-sm bg-surface-container-high rounded-full px-4 py-3 border border-transparent focus-within:border-outline-variant transition-colors">
+<span class="material-symbols-outlined text-on-surface-variant text-[20px]" data-icon="search">search</span>
+<input class="flex-1 bg-transparent border-none outline-none text-body-lg font-body-lg text-on-surface placeholder:text-on-surface-variant/70 focus:ring-0 p-0" placeholder="Rechercher sur YouTube..." type="text"/>
+<button class="text-on-surface-variant hover:text-primary transition-colors focus:outline-none">
+<span class="material-symbols-outlined text-[20px]" data-icon="mic" style="font-variation-settings: 'FILL' 1;">mic</span>
+</button>
+</div>
+</header>
+<!-- Categories / Chips -->
+<section class="px-gutter py-stack-md">
+<div class="flex gap-stack-sm overflow-x-auto no-scrollbar pb-2">
+<!-- Active Chip -->
+<button class="px-4 py-2 rounded-full bg-primary text-on-primary font-label-caps text-label-caps whitespace-nowrap transition-transform active:scale-95">
+                Trending
+            </button>
+<!-- Inactive Chips -->
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface border border-outline-variant font-label-caps text-label-caps whitespace-nowrap hover:bg-surface-container-high transition-all active:scale-95">
+                Pop
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface border border-outline-variant font-label-caps text-label-caps whitespace-nowrap hover:bg-surface-container-high transition-all active:scale-95">
+                Lo-Fi
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface border border-outline-variant font-label-caps text-label-caps whitespace-nowrap hover:bg-surface-container-high transition-all active:scale-95">
+                Rock
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface border border-outline-variant font-label-caps text-label-caps whitespace-nowrap hover:bg-surface-container-high transition-all active:scale-95">
+                Electronic
+            </button>
+<button class="px-4 py-2 rounded-full bg-surface-container text-on-surface border border-outline-variant font-label-caps text-label-caps whitespace-nowrap hover:bg-surface-container-high transition-all active:scale-95">
+                Jazz
+            </button>
+</div>
+</section>
+<!-- Main Content: Recommended Tracks -->
+<main class="px-gutter flex flex-col gap-stack-md pb-stack-lg">
+<h2 class="font-title-md text-title-md text-on-surface mb-stack-sm">Recommended for you</h2>
+<!-- Track Item 1 -->
+<article class="flex items-center gap-stack-md group cursor-pointer hover:bg-surface-container-low p-2 -mx-2 rounded-lg transition-colors">
+<div class="w-14 h-14 rounded-md bg-surface-container shrink-0 bg-cover bg-center overflow-hidden relative" data-alt="A moody, atmospheric album cover featuring abstract geometric shapes resembling neon light tubes. The scene is illuminated by harsh pink and blue neon lights reflecting off a dark metallic surface. The overall aesthetic matches a dark-mode music application, emphasizing deep blacks and vibrant neon accents to convey an electronic or synthwave vibe." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBjZj0RaNAmGvX472_13h0BcjTt20S36a-imUpLDvbHeBGihnHt03dZBSlokKd7_rg6rgBmdgFHQHACxremW9eAN0QV2KTFRdwZOBOuoNU4ZFv1g-lNEhxL6JLAr97rPUjP7gMug8hiuaBImO5H3dWD7ngSosiQ7GarcDh3MD-AUSnx5uOKdUH2i25ok1H6hYRawZZGryomiriCmo1NvW4fmAonQmvJk3tHpYtRWaIreGO8QDIeNv37aaRgO4lJjbnPUJhEKTddPv4');">
+<!-- Play overlay on hover -->
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary text-[28px]" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<h3 class="font-title-md text-title-md text-on-surface truncate group-hover:text-primary transition-colors">Midnight City Lights</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Synthwave Collective • 4.2M views</p>
+</div>
+<button aria-label="More options" class="text-on-surface-variant hover:text-primary p-2 transition-colors focus:outline-none">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</article>
+<!-- Track Item 2 -->
+<article class="flex items-center gap-stack-md group cursor-pointer hover:bg-surface-container-low p-2 -mx-2 rounded-lg transition-colors">
+<div class="w-14 h-14 rounded-md bg-surface-container shrink-0 bg-cover bg-center overflow-hidden relative" data-alt="A minimalist acoustic album cover showing a close-up of an old, vintage microphone in a dimly lit studio setting. The colors are warm, featuring deep sepia tones, soft shadows, and a focused shallow depth of field. The image has a subtle film grain texture, perfectly suited for an indie or acoustic music compilation in a high-end dark-themed UI." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuBw8l06WMsNdmZXtbi9YTPWsXHwko0l3Jnodp0C-0337dTrXeljLYAAhWbXCfvUw7CZx1483AeUtkGBEcqiJZ6lloNuMJla4AQHQcyFSX1hUljCx8aE-bjWRiEdjJboW8_od3cCJDuXTHZSRwlhaHRXcr4Rae9HhBIhIx_Jm-ARinBwmsSDWyu-z4jHNxfepjUSHy24XLQO5VhkVENl9PC0hdGgG0uIH7DE0PrJCovK-nc31Jg5wb0pl13DZCmoBcD7EgaMGa_kbVI');">
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary text-[28px]" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<h3 class="font-title-md text-title-md text-on-surface truncate group-hover:text-primary transition-colors">Acoustic Sessions Vol. 2</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">Elena &amp; The Woods • 1.1M views</p>
+</div>
+<button aria-label="More options" class="text-on-surface-variant hover:text-primary p-2 transition-colors focus:outline-none">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</article>
+<!-- Track Item 3 -->
+<article class="flex items-center gap-stack-md group cursor-pointer hover:bg-surface-container-low p-2 -mx-2 rounded-lg transition-colors">
+<div class="w-14 h-14 rounded-md bg-surface-container shrink-0 bg-cover bg-center overflow-hidden relative" data-alt="An energetic rock album cover featuring a distorted, abstract representation of an electric guitar neck in heavy motion blur. The color palette is high contrast, with deep charcoal blacks, stark whites, and aggressive splatters of primary red. The visual style is gritty and textured, designed to stand out against a dark application background while maintaining a modern edge." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAT88Qgm0PAJxFP1znVdJsrNuWRFOEzWvf6NYWVHEAmA_MIPMKVo2SP9ZQw333BQz0faKNK9wFAvWLjUgQXg2rYO-otWeiSE6cYtVKBs3EgvZdBjJh_Jn10G8k0v2DTTxfMQ72zJkdHjPpZsPseHubqHDkbn96snimjuwhrhSxMwC8dkaP0Zr61xqsf2o7_1N-5jpwVxQnpu8I1RartG55ficUPSppZKujurJx2AGtWp48jMUer39Dlp6TiUI4MM12MB_GtGwNzKgU');">
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary text-[28px]" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<h3 class="font-title-md text-title-md text-on-surface truncate group-hover:text-primary transition-colors">Riff Heavy Anthems</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">The Steel Vipers • 850K views</p>
+</div>
+<button aria-label="More options" class="text-on-surface-variant hover:text-primary p-2 transition-colors focus:outline-none">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</article>
+<!-- Track Item 4 -->
+<article class="flex items-center gap-stack-md group cursor-pointer hover:bg-surface-container-low p-2 -mx-2 rounded-lg transition-colors">
+<div class="w-14 h-14 rounded-md bg-surface-container shrink-0 bg-cover bg-center overflow-hidden relative" data-alt="A serene lo-fi beats album cover featuring a stylized, animated-looking sunset over a calm ocean. The color palette relies on soft pastels—dusty pinks, muted purples, and deep navy blues—creating a relaxing, nostalgic atmosphere. The aesthetic perfectly matches a chill, focused study session within a premium dark-mode media interface." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuDq1EcmCZjtMcKFj3I9MprFxU1IkrqU0t0VvUoGkB1B9NEcwW3JHio2Duo9ZHn2iWgNp5RCvytEqRSgih7JM6JZ5-CdBUspuVQR5nBbb8cjCsbe4ef-sDII8rrCSgYaNNsrmQBAAtE6WQSNq5RNpDIofMH9m-5DcDjZ4YPbAxxbDuMDqqxT5lcXZKDfSV3EGe1a8k9qjVJchJBuZC9ZRF_vB45o-o4Tsx8eDDXcyrcv0ZHZhdNWcQzwGmv7cIjnHc8vVCKVveLMQRw');">
+<div class="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-primary text-[28px]" data-icon="play_arrow" style="font-variation-settings: 'FILL' 1;">play_arrow</span>
+</div>
+</div>
+<div class="flex-1 min-w-0 flex flex-col justify-center">
+<h3 class="font-title-md text-title-md text-on-surface truncate group-hover:text-primary transition-colors">Chill Beats to Study To</h3>
+<p class="font-body-sm text-body-sm text-on-surface-variant truncate">LoFi Girl • Live</p>
+</div>
+<button aria-label="More options" class="text-on-surface-variant hover:text-primary p-2 transition-colors focus:outline-none">
+<span class="material-symbols-outlined text-[20px]" data-icon="more_vert">more_vert</span>
+</button>
+</article>
+</main>
+<!-- Shared Component: BottomNavBar -->
+<!-- JSON Blueprint dictates: type: label_icon, active state on "Search" based on intent. -->
+<nav class="fixed bottom-0 w-full z-50 flex justify-around items-center py-stack-sm px-gutter bg-surface-container/90 dark:bg-surface-container/90 backdrop-blur-xl shadow-sm rounded-t-xl" style="border-top: none;">
+<!-- Discover (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform gap-1" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="explore">explore</span>
+<span>Discover</span>
+</a>
+<!-- Search (Active - Matches Intent) -->
+<a class="flex flex-col items-center justify-center text-primary font-bold font-label-caps text-label-caps hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform gap-1" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="search" style="font-variation-settings: 'FILL' 1;">search</span>
+<span>Search</span>
+</a>
+<!-- Library (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform gap-1" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="library_music">library_music</span>
+<span>Library</span>
+</a>
+<!-- Queue (Inactive) -->
+<a class="flex flex-col items-center justify-center text-secondary font-label-caps text-label-caps hover:text-primary-fixed-dim scale-95 active:scale-90 transition-transform gap-1" href="#">
+<span class="material-symbols-outlined text-[24px]" data-icon="queue_music">queue_music</span>
+<span>Queue</span>
+</a>
+</nav>
+</body></html>
