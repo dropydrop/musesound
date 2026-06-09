@@ -236,9 +236,9 @@ const MuseSound = {
             
             this.ytActive = false;
             
-            if (!this.ytPlayer || typeof this.ytPlayer.loadVideoById !== 'function') {
+            if (!this.ytPlayer || typeof this.ytPlayer.cueVideoById !== 'function') {
                 const waitForPlayer = setInterval(() => {
-                    if (this.ytPlayer && typeof this.ytPlayer.loadVideoById === 'function') {
+                    if (this.ytPlayer && typeof this.ytPlayer.cueVideoById === 'function') {
                         clearInterval(waitForPlayer);
                         this.doPlay(track);
                     }
@@ -252,7 +252,8 @@ const MuseSound = {
         
         doPlay(track) {
             this.ytActive = true;
-            this.ytPlayer.loadVideoById(track.id);
+            this.ytPlayer.cueVideoById(track.id);
+            this.ytPlayer.playVideo();
             MuseSound.ui.updateNowPlaying(track);
             MuseSound.ui.setLoading(false);
         },
