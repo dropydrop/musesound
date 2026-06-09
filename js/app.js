@@ -1,29 +1,30 @@
 /**
- * MuseSound - YouTube IFrame Edition (V7 - API Officielle)
- *
- * Nécessite une clé API YouTube Data v3 (gratuite)
- * Obtenez-la ici : https://console.cloud.google.com/apis/credentials
- * (Activer YouTube Data API v3, créer une clé API)
+ * MuseSound - YouTube IFrame Edition (V7.1 - API Officielle + Nouvelles UI)
  */
 
 const MuseSound = {
     // ⚠️ REMPLACEZ CETTE CLÉ PAR LA VÔTRE ⚠️
-    YOUTUBE_API_KEY: 'AIzaSyAVwOsusFT9y3w5qd_C0JoGz0DbUi22yGE',
-
+    YOUTUBE_API_KEY: 'VOTRE_CLE_API_ICI',
+    
     config: {},
-
+    
     state: {
         currentPlaylist: JSON.parse(localStorage.getItem('MS_CURRENT_PLAYLIST')) || [],
         currentIndex: -1,
         isPlaying: false,
-        isLoading: false
+        isLoading: false,
+        volume: !isNaN(parseInt(localStorage.getItem('MS_VOLUME'))) ? parseInt(localStorage.getItem('MS_VOLUME')) : 100,
+        shuffle: localStorage.getItem('MS_SHUFFLE') === 'true',
+        repeat: localStorage.getItem('MS_REPEAT') || 'none', // 'none', 'one', 'all'
+        isCinemaMode: false,
+        shuffleHistory: []
     },
 
     init() {
-        console.log("MuseSound V7 - YouTube API Officielle");
+        console.log("MuseSound V7.1 - UI Upgrades");
         this.ui.init();
         this.player.init();
-
+        
         if (this.state.currentPlaylist.length > 0) {
             this.ui.renderPlaylist();
         }
@@ -33,7 +34,7 @@ const MuseSound = {
         extractId(url) {
             const plRegex = /[&?]list=([^&]+)/;
             const videoRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
-
+            
             const plMatch = url.match(plRegex);
             if (plMatch) return { id: plMatch[1], type: 'playlist' };
 
@@ -58,7 +59,7 @@ const MuseSound = {
 
             try {
                 let success = false;
-
+                
                 if (target && target.type === 'playlist') {
                     success = await this.fetchPlaylist(target.id);
                 } else if (target && target.type === 'video') {
@@ -72,7 +73,7 @@ const MuseSound = {
                 }
             } catch (error) {
                 console.error("Erreur API YouTube:", error);
-                alert("Erreur lors de l'import. Vérifiez votre clé API et que l'API YouTube Data v3 est activée.");
+                alert("Erreur lors de l'import. Vérifiez votre clé API.");
             }
 
             MuseSound.ui.setLoading(false);
@@ -82,18 +83,18 @@ const MuseSound = {
             const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${MuseSound.YOUTUBE_API_KEY}`;
             const response = await fetch(url);
             if (!response.ok) return false;
-
+            
             const data = await response.json();
             if (!data.items || data.items.length === 0) return false;
-
+            
             const tracks = data.items.map(item => ({
                 id: item.snippet.resourceId.videoId,
                 title: item.snippet.title,
                 author: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
                 thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                duration: 0
+                duration: 0 
             }));
-
+            
             this.updateState(tracks);
             return true;
         },
@@ -102,10 +103,10 @@ const MuseSound = {
             const url = `https://www.googleapis.com/youtube/v3/videos?part=snippet&id=${videoId}&key=${MuseSound.YOUTUBE_API_KEY}`;
             const response = await fetch(url);
             if (!response.ok) return false;
-
+            
             const data = await response.json();
             if (!data.items || data.items.length === 0) return false;
-
+            
             const item = data.items[0];
             const track = {
                 id: videoId,
@@ -114,7 +115,7 @@ const MuseSound = {
                 thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
                 duration: 0
             };
-
+            
             this.updateState([track]);
             return true;
         },
@@ -123,10 +124,10 @@ const MuseSound = {
             const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=50&type=video&q=${encodeURIComponent(query)}&key=${MuseSound.YOUTUBE_API_KEY}`;
             const response = await fetch(url);
             if (!response.ok) return false;
-
+            
             const data = await response.json();
             if (!data.items || data.items.length === 0) return false;
-
+            
             const tracks = data.items.map(item => ({
                 id: item.id.videoId,
                 title: item.snippet.title,
@@ -134,7 +135,7 @@ const MuseSound = {
                 thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
                 duration: 0
             }));
-
+            
             this.updateState(tracks);
             return true;
         },
@@ -142,8 +143,9 @@ const MuseSound = {
         updateState(tracks) {
             MuseSound.state.currentPlaylist = tracks;
             localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(tracks));
+            MuseSound.state.shuffleHistory = [];
             MuseSound.ui.renderPlaylist();
-
+            
             if (tracks.length > 0) {
                 MuseSound.player.playTrack(0);
             }
@@ -174,10 +176,13 @@ const MuseSound = {
                         disablekb: 1,
                     },
                     events: {
-                        onReady: () => console.log("YouTube IFrame Player prêt"),
+                        onReady: () => {
+                            console.log("YouTube IFrame Player prêt");
+                            this.ytPlayer.setVolume(MuseSound.state.volume);
+                        },
                         onStateChange: (event) => {
                             if (!this.ytActive) return;
-
+                            
                             if (event.data === YT.PlayerState.PLAYING) {
                                 MuseSound.state.isPlaying = true;
                                 MuseSound.ui.updatePlayerControls();
@@ -186,7 +191,8 @@ const MuseSound = {
                                 MuseSound.state.isPlaying = false;
                                 MuseSound.ui.updatePlayerControls();
                             } else if (event.data === YT.PlayerState.ENDED) {
-                                MuseSound.player.next();
+                                // Fin naturelle -> on ne force pas le next
+                                MuseSound.player.next(false);
                             }
                         },
                         onError: (error) => {
@@ -201,7 +207,7 @@ const MuseSound = {
 
         startProgressTracking() {
             if (this.progressInterval) clearInterval(this.progressInterval);
-
+            
             this.progressInterval = setInterval(() => {
                 if (this.ytActive && this.ytPlayer && typeof this.ytPlayer.getCurrentTime === 'function') {
                     const currentTime = this.ytPlayer.getCurrentTime();
@@ -218,18 +224,18 @@ const MuseSound = {
 
         async playTrack(index) {
             if (index < 0 || index >= MuseSound.state.currentPlaylist.length) return;
-
+            
             MuseSound.state.currentIndex = index;
             const track = MuseSound.state.currentPlaylist[index];
 
             MuseSound.ui.setLoading(true);
-
+            
             if (this.ytPlayer && typeof this.ytPlayer.stopVideo === 'function') {
                 this.ytPlayer.stopVideo();
             }
-
+            
             this.ytActive = false;
-
+            
             if (!this.ytPlayer || typeof this.ytPlayer.loadVideoById !== 'function') {
                 const waitForPlayer = setInterval(() => {
                     if (this.ytPlayer && typeof this.ytPlayer.loadVideoById === 'function') {
@@ -240,10 +246,10 @@ const MuseSound = {
                 setTimeout(() => clearInterval(waitForPlayer), 5000);
                 return;
             }
-
+            
             this.doPlay(track);
         },
-
+        
         doPlay(track) {
             this.ytActive = true;
             this.ytPlayer.loadVideoById(track.id);
@@ -253,7 +259,7 @@ const MuseSound = {
 
         toggle() {
             if (!this.ytPlayer) return;
-
+            
             if (this.ytActive) {
                 const state = this.ytPlayer.getPlayerState();
                 if (state === YT.PlayerState.PLAYING) {
@@ -266,31 +272,156 @@ const MuseSound = {
             }
         },
 
-        next() { this.playTrack(MuseSound.state.currentIndex + 1); },
-        prev() { this.playTrack(MuseSound.state.currentIndex - 1); }
+        next(forceNext = false) { 
+            if (MuseSound.state.currentPlaylist.length === 0) return;
+            
+            // Si on est en repeat ONE et que l'utilisateur n'a pas cliqué sur next (fin naturelle)
+            if (!forceNext && MuseSound.state.repeat === 'one') {
+                if (this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
+                    this.ytPlayer.seekTo(0, true);
+                    this.ytPlayer.playVideo();
+                    return;
+                }
+            }
+
+            let nextIndex = MuseSound.state.currentIndex + 1;
+
+            if (MuseSound.state.shuffle) {
+                MuseSound.state.shuffleHistory.push(MuseSound.state.currentIndex);
+                nextIndex = Math.floor(Math.random() * MuseSound.state.currentPlaylist.length);
+            }
+
+            if (nextIndex >= MuseSound.state.currentPlaylist.length) {
+                if (MuseSound.state.repeat === 'all') {
+                    nextIndex = 0;
+                } else {
+                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+                    return; // Fin de playlist
+                }
+            }
+            
+            this.playTrack(nextIndex); 
+        },
+
+        prev() { 
+            if (MuseSound.state.currentPlaylist.length === 0) return;
+            
+            if (this.ytPlayer && typeof this.ytPlayer.getCurrentTime === 'function' && this.ytPlayer.getCurrentTime() > 3) {
+                this.ytPlayer.seekTo(0, true);
+                return;
+            }
+
+            let prevIndex = MuseSound.state.currentIndex - 1;
+
+            if (MuseSound.state.shuffle && MuseSound.state.shuffleHistory.length > 0) {
+                prevIndex = MuseSound.state.shuffleHistory.pop();
+            }
+
+            if (prevIndex < 0) {
+                if (MuseSound.state.repeat === 'all') {
+                    prevIndex = MuseSound.state.currentPlaylist.length - 1;
+                } else {
+                    prevIndex = 0;
+                }
+            }
+            
+            this.playTrack(prevIndex); 
+        },
+
+        setVolume(val) {
+            MuseSound.state.volume = val;
+            localStorage.setItem('MS_VOLUME', val);
+            if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                this.ytPlayer.setVolume(val);
+            }
+            MuseSound.ui.updateVolumeUI();
+        }
     },
 
     ui: {
         init() {
+            // Import / Search
             const importBtn = document.getElementById('btn-import');
             const urlInput = document.getElementById('playlist-url');
-
             if (importBtn && urlInput) {
                 importBtn.addEventListener('click', () => MuseSound.importer.processInput(urlInput.value));
                 urlInput.addEventListener('keypress', (e) => e.key === 'Enter' && MuseSound.importer.processInput(urlInput.value));
             }
-
+            
+            // Player Controls
             document.getElementById('play-pause-btn')?.addEventListener('click', () => MuseSound.player.toggle());
-            document.getElementById('next-btn')?.addEventListener('click', () => MuseSound.player.next());
+            document.getElementById('next-btn')?.addEventListener('click', () => MuseSound.player.next(true));
             document.getElementById('prev-btn')?.addEventListener('click', () => MuseSound.player.prev());
+            
+            // Clickable Progress Bar
+            const progressContainer = document.getElementById('progress-container');
+            if (progressContainer) {
+                progressContainer.addEventListener('click', (e) => {
+                    if (!MuseSound.player.ytPlayer || !MuseSound.player.ytActive) return;
+                    const rect = progressContainer.getBoundingClientRect();
+                    const percent = (e.clientX - rect.left) / rect.width;
+                    const duration = MuseSound.player.ytPlayer.getDuration();
+                    if (duration) {
+                        MuseSound.player.ytPlayer.seekTo(duration * percent, true);
+                    }
+                });
+            }
 
+            // Volume Controls
+            const volSlider = document.getElementById('volume-slider');
+            const volIcon = document.getElementById('volume-icon');
+            if (volSlider) {
+                volSlider.value = MuseSound.state.volume;
+                volSlider.addEventListener('input', (e) => MuseSound.player.setVolume(parseInt(e.target.value)));
+            }
+            if (volIcon) {
+                volIcon.addEventListener('click', () => {
+                    MuseSound.player.setVolume(MuseSound.state.volume > 0 ? 0 : 100);
+                });
+            }
+
+            // Shuffle & Repeat
+            document.getElementById('shuffle-btn')?.addEventListener('click', () => {
+                MuseSound.state.shuffle = !MuseSound.state.shuffle;
+                localStorage.setItem('MS_SHUFFLE', MuseSound.state.shuffle);
+                this.updateShuffleRepeatUI();
+            });
+
+            document.getElementById('repeat-btn')?.addEventListener('click', () => {
+                const modes = ['none', 'all', 'one'];
+                const idx = modes.indexOf(MuseSound.state.repeat);
+                MuseSound.state.repeat = modes[(idx + 1) % 3];
+                localStorage.setItem('MS_REPEAT', MuseSound.state.repeat);
+                this.updateShuffleRepeatUI();
+            });
+
+            // Cinema Mode (Fullscreen)
+            document.getElementById('fullscreen-btn')?.addEventListener('click', () => {
+                MuseSound.state.isCinemaMode = !MuseSound.state.isCinemaMode;
+                const header = document.getElementById('main-header');
+                const playlist = document.getElementById('playlist-container');
+                const fsBtn = document.getElementById('fullscreen-btn');
+                
+                if (MuseSound.state.isCinemaMode) {
+                    header.classList.add('hidden');
+                    playlist.classList.add('hidden');
+                    if (fsBtn) fsBtn.textContent = 'close_fullscreen';
+                } else {
+                    header.classList.remove('hidden');
+                    playlist.classList.remove('hidden');
+                    if (fsBtn) fsBtn.textContent = 'open_in_full';
+                }
+            });
+
+            this.updateShuffleRepeatUI();
+            this.updateVolumeUI();
             this.renderPlaylist();
         },
 
         setLoading(loading) {
             const btn = document.getElementById('btn-import');
             if (btn) {
-                btn.innerHTML = loading ? '<span class="animate-spin material-symbols-outlined">sync</span>' : 'Import';
+                btn.innerHTML = loading ? '<span class="animate-spin material-symbols-outlined">sync</span>' : 'Écouter';
                 btn.disabled = loading;
             }
         },
@@ -298,32 +429,32 @@ const MuseSound = {
         renderPlaylist() {
             const container = document.getElementById('playlist-container');
             if (!container) return;
-
+            
             const countSpan = document.getElementById('track-count');
             if (countSpan) countSpan.textContent = MuseSound.state.currentPlaylist.length;
-
+            
             if (MuseSound.state.currentPlaylist.length === 0) {
                 container.innerHTML = `
                     <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
                         <span class="material-symbols-outlined text-6xl mb-4">queue_music</span>
                         <p>No playlist imported yet.</p>
-                        <p class="text-sm mt-2">Collez une URL YouTube ci-dessus</p>
+                        <p class="text-sm mt-2">Collez une URL ou cherchez un morceau ci-dessus.</p>
                     </div>
                 `;
                 return;
             }
-
+            
             container.innerHTML = MuseSound.state.currentPlaylist.map((t, i) => `
                 <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer transition-colors group" onclick="MuseSound.player.playTrack(${i})">
                     <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover bg-surface-container-highest" onerror="this.src='https://placehold.co/48x48?text=Music'">
                     <div class="flex-1 min-w-0">
-                        <div class="font-body-md text-on-surface truncate font-medium group-hover:text-primary">${this.escapeHtml(t.title)}</div>
+                        <div class="font-body-md text-on-surface truncate font-medium group-hover:text-primary ${i === MuseSound.state.currentIndex ? 'text-primary' : ''}">${this.escapeHtml(t.title)}</div>
                         <div class="font-label-md text-on-surface-variant truncate">${this.escapeHtml(t.author)}</div>
                     </div>
                 </div>
             `).join('');
         },
-
+        
         escapeHtml(str) {
             if (!str) return '';
             return str.replace(/[&<>]/g, function(m) {
@@ -340,10 +471,10 @@ const MuseSound = {
             document.querySelectorAll('.current-art').forEach(el => {
                 if (el.tagName === 'IMG') {
                     el.src = track.thumbnail;
-                } else {
-                    el.style.backgroundImage = `url('${track.thumbnail}')`;
+                    el.style.display = 'block';
                 }
             });
+            this.renderPlaylist(); // Met à jour le style de la playlist pour colorer le titre en cours
         },
 
         updatePlayerControls() {
@@ -351,6 +482,44 @@ const MuseSound = {
             if (icon) {
                 icon.textContent = MuseSound.state.isPlaying ? 'pause' : 'play_arrow';
             }
+        },
+
+        updateShuffleRepeatUI() {
+            const shuffleBtn = document.getElementById('shuffle-btn');
+            if (shuffleBtn) {
+                shuffleBtn.classList.toggle('text-primary', MuseSound.state.shuffle);
+                shuffleBtn.classList.toggle('text-on-surface-variant', !MuseSound.state.shuffle);
+            }
+            const repeatIcon = document.getElementById('repeat-icon');
+            const repeatBtn = document.getElementById('repeat-btn');
+            if (repeatIcon && repeatBtn) {
+                if (MuseSound.state.repeat === 'none') {
+                    repeatIcon.textContent = 'repeat';
+                    repeatBtn.classList.remove('text-primary');
+                    repeatBtn.classList.add('text-on-surface-variant');
+                } else if (MuseSound.state.repeat === 'all') {
+                    repeatIcon.textContent = 'repeat';
+                    repeatBtn.classList.add('text-primary');
+                    repeatBtn.classList.remove('text-on-surface-variant');
+                } else if (MuseSound.state.repeat === 'one') {
+                    repeatIcon.textContent = 'repeat_one';
+                    repeatBtn.classList.add('text-primary');
+                    repeatBtn.classList.remove('text-on-surface-variant');
+                }
+            }
+        },
+
+        updateVolumeUI() {
+            const volIcon = document.getElementById('volume-icon');
+            const volSlider = document.getElementById('volume-slider');
+            const vol = MuseSound.state.volume;
+            
+            if (volSlider && volSlider.value != vol) volSlider.value = vol;
+            if (!volIcon) return;
+
+            if (vol === 0) volIcon.textContent = 'volume_off';
+            else if (vol < 50) volIcon.textContent = 'volume_down';
+            else volIcon.textContent = 'volume_up';
         },
 
         formatTime(s) {
