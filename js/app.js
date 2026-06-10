@@ -544,6 +544,13 @@ const MuseSound = {
                 this.toggleFullscreen();
             });
 
+            document.addEventListener('fullscreenchange', () => {
+                const isFs = !!document.fullscreenElement;
+                if (!isFs && MuseSound.state.isCinemaMode) {
+                    this.toggleFullscreen(true);
+                }
+            });
+
             document.addEventListener('keydown', (e) => {
                 if (e.key === 'Escape' && MuseSound.state.isCinemaMode) {
                     this.toggleFullscreen(true);
@@ -585,16 +592,25 @@ const MuseSound = {
         },
 
         toggleFullscreen(forceClose = false) {
-            MuseSound.state.isCinemaMode = forceClose ? false : !MuseSound.state.isCinemaMode;
+            const isNativeFs = !!document.fullscreenElement;
+            const shouldBeFs = forceClose ? false : !MuseSound.state.isCinemaMode;
+            
+            MuseSound.state.isCinemaMode = shouldBeFs;
             const body = document.body;
             const fsBtn = document.getElementById('fullscreen-btn');
             
-            if (MuseSound.state.isCinemaMode) {
+            if (shouldBeFs) {
                 body.classList.add('is-cinema-mode');
                 if (fsBtn) fsBtn.textContent = 'close_fullscreen';
+                if (!isNativeFs) {
+                    document.documentElement.requestFullscreen().catch(e => console.warn("Fullscreen request failed:", e));
+                }
             } else {
                 body.classList.remove('is-cinema-mode');
                 if (fsBtn) fsBtn.textContent = 'open_in_full';
+                if (isNativeFs) {
+                    document.exitFullscreen().catch(e => console.warn("Fullscreen exit failed:", e));
+                }
             }
         },
 
