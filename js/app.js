@@ -18,6 +18,8 @@ const MuseSound = {
         repeat: localStorage.getItem('MS_REPEAT') || 'none', // 'none', 'all', 'one'
         isCinemaMode: false,
         uiMode: 'playlist', // 'playlist' or 'queue'
+        ecoMode: localStorage.getItem('MS_ECO_MODE') === 'true',
+        playingQueueIndex: -1,
         shuffleHistory: [],
         queue: JSON.parse(localStorage.getItem('MS_QUEUE')) || []
         },
@@ -29,6 +31,7 @@ const MuseSound = {
         
         if (this.state.currentPlaylist.length > 0) {
             this.ui.renderPlaylist();
+            this.ui.checkResumeState();
         }
     },
 
@@ -260,7 +263,13 @@ const MuseSound = {
                         onError: (error) => {
                             console.error("YouTube Player error:", error);
                             MuseSound.ui.setLoading(false);
-                            alert("Erreur de lecture. La vidéo est peut-être restreinte ou supprimée.");
+                            
+                            // 101/150 = Video not embeddable or blocked
+                            MuseSound.showToast("Piste indisponible, passage à la suivante...");
+                            
+                            setTimeout(() => {
+                                MuseSound.player.next(true);
+                            }, 2000);
                         }
                     }
                 });
@@ -274,11 +283,51 @@ const MuseSound = {
                 if (this.ytActive && this.ytPlayer && typeof this.ytPlayer.getCurrentTime === 'function') {
                     const currentTime = this.ytPlayer.getCurrentTime();
                     const duration = this.ytPlayer.getDuration();
+                    
                     if (duration && duration > 0) {
                         const progress = (currentTime / duration) * 100;
                         document.querySelectorAll('.player-progress-bar').forEach(el => el.style.width = progress + '%');
                         document.querySelectorAll('.player-current-time').forEach(el => el.textContent = MuseSound.ui.formatTime(currentTime));
                         document.querySelectorAll('.player-duration').forEach(el => el.textContent = MuseSound.ui.formatTime(duration));
+
+                        // Media Session Position
+                        if ('mediaSession' in navigator && 'setPositionState' in navigator.mediaSession) {
+                            navigator.mediaSession.setPositionState({
+                                duration: duration,
+                                playbackRate: 1,
+                                position: currentTime
+                            });
+                        }
+
+                        // DJ Crossfade (Fade-out 3s avant la fin)
+                        if (duration - currentTime <= 3 && !this.isFadingOut) {
+                            this.isFadingOut = true;
+                            let currentVol = MuseSound.state.volume;
+                            const fadeInterval = setInterval(() => {
+                                currentVol -= 5;
+                                if (currentVol <= 0) {
+                                    clearInterval(fadeInterval);
+                                    if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                                        this.ytPlayer.setVolume(0);
+                                    }
+                                } else {
+                                    if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                                        this.ytPlayer.setVolume(currentVol);
+                                    }
+                                }
+                            }, 200);
+                        }
+
+                        // Réinitialiser le flag de fade si on change de morceau ou seek back
+                        if (duration - currentTime > 4) {
+                            this.isFadingOut = false;
+                        }
+
+                        // Sauvegarde de l'état (Persistence) toutes les 5 secondes
+                        if (Math.floor(currentTime) % 5 === 0) {
+                            localStorage.setItem('MS_LAST_INDEX', MuseSound.state.currentIndex);
+                            localStorage.setItem('MS_LAST_POS', currentTime);
+                        }
                     }
                 }
             }, 500);
@@ -312,19 +361,50 @@ const MuseSound = {
             this.doPlay(track);
         },
         
-        doPlay(track) {
+        doPlay(track, startTime = 0) {
             this.ytActive = true;
-            this.ytPlayer.loadVideoById(track.id);
-            // Simulate extra play call for better reliability as requested
+            this.isFadingOut = false;
+            
+            if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                this.ytPlayer.setVolume(MuseSound.state.volume);
+            }
+
+            this.ytPlayer.loadVideoById({
+                videoId: track.id,
+                startSeconds: startTime,
+                suggestedQuality: MuseSound.state.ecoMode ? 'tiny' : 'large'
+            });
+            
+            // Appliquer la qualité explicitement si déjà chargé
+            if (this.ytPlayer && typeof this.ytPlayer.setPlaybackQuality === 'function') {
+                this.ytPlayer.setPlaybackQuality(MuseSound.state.ecoMode ? 'tiny' : 'large');
+            }
+            
+            // Simulate extra play call for better reliability
             setTimeout(() => {
                 if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
                     this.ytPlayer.playVideo();
                 }
             }, 150);
 
+            // Keep-Alive (Mobile trick)
+            this.startKeepAlive();
+
             MuseSound.ui.updateNowPlaying(track);
             this.updateMediaSession(track);
             MuseSound.ui.setLoading(false);
+        },
+
+        startKeepAlive() {
+            if (this.keepAliveAudio) return;
+            // Silent WAV 1s
+            const silentB64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/AA==";
+            this.keepAliveAudio = new Audio(silentB64);
+            this.keepAliveAudio.loop = true;
+            this.keepAliveAudio.play().catch(() => {
+                // User interaction required, will try again next play
+                this.keepAliveAudio = null;
+            });
         },
 
         updateMediaSession(track) {
@@ -361,21 +441,24 @@ const MuseSound = {
 
         playQueueTrack(index) {
             const track = MuseSound.state.queue[index];
-            MuseSound.state.queue.splice(index, 1);
-            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
-            MuseSound.state.currentIndex = -1;
+            MuseSound.state.playingQueueIndex = index;
+            MuseSound.state.currentIndex = -1; // On n'est plus dans la playlist principale
             this.doPlay(track);
             MuseSound.ui.renderQueue();
         },
 
         removeFromQueue(index) {
             MuseSound.state.queue.splice(index, 1);
+            if (MuseSound.state.playingQueueIndex === index) MuseSound.state.playingQueueIndex = -1;
+            else if (MuseSound.state.playingQueueIndex > index) MuseSound.state.playingQueueIndex--;
+            
             localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
             MuseSound.ui.renderQueue();
         },
 
         clearQueue() {
             MuseSound.state.queue = [];
+            MuseSound.state.playingQueueIndex = -1;
             localStorage.removeItem('MS_QUEUE');
             MuseSound.ui.renderQueue();
         },
@@ -394,18 +477,32 @@ const MuseSound = {
                 }
             } else if (MuseSound.state.currentIndex >= 0) {
                 this.playTrack(MuseSound.state.currentIndex);
+            } else if (MuseSound.state.playingQueueIndex >= 0) {
+                this.playQueueTrack(MuseSound.state.playingQueueIndex);
             }
         },
 
         next(forceNext = false) { 
-            // Priorité à la file d'attente
-            if (MuseSound.state.queue.length > 0) {
-                const nextTrack = MuseSound.state.queue.shift();
-                localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
-                MuseSound.ui.renderQueue();
-                MuseSound.state.currentIndex = -1;
-                this.doPlay(nextTrack);
-                return;
+            // Si on forçait le suivant alors qu'on était dans la queue
+            if (MuseSound.state.playingQueueIndex >= 0 || MuseSound.state.queue.length > 0) {
+                // Si on finit un morceau de la queue (naturel ou forcé)
+                if (MuseSound.state.playingQueueIndex >= 0) {
+                    MuseSound.state.queue.splice(MuseSound.state.playingQueueIndex, 1);
+                    MuseSound.state.playingQueueIndex = -1;
+                } else if (MuseSound.state.queue.length > 0) {
+                    // Si on était dans la playlist et qu'on fait next alors qu'il y a une queue
+                    // On ne touche pas à la playlist, on lance la queue
+                }
+
+                if (MuseSound.state.queue.length > 0) {
+                    const nextTrack = MuseSound.state.queue[0];
+                    MuseSound.state.playingQueueIndex = 0;
+                    localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+                    MuseSound.ui.renderQueue();
+                    MuseSound.state.currentIndex = -1;
+                    this.doPlay(nextTrack);
+                    return;
+                }
             }
 
             if (MuseSound.state.currentPlaylist.length === 0) return;
@@ -535,6 +632,19 @@ const MuseSound = {
                 MuseSound.player.clearQueue();
             });
 
+            // Resume Banner
+            document.getElementById('btn-resume-ignore')?.addEventListener('click', () => {
+                this.hideResumeBanner();
+            });
+            document.getElementById('btn-resume-play')?.addEventListener('click', () => {
+                const index = parseInt(localStorage.getItem('MS_LAST_INDEX'));
+                const pos = parseFloat(localStorage.getItem('MS_LAST_POS'));
+                this.hideResumeBanner();
+                if (!isNaN(index) && index >= 0) {
+                    MuseSound.player.playTrack(index, pos);
+                }
+            });
+
             // Tabs
             document.getElementById('tab-playlist')?.addEventListener('click', () => this.showPlaylist());
             document.getElementById('tab-queue')?.addEventListener('click', () => this.showQueue());
@@ -557,10 +667,30 @@ const MuseSound = {
                 }
             });
 
+            document.getElementById('eco-btn')?.addEventListener('click', () => {
+                MuseSound.state.ecoMode = !MuseSound.state.ecoMode;
+                localStorage.setItem('MS_ECO_MODE', MuseSound.state.ecoMode);
+                this.updateEcoUI();
+                if (MuseSound.player.ytPlayer && typeof MuseSound.player.ytPlayer.setPlaybackQuality === 'function') {
+                    MuseSound.player.ytPlayer.setPlaybackQuality(MuseSound.state.ecoMode ? 'tiny' : 'large');
+                }
+                MuseSound.showToast(MuseSound.state.ecoMode ? "Mode Éco Data activé (144p)" : "Mode Éco désactivé (480p)");
+            });
+
             this.updateShuffleRepeatUI();
             this.updateVolumeUI();
+            this.updateEcoUI();
             this.renderQueue();
             this.renderPlaylist();
+        },
+
+        updateEcoUI() {
+            const btn = document.getElementById('eco-btn');
+            if (btn) {
+                btn.classList.toggle('bg-primary', MuseSound.state.ecoMode);
+                btn.classList.toggle('text-background', MuseSound.state.ecoMode);
+                btn.classList.toggle('border-primary', MuseSound.state.ecoMode);
+            }
         },
 
         showPlaylist() {
@@ -575,6 +705,34 @@ const MuseSound = {
             document.getElementById('tab-queue')?.classList.add('border-transparent', 'text-on-surface-variant');
             
             this.renderPlaylist();
+        },
+
+        checkResumeState() {
+            const index = parseInt(localStorage.getItem('MS_LAST_INDEX'));
+            const pos = parseFloat(localStorage.getItem('MS_LAST_POS'));
+            const playlist = MuseSound.state.currentPlaylist;
+
+            if (!isNaN(index) && index >= 0 && index < playlist.length && pos > 10) {
+                const track = playlist[index];
+                const banner = document.getElementById('resume-banner');
+                const title = document.getElementById('resume-track-title');
+                if (banner && title) {
+                    title.textContent = `${track.title} (${this.formatTime(pos)})`;
+                    banner.classList.remove('hidden');
+                    setTimeout(() => banner.classList.add('visible'), 100);
+                }
+            }
+        },
+
+        hideResumeBanner() {
+            const banner = document.getElementById('resume-banner');
+            if (banner) {
+                banner.classList.remove('visible');
+                setTimeout(() => banner.classList.add('hidden'), 500);
+            }
+            // On nettoie pour ne pas reproposer
+            localStorage.removeItem('MS_LAST_INDEX');
+            localStorage.removeItem('MS_LAST_POS');
         },
 
         showQueue() {
@@ -644,7 +802,12 @@ const MuseSound = {
             }
             
             container.innerHTML = MuseSound.state.currentPlaylist.map((t, i) => `
-                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer transition-colors group" onclick="MuseSound.player.playTrack(${i})">
+                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer transition-colors group" 
+                     draggable="true" 
+                     ondragstart="MuseSound.ui.handleDragStart(event, ${i}, 'playlist')"
+                     ondragover="MuseSound.ui.handleDragOver(event)"
+                     ondrop="MuseSound.ui.handleDrop(event, ${i}, 'playlist')"
+                     onclick="MuseSound.player.playTrack(${i})">
                     <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover bg-surface-container-highest" onerror="this.src='https://placehold.co/48x48?text=Music'">
                     <div class="flex-1 min-w-0">
                         <div class="font-body-md text-on-surface truncate font-medium group-hover:text-primary ${i === MuseSound.state.currentIndex ? 'text-primary' : ''}">${this.escapeHtml(t.title)}</div>
@@ -680,10 +843,15 @@ const MuseSound = {
             }
 
             list.innerHTML = MuseSound.state.queue.map((t, i) => `
-                <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-colors" onclick="MuseSound.player.playQueueTrack(${i})">
-                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover" onerror="this.src='https://placehold.co/40x40?text=Music'">
+                <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-colors ${i === MuseSound.state.playingQueueIndex ? 'border border-primary bg-primary/5' : ''}" 
+                     draggable="true" 
+                     ondragstart="MuseSound.ui.handleDragStart(event, ${i}, 'queue')"
+                     ondragover="MuseSound.ui.handleDragOver(event)"
+                     ondrop="MuseSound.ui.handleDrop(event, ${i}, 'queue')"
+                     onclick="MuseSound.player.playQueueTrack(${i})">
+                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover ${i === MuseSound.state.playingQueueIndex ? 'animate-pulse' : ''}" onerror="this.src='https://placehold.co/40x40?text=Music'">
                     <div class="flex-1 min-w-0">
-                        <div class="text-sm font-medium truncate group-hover:text-primary">${this.escapeHtml(t.title)}</div>
+                        <div class="text-sm font-medium truncate group-hover:text-primary ${i === MuseSound.state.playingQueueIndex ? 'text-primary' : ''}">${this.escapeHtml(t.title)}</div>
                         <div class="text-[10px] text-on-surface-variant truncate">${this.escapeHtml(t.author)}</div>
                     </div>
                     <button class="opacity-0 group-hover:opacity-100 p-2 hover:text-red-400 transition-all" 
@@ -692,6 +860,42 @@ const MuseSound = {
                     </button>
                 </div>
             `).join('');
+        },
+
+        handleDragStart(e, index, type) {
+            e.dataTransfer.setData('text/plain', JSON.stringify({ index, type }));
+            e.dataTransfer.effectAllowed = 'move';
+        },
+
+        handleDragOver(e) {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = 'move';
+        },
+
+        handleDrop(e, toIndex, type) {
+            e.preventDefault();
+            const data = JSON.parse(e.dataTransfer.getData('text/plain'));
+            if (data.type !== type) return;
+            const fromIndex = data.index;
+            if (fromIndex === toIndex) return;
+
+            const list = type === 'playlist' ? MuseSound.state.currentPlaylist : MuseSound.state.queue;
+            const [movedItem] = list.splice(fromIndex, 1);
+            list.splice(toIndex, 0, movedItem);
+
+            if (type === 'playlist') {
+                if (MuseSound.state.currentIndex === fromIndex) MuseSound.state.currentIndex = toIndex;
+                else if (fromIndex < MuseSound.state.currentIndex && toIndex >= MuseSound.state.currentIndex) MuseSound.state.currentIndex--;
+                else if (fromIndex > MuseSound.state.currentIndex && toIndex <= MuseSound.state.currentIndex) MuseSound.state.currentIndex++;
+                localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(list));
+                this.renderPlaylist();
+            } else {
+                if (MuseSound.state.playingQueueIndex === fromIndex) MuseSound.state.playingQueueIndex = toIndex;
+                else if (fromIndex < MuseSound.state.playingQueueIndex && toIndex >= MuseSound.state.playingQueueIndex) MuseSound.state.playingQueueIndex--;
+                else if (fromIndex > MuseSound.state.playingQueueIndex && toIndex <= MuseSound.state.playingQueueIndex) MuseSound.state.playingQueueIndex++;
+                localStorage.setItem('MS_QUEUE', JSON.stringify(list));
+                this.renderQueue();
+            }
         },
 
         calculateTotalDuration(tracks) {
