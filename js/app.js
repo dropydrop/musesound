@@ -629,6 +629,27 @@ const MuseSound = {
             MuseSound.player.playQueueTrack(insertPos);
         },
 
+        renderPlaylistsResults() {
+            const container = document.getElementById('playlists-results');
+            if (!container) return;
+            if (MuseSound.state.foundPlaylists.length === 0) {
+                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">featured_play_list</span><p>Aucune playlist trouvée.</p></div>`;
+                return;
+            }
+            container.innerHTML = MuseSound.state.foundPlaylists.map(pl => `
+                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
+                    <div class="relative">
+                        <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
+                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
+                    </div>
+                    <div class="flex-1 min-w-0">
+                        <div class="font-bold truncate">${this.escapeHtml(pl.title)}</div>
+                        <div class="text-xs text-primary">${this.escapeHtml(pl.author)}</div>
+                    </div>
+                </div>
+            `).join('');
+        },
+
         initStaticControls() {
             document.getElementById('play-pause-btn')?.addEventListener('click', () => MuseSound.player.toggle());
             document.getElementById('next-btn')?.addEventListener('click', () => MuseSound.player.next(true));
