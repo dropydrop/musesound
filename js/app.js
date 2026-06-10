@@ -435,6 +435,15 @@ const MuseSound = {
             MuseSound.state.playingQueueIndex = -1;
             localStorage.removeItem('MS_QUEUE');
             MuseSound.ui.renderQueue();
+        },
+
+        setVolume(val) {
+            MuseSound.state.volume = val;
+            localStorage.setItem('MS_VOLUME', val);
+            if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                this.ytPlayer.setVolume(val);
+            }
+            MuseSound.ui.updateVolumeUI();
         }
     },
 
@@ -625,12 +634,20 @@ const MuseSound = {
                 this.updateEcoUI();
                 MuseSound.showToast(MuseSound.state.ecoMode ? "Mode Éco (144p)" : "Mode HD (720p)");
             });
+
+            // Fullscreen
+            document.getElementById('fullscreen-btn')?.addEventListener('click', () => this.toggleFullscreen());
+
+            // Volume
             const volSlider = document.getElementById('volume-slider');
             if (volSlider) {
                 volSlider.value = MuseSound.state.volume;
-                volSlider.oninput = (e) => MuseSound.player.setVolume(parseInt(e.target.value));
+                volSlider.addEventListener('input', (e) => MuseSound.player.setVolume(parseInt(e.target.value)));
             }
-            document.getElementById('volume-icon')?.addEventListener('click', () => MuseSound.player.setVolume(MuseSound.state.volume > 0 ? 0 : 100));
+            document.getElementById('volume-icon')?.addEventListener('click', () => {
+                MuseSound.player.setVolume(MuseSound.state.volume > 0 ? 0 : 100);
+            });
+
             this.updateShuffleRepeatUI();
             this.updateVolumeUI();
             this.updateEcoUI();
