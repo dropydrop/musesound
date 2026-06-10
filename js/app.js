@@ -207,19 +207,23 @@ const MuseSound = {
         },
 
         updateState(tracks) {
+            // Mise à jour de la playlist (remplacement du contenu spécifique)
             MuseSound.state.currentPlaylist = tracks;
             localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(tracks));
             MuseSound.state.shuffleHistory = [];
             
-            // Clear queue on new import
-            MuseSound.state.queue = [];
-            localStorage.removeItem('MS_QUEUE');
+            // On AJOUTE les nouveaux contenus à la file d'attente existante (sans la vider)
+            MuseSound.state.queue = [...MuseSound.state.queue, ...tracks];
+            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+            
             MuseSound.ui.renderQueue();
-
             MuseSound.ui.renderPlaylist();
             
-            if (tracks.length > 0) {
+            // On ne lance la lecture QUE si rien n'est déjà en cours
+            if (!MuseSound.player.ytActive && tracks.length > 0) {
                 MuseSound.player.playTrack(0);
+            } else {
+                MuseSound.showToast(`${tracks.length} titres ajoutés à la file d'attente`);
             }
         }
     },
@@ -784,7 +788,7 @@ const MuseSound = {
         setLoading(loading) {
             const btn = document.getElementById('btn-import');
             if (btn) {
-                btn.innerHTML = loading ? '<span class="animate-spin material-symbols-outlined">sync</span>' : 'Écouter';
+                btn.innerHTML = loading ? '<span class="animate-spin material-symbols-outlined">sync</span>' : '<span class="material-symbols-outlined">search</span>';
                 btn.disabled = loading;
             }
         },
@@ -793,11 +797,14 @@ const MuseSound = {
             const container = document.getElementById('playlist-container');
             if (!container) return;
             
-            const countSpan = document.getElementById('track-count');
-            if (countSpan) countSpan.textContent = MuseSound.state.currentPlaylist.length;
-            
-            const durationSpan = document.getElementById('total-duration');
-            if (durationSpan) durationSpan.textContent = this.calculateTotalDuration(MuseSound.state.currentPlaylist);
+            // Stats contextuelles (uniquement si l'onglet Playlist est actif)
+            if (MuseSound.state.uiMode === 'playlist') {
+                const countSpan = document.getElementById('track-count');
+                if (countSpan) countSpan.textContent = MuseSound.state.currentPlaylist.length;
+                
+                const durationSpan = document.getElementById('total-duration');
+                if (durationSpan) durationSpan.textContent = this.calculateTotalDuration(MuseSound.state.currentPlaylist);
+            }
             
             if (MuseSound.state.currentPlaylist.length === 0) {
                 container.innerHTML = `
@@ -839,6 +846,15 @@ const MuseSound = {
             if (badge) {
                 badge.textContent = count;
                 badge.classList.toggle('hidden', count === 0);
+            }
+
+            // Stats contextuelles (uniquement si l'onglet Queue est actif)
+            if (MuseSound.state.uiMode === 'queue') {
+                const countSpan = document.getElementById('track-count');
+                if (countSpan) countSpan.textContent = count;
+                
+                const durationSpan = document.getElementById('total-duration');
+                if (durationSpan) durationSpan.textContent = this.calculateTotalDuration(MuseSound.state.queue);
             }
 
             if (count === 0) {
