@@ -332,7 +332,11 @@ const MuseSound = {
                         if (dur - cur > 6) this.isFadingOut = false;
 
                         if (Math.floor(cur) % 5 === 0) {
-                            localStorage.setItem('MS_LAST_INDEX', MuseSound.state.playingQueueIndex);
+                            // On stocke l'index actif (soit queue, soit playlist)
+                            const activeIdx = MuseSound.state.playingQueueIndex >= 0 ? MuseSound.state.playingQueueIndex : MuseSound.state.currentIndex;
+                            const isQueue = MuseSound.state.playingQueueIndex >= 0;
+                            localStorage.setItem('MS_LAST_INDEX', activeIdx);
+                            localStorage.setItem('MS_LAST_IS_QUEUE', isQueue);
                             localStorage.setItem('MS_LAST_POS', cur);
                         }
                     }
@@ -410,8 +414,24 @@ const MuseSound = {
         },
 
         prev() {
-            if (this.ytPlayer?.getCurrentTime() > 3) {
+            if (!this.ytPlayer) return;
+            const cur = this.ytPlayer.getCurrentTime();
+            if (cur > 3) {
                 this.ytPlayer.seekTo(0, true);
+                return;
+            }
+            
+            // Si on est dans la playlist principale (pas dans la queue)
+            if (MuseSound.state.playingQueueIndex < 0 && MuseSound.state.currentPlaylist.length > 0) {
+                let prevIndex = MuseSound.state.currentIndex - 1;
+                if (MuseSound.state.shuffle && MuseSound.state.shuffleHistory.length > 0) {
+                    prevIndex = MuseSound.state.shuffleHistory.pop();
+                }
+                if (prevIndex < 0) {
+                    if (MuseSound.state.repeat === 'all') prevIndex = MuseSound.state.currentPlaylist.length - 1;
+                    else prevIndex = 0;
+                }
+                this.playTrack(prevIndex);
             }
         },
 
@@ -475,6 +495,19 @@ const MuseSound = {
             // Handle suggestions closure
             document.addEventListener('click', (e) => {
                 if (!e.target.closest('#playlist-url')) this.hideSuggestions();
+            });
+
+            // Resume Banner Listeners
+            document.getElementById('btn-resume-ignore')?.addEventListener('click', () => this.hideResumeBanner());
+            document.getElementById('btn-resume-play')?.addEventListener('click', () => {
+                const index = parseInt(localStorage.getItem('MS_LAST_INDEX'));
+                const pos = parseFloat(localStorage.getItem('MS_LAST_POS'));
+                const isQueue = localStorage.getItem('MS_LAST_IS_QUEUE') === 'true';
+                this.hideResumeBanner();
+                if (!isNaN(index) && index >= 0) {
+                    if (isQueue) MuseSound.player.playQueueTrack(index, pos);
+                    else MuseSound.player.playTrack(index, pos);
+                }
             });
 
             this.initStaticControls();
@@ -748,10 +781,20 @@ const MuseSound = {
             }
         },
         checkResumeState() {
-            const i = parseInt(localStorage.getItem('MS_LAST_INDEX')), p = parseFloat(localStorage.getItem('MS_LAST_POS')), pl = MuseSound.state.currentPlaylist;
-            if (!isNaN(i) && i >= 0 && i < pl.length && p > 10) {
-                const t = pl[i], b = document.getElementById('resume-banner'), tt = document.getElementById('resume-track-title');
-                if (b && tt) { tt.textContent = `${t.title} (${this.formatTime(p)})`; b.classList.remove('hidden'); setTimeout(() => b.classList.add('visible'), 100); }
+            const i = parseInt(localStorage.getItem('MS_LAST_INDEX'));
+            const p = parseFloat(localStorage.getItem('MS_LAST_POS'));
+            const isQueue = localStorage.getItem('MS_LAST_IS_QUEUE') === 'true';
+            
+            const list = isQueue ? MuseSound.state.queue : MuseSound.state.currentPlaylist;
+
+            if (!isNaN(i) && i >= 0 && i < list.length && p > 10) {
+                const t = list[i];
+                const b = document.getElementById('resume-banner'), tt = document.getElementById('resume-track-title');
+                if (b && tt) { 
+                    tt.textContent = `${t.title} (${this.formatTime(p)})`; 
+                    b.classList.remove('hidden'); 
+                    setTimeout(() => b.classList.add('visible'), 100); 
+                }
             }
         },
         hideResumeBanner() {
