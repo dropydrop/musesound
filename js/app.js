@@ -296,8 +296,16 @@ const MuseSound = {
         },
 
         handleError(error) {
-            MuseSound.showToast("Piste indisponible, passage à la suivante...");
-            setTimeout(() => this.next(true), 2000);
+            console.error("YouTube Player error:", error);
+            MuseSound.ui.setLoading(false);
+            
+            // Notification discrète
+            MuseSound.showToast("Morceau non disponible, passage au suivant...");
+            
+            // Passage immédiat au suivant après un très court délai visuel
+            setTimeout(() => {
+                this.next(true);
+            }, 1500);
         },
 
         startProgressTracking() {
