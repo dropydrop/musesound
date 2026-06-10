@@ -52,22 +52,12 @@ const MuseSound = {
     },
 
     importer: {
-        extractId(url) {
-            const plRegex = /[&?]list=([^&]+)/;
-            const videoRegex = /(?:youtube\.com\/(?:[^\/]+\/.+\/|(?:v|e(?:mbed)?)\/|.*[?&]v=)|youtu\.be\/)([^"&?\/ ]{11})/;
-            
-            const plMatch = url.match(plRegex);
-            if (plMatch) return { id: plMatch[1], type: 'playlist' };
-
-            const videoMatch = url.match(videoRegex);
-            if (videoMatch) return { id: videoMatch[1], type: 'video' };
-
-            return null;
-        },
-
         async processInput(input) {
             const cleanInput = input.trim();
             if (!cleanInput) return;
+
+            // 1. Normalisation YouTube Music -> YouTube
+            const normalizedInput = cleanInput.replace("music.youtube.com", "www.youtube.com");
 
             if (MuseSound.YOUTUBE_API_KEY === 'VOTRE_CLE_API_ICI') {
                 alert("🔑 Clé API YouTube manquante.\n\nObtenez-en une gratuite sur :\nhttps://console.cloud.google.com/apis/credentials\n\nActivez YouTube Data API v3, puis copiez la clé dans le code.");
@@ -76,25 +66,44 @@ const MuseSound = {
             }
 
             MuseSound.ui.setLoading(true);
-            const target = this.extractId(cleanInput);
-
+            
             try {
                 let success = false;
                 
-                if (target && target.type === 'playlist') {
-                    success = await this.fetchPlaylist(target.id);
-                } else if (target && target.type === 'video') {
-                    success = await this.fetchSingleVideo(target.id);
-                } else {
+                // 2. Étape 1 : Priorité absolue à la PLAYLIST (si 'list=' est présent)
+                if (normalizedInput.includes("list=")) {
+                    try {
+                        const urlObj = new URL(normalizedInput.includes('http') ? normalizedInput : `https://${normalizedInput}`);
+                        const playlistId = urlObj.searchParams.get("list");
+                        if (playlistId) {
+                            success = await this.fetchPlaylist(playlistId);
+                        }
+                    } catch (e) {
+                        // Si URL malformée, on tente une regex manuelle pour l'ID de liste
+                        const listMatch = normalizedInput.match(/[?&]list=([^#&?]+)/);
+                        if (listMatch) success = await this.fetchPlaylist(listMatch[1]);
+                    }
+                } 
+                
+                // 3. Étape 2 : Sinon Vidéo unique (youtube.com, youtu.be, shorts)
+                if (!success && (normalizedInput.includes("youtube.com") || normalizedInput.includes("youtu.be"))) {
+                    const videoIdRegex = /(?:v=|\/v\/|embed\/|shorts\/|youtu\.be\/|\/watch\?v=)([^#&?]{11})/;
+                    const match = normalizedInput.match(videoIdRegex);
+                    if (match && match[1]) {
+                        success = await this.fetchSingleVideo(match[1]);
+                    }
+                }
+
+                // 4. Étape 3 : Sinon Recherche textuelle brute
+                if (!success) {
                     success = await this.searchTracks(cleanInput);
                 }
 
-                if (!success) {
-                    alert("Aucun résultat trouvé.");
-                }
+                if (!success) alert("Aucun résultat trouvé.");
             } catch (error) {
-                console.error("Erreur API YouTube:", error);
-                alert("Erreur lors de l'import. Vérifiez votre clé API.");
+                console.error("Erreur Importer:", error);
+                // Dernier recours : recherche brute si le parsing a crashé
+                await this.searchTracks(cleanInput);
             }
 
             MuseSound.ui.setLoading(false);
@@ -299,8 +308,8 @@ const MuseSound = {
                             });
                         }
 
-                        // DJ Crossfade (Fade-out 3s avant la fin)
-                        if (duration - currentTime <= 3 && !this.isFadingOut) {
+                        // DJ Crossfade (Fade-out 5s avant la fin)
+                        if (duration - currentTime <= 5 && !this.isFadingOut) {
                             this.isFadingOut = true;
                             let currentVol = MuseSound.state.volume;
                             const fadeInterval = setInterval(() => {
@@ -319,7 +328,7 @@ const MuseSound = {
                         }
 
                         // Réinitialiser le flag de fade si on change de morceau ou seek back
-                        if (duration - currentTime > 4) {
+                        if (duration - currentTime > 6) {
                             this.isFadingOut = false;
                         }
 
