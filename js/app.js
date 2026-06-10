@@ -545,40 +545,29 @@ const MuseSound = {
             }
 
             container.innerHTML = MuseSound.state.currentPlaylist.map((t, i) => `
-                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group">
-                    <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover" onclick="MuseSound.player.playQueueTrack(MuseSound.state.queue.push(${this.safeString(t)}) - 1); MuseSound.state.uiMode='queue'; MuseSound.ui.syncTabs();">
-                    <div class="flex-1 min-w-0" onclick="MuseSound.player.addToQueue(${this.safeString(t)})">
+                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group" 
+                     draggable="true" 
+                     ondragstart="MuseSound.ui.handleDragStart(event, ${i}, 'playlist')" 
+                     ondragover="MuseSound.ui.handleDragOver(event)" 
+                     ondrop="MuseSound.ui.handleDrop(event, ${i}, 'playlist')">
+                    
+                    <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover" 
+                         onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
+                    
+                    <div class="flex-1 min-w-0" onclick="MuseSound.ui.playResultNow(${i})">
                         <div class="font-medium truncate">${this.escapeHtml(t.title)}</div>
                         <div class="text-xs text-on-surface-variant truncate">${this.escapeHtml(t.author)} • ${this.formatViews(t.views)} écoutes</div>
                     </div>
+
                     <div class="flex items-center gap-1">
-                        <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='MuseSound.importer.fetchRadio(${this.safeString(t)})'>
+                        <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" 
+                                onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.currentPlaylist[${i}])'>
                             <span class="material-symbols-outlined text-primary">radio</span>
                         </button>
-                        <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.player.addToQueue(${this.safeString(t)})'>
+                        <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" 
+                                onclick='event.stopPropagation(); MuseSound.player.addToQueue(MuseSound.state.currentPlaylist[${i}])'>
                             <span class="material-symbols-outlined text-primary">playlist_add</span>
                         </button>
-                    </div>
-                </div>
-            `).join('');
-        },
-
-        renderPlaylistsResults() {
-            const container = document.getElementById('playlists-results');
-            if (!container) return;
-            if (MuseSound.state.foundPlaylists.length === 0) {
-                container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">featured_play_list</span><p>Aucune playlist trouvée.</p></div>`;
-                return;
-            }
-            container.innerHTML = MuseSound.state.foundPlaylists.map(pl => `
-                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
-                    <div class="relative">
-                        <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
-                        <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
-                    </div>
-                    <div class="flex-1 min-w-0">
-                        <div class="font-bold truncate">${this.escapeHtml(pl.title)}</div>
-                        <div class="text-xs text-primary">${this.escapeHtml(pl.author)}</div>
                     </div>
                 </div>
             `).join('');
@@ -598,22 +587,46 @@ const MuseSound = {
             }
 
             list.innerHTML = MuseSound.state.queue.map((t, i) => `
-                <div class="flex items-center gap-3 p-3 rounded-lg transition-colors ${i === MuseSound.state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}">
-                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover ${i === MuseSound.state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
+                <div class="flex items-center gap-3 p-3 rounded-lg transition-colors ${i === MuseSound.state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
+                     draggable="true" 
+                     ondragstart="MuseSound.ui.handleDragStart(event, ${i}, 'queue')" 
+                     ondragover="MuseSound.ui.handleDragOver(event)" 
+                     ondrop="MuseSound.ui.handleDrop(event, ${i}, 'queue')">
+                    
+                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover ${i === MuseSound.state.playingQueueIndex ? 'animate-pulse' : ''}" 
+                         onclick="MuseSound.player.playQueueTrack(${i})">
+                    
                     <div class="flex-1 min-w-0" onclick="MuseSound.player.playQueueTrack(${i})">
                         <div class="text-sm font-medium truncate ${i === MuseSound.state.playingQueueIndex ? 'text-primary' : ''}">${this.escapeHtml(t.title)}</div>
                         <div class="text-[10px] text-on-surface-variant truncate">${this.escapeHtml(t.author)}</div>
                     </div>
                     <div class="flex items-center">
-                        <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='MuseSound.importer.fetchRadio(${this.safeString(t)})'>
+                        <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" 
+                                onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.queue[${i}])'>
                             <span class="material-symbols-outlined text-sm">radio</span>
                         </button>
-                        <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick="MuseSound.player.removeFromQueue(${i})">
+                        <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" 
+                                onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
                             <span class="material-symbols-outlined text-sm">close</span>
                         </button>
                     </div>
                 </div>
             `).join('');
+        },
+
+        playResultNow(index) {
+            const track = MuseSound.state.currentPlaylist[index];
+            if (!track) return;
+            // On l'ajoute à la queue (si elle est vide, on l'injecte, sinon on l'ajoute à la fin)
+            // Mais pour une lecture "Maintenant", on veut souvent que ce soit prioritaire.
+            // On va l'insérer juste après le morceau actuel si on écoute déjà quelque chose
+            const insertPos = MuseSound.state.playingQueueIndex >= 0 ? MuseSound.state.playingQueueIndex + 1 : 0;
+            MuseSound.state.queue.splice(insertPos, 0, track);
+            
+            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+            MuseSound.state.uiMode = 'queue';
+            this.syncTabs();
+            MuseSound.player.playQueueTrack(insertPos);
         },
 
         initStaticControls() {
