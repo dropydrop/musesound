@@ -23,7 +23,11 @@ const MuseSound = {
         queue: JSON.parse(localStorage.getItem('MS_QUEUE')) || [],
         debounceTimer: null,
         isFadingOut: false,
-        keepAliveAudio: null
+        keepAliveAudio: null,
+        draggedIndex: -1,
+        draggedType: null, // 'playlist' or 'queue'
+        dragTimer: null,
+        startY: 0
     },
 
     init() {
@@ -683,13 +687,12 @@ const MuseSound = {
             }
 
             container.innerHTML = MuseSound.state.currentPlaylist.map((t, i) => `
-                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group" 
-                     draggable="true" 
-                     ondragstart="MuseSound.ui.handleDragStart(event, ${i}, 'playlist')" 
-                     ondragover="MuseSound.ui.handleDragOver(event)" 
-                     ondrop="MuseSound.ui.handleDrop(event, ${i}, 'playlist')">
+                <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-all select-none" 
+                     onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'playlist')" 
+                     onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'playlist')"
+                     onpointermove="MuseSound.ui.handlePointerMove(event)">
                     
-                    <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover" 
+                    <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover pointer-events-none" 
                          onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
                     
                     <div class="flex-1 min-w-0" onclick="MuseSound.ui.playResultNow(${i})">
@@ -725,13 +728,12 @@ const MuseSound = {
             }
 
             list.innerHTML = MuseSound.state.queue.map((t, i) => `
-                <div class="flex items-center gap-3 p-3 rounded-lg transition-colors ${i === MuseSound.state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
-                     draggable="true" 
-                     ondragstart="MuseSound.ui.handleDragStart(event, ${i}, 'queue')" 
-                     ondragover="MuseSound.ui.handleDragOver(event)" 
-                     ondrop="MuseSound.ui.handleDrop(event, ${i}, 'queue')">
+                <div class="flex items-center gap-3 p-3 rounded-lg transition-all select-none ${i === MuseSound.state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
+                     onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'queue')" 
+                     onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'queue')"
+                     onpointermove="MuseSound.ui.handlePointerMove(event)">
                     
-                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover ${i === MuseSound.state.playingQueueIndex ? 'animate-pulse' : ''}" 
+                    <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover pointer-events-none ${i === MuseSound.state.playingQueueIndex ? 'animate-pulse' : ''}" 
                          onclick="MuseSound.player.playQueueTrack(${i})">
                     
                     <div class="flex-1 min-w-0" onclick="MuseSound.player.playQueueTrack(${i})">
@@ -750,6 +752,71 @@ const MuseSound = {
                     </div>
                 </div>
             `).join('');
+        },
+
+        handlePointerDown(e, index, type) {
+            // Uniquement clic gauche ou touché
+            if (e.button !== 0 && e.pointerType === 'mouse') return;
+            
+            // On évite de drag si on clique sur un bouton
+            if (e.target.closest('button')) return;
+
+            MuseSound.state.draggedIndex = index;
+            MuseSound.state.draggedType = type;
+            MuseSound.state.startY = e.clientY;
+            
+            // Timer long-press 500ms
+            MuseSound.state.dragTimer = setTimeout(() => {
+                const el = e.currentTarget;
+                el.classList.add('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1');
+                document.body.style.cursor = 'grabbing';
+                MuseSound.showToast("Déplacement activé");
+            }, 500);
+        },
+
+        handlePointerMove(e) {
+            // Si on bouge trop pendant le timer (plus de 10px), on annule (c'est un scroll)
+            if (MuseSound.state.dragTimer && !document.body.style.cursor) {
+                if (Math.abs(e.clientY - MuseSound.state.startY) > 10) {
+                    clearTimeout(MuseSound.state.dragTimer);
+                    MuseSound.state.dragTimer = null;
+                }
+            }
+        },
+
+        handlePointerUp(e, toIndex, type) {
+            clearTimeout(MuseSound.state.dragTimer);
+            MuseSound.state.dragTimer = null;
+            
+            const fromIndex = MuseSound.state.draggedIndex;
+            const fromType = MuseSound.state.draggedType;
+
+            document.body.style.cursor = '';
+            
+            if (fromIndex !== -1 && fromIndex !== toIndex && fromType === type) {
+                const list = type === 'playlist' ? MuseSound.state.currentPlaylist : MuseSound.state.queue;
+                const [movedItem] = list.splice(fromIndex, 1);
+                list.splice(toIndex, 0, movedItem);
+
+                if (type === 'playlist') {
+                    // Maj Index
+                    if (MuseSound.state.currentIndex === fromIndex) MuseSound.state.currentIndex = toIndex;
+                    else if (fromIndex < MuseSound.state.currentIndex && toIndex >= MuseSound.state.currentIndex) MuseSound.state.currentIndex--;
+                    else if (fromIndex > MuseSound.state.currentIndex && toIndex <= MuseSound.state.currentIndex) MuseSound.state.currentIndex++;
+                    localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(list));
+                    this.renderPlaylist();
+                } else {
+                    // Maj Index Queue
+                    if (MuseSound.state.playingQueueIndex === fromIndex) MuseSound.state.playingQueueIndex = toIndex;
+                    else if (fromIndex < MuseSound.state.playingQueueIndex && toIndex >= MuseSound.state.playingQueueIndex) MuseSound.state.playingQueueIndex--;
+                    else if (fromIndex > MuseSound.state.playingQueueIndex && toIndex <= MuseSound.state.playingQueueIndex) MuseSound.state.playingQueueIndex++;
+                    localStorage.setItem('MS_QUEUE', JSON.stringify(list));
+                    this.renderQueue();
+                }
+            }
+            
+            MuseSound.state.draggedIndex = -1;
+            MuseSound.state.draggedType = null;
         },
 
         playResultNow(index) {

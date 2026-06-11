@@ -195,6 +195,13 @@
             transform: translateY(0);
         }
 
+        /* Touch adjustments */
+        #playlist-container > div,
+        #queue-list > div {
+            touch-action: none;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         /* Landscape Mobile Optimization */
         @media (max-height: 500px) and (orientation: landscape) {
             body.is-cinema-mode footer {
