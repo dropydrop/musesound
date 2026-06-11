@@ -418,6 +418,14 @@ const MuseSound = {
             });
         },
 
+        addToQueue(track) {
+            if (!track) return;
+            MuseSound.state.queue.push(track);
+            localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+            MuseSound.ui.renderQueue();
+            MuseSound.showToast("Ajouté à la file d'attente");
+        },
+
         next(forceNext = false) {
             if (MuseSound.state.playingQueueIndex >= 0) {
                 MuseSound.state.queue.splice(MuseSound.state.playingQueueIndex, 1);
