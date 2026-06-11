@@ -27,7 +27,12 @@ const MuseSound = {
         draggedIndex: -1,
         draggedType: null, // 'playlist' or 'queue'
         dragTimer: null,
-        startY: 0
+        startY: 0,
+        // Pagination
+        nextPageTokenTracks: null,
+        nextPageTokenPlaylists: null,
+        lastSearchQuery: null,
+        isFetchingMore: false
     },
 
     init() {
@@ -125,49 +130,110 @@ const MuseSound = {
             };
         },
 
-        async searchTracks(query) {
-            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&type=video&q=${encodeURIComponent(query)}&key=${MuseSound.YOUTUBE_API_KEY}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            if (!data.items?.length) return false;
+        async searchTracks(query, isMore = false) {
+            if (!isMore) {
+                MuseSound.state.lastSearchQuery = query;
+                MuseSound.state.nextPageTokenTracks = null;
+            } else if (!MuseSound.state.nextPageTokenTracks) return false;
 
-            const tracks = data.items.map(item => ({
-                id: item.id.videoId,
-                title: item.snippet.title,
-                author: item.snippet.channelTitle,
-                thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-                duration: 0,
-                views: 0
-            }));
+            const tokenParam = MuseSound.state.nextPageTokenTracks ? `&pageToken=${MuseSound.state.nextPageTokenTracks}` : "";
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&type=video&q=${encodeURIComponent(query)}${tokenParam}&key=${MuseSound.YOUTUBE_API_KEY}`;
 
-            const enrichedTracks = await this.enrichTracksData(tracks);
-            MuseSound.state.currentPlaylist = enrichedTracks;
-            localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(enrichedTracks));
-            
-            if (MuseSound.state.queue.length === 0) {
-                MuseSound.state.queue = [...enrichedTracks];
-                localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
-                if (!MuseSound.player.ytActive) MuseSound.player.playQueueTrack(0);
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (!data.items?.length) return false;
+
+                MuseSound.state.nextPageTokenTracks = data.nextPageToken || null;
+
+                const tracks = data.items.map(item => ({
+                    id: item.id.videoId,
+                    title: item.snippet.title,
+                    author: item.snippet.channelTitle,
+                    thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+                    duration: 0,
+                    views: 0
+                }));
+
+                const enrichedTracks = await this.enrichTracksData(tracks);
+
+                if (isMore) {
+                    MuseSound.state.currentPlaylist = [...MuseSound.state.currentPlaylist, ...enrichedTracks];
+                } else {
+                    MuseSound.state.currentPlaylist = enrichedTracks;
+                    localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(enrichedTracks));
+
+                    if (MuseSound.state.queue.length === 0) {
+                        MuseSound.state.queue = [...enrichedTracks];
+                        localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+                        if (!MuseSound.player.ytActive) MuseSound.player.playQueueTrack(0);
+                    }
+                }
+
+                MuseSound.ui.renderPlaylist();
+                return true;
+            } catch (e) {
+                console.error("Search Tracks Error:", e);
+                return false;
             }
-            
-            MuseSound.ui.renderPlaylist();
-            return true;
         },
 
-        async searchPlaylists(query) {
-            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&type=playlist&q=${encodeURIComponent(query)}&key=${MuseSound.YOUTUBE_API_KEY}`;
-            const response = await fetch(url);
-            const data = await response.json();
-            if (!data.items?.length) return false;
+        async searchPlaylists(query, isMore = false) {
+            if (!isMore) {
+                MuseSound.state.lastSearchQuery = query;
+                MuseSound.state.nextPageTokenPlaylists = null;
+            } else if (!MuseSound.state.nextPageTokenPlaylists) return false;
 
-            MuseSound.state.foundPlaylists = data.items.map(item => ({
-                id: item.id.playlistId,
-                title: item.snippet.title,
-                author: item.snippet.channelTitle,
-                thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url
-            }));
-            MuseSound.ui.renderPlaylistsResults();
-            return true;
+            const tokenParam = MuseSound.state.nextPageTokenPlaylists ? `&pageToken=${MuseSound.state.nextPageTokenPlaylists}` : "";
+            const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=15&type=playlist&q=${encodeURIComponent(query)}${tokenParam}&key=${MuseSound.YOUTUBE_API_KEY}`;
+
+            try {
+                const response = await fetch(url);
+                const data = await response.json();
+                if (!data.items?.length) return false;
+
+                MuseSound.state.nextPageTokenPlaylists = data.nextPageToken || null;
+
+                const newPlaylists = data.items.map(item => ({
+                    id: item.id.playlistId,
+                    title: item.snippet.title,
+                    author: item.snippet.channelTitle,
+                    thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url
+                }));
+
+                if (isMore) {
+                    MuseSound.state.foundPlaylists = [...MuseSound.state.foundPlaylists, ...newPlaylists];
+                } else {
+                    MuseSound.state.foundPlaylists = newPlaylists;
+                }
+
+                MuseSound.ui.renderPlaylistsResults();
+                return true;
+            } catch (e) {
+                console.error("Search Playlists Error:", e);
+                return false;
+            }
+        },
+
+        async fetchMore() {
+            if (MuseSound.state.isFetchingMore || !MuseSound.state.lastSearchQuery) return;
+
+            const mode = MuseSound.state.uiMode;
+            if (mode !== 'playlist' && mode !== 'playlists') return;
+
+            MuseSound.state.isFetchingMore = true;
+            
+            // Force render pour afficher le spinner
+            if (mode === 'playlist') MuseSound.ui.renderPlaylist();
+            else MuseSound.ui.renderPlaylistsResults();
+
+            if (mode === 'playlist') {
+                await this.searchTracks(MuseSound.state.lastSearchQuery, true);
+            } else {
+                await this.searchPlaylists(MuseSound.state.lastSearchQuery, true);
+            }
+
+            MuseSound.state.isFetchingMore = false;
         },
 
         async fetchPlaylist(playlistId, isQuiet = false) {
@@ -686,7 +752,7 @@ const MuseSound = {
                 return;
             }
 
-            container.innerHTML = MuseSound.state.currentPlaylist.map((t, i) => `
+            let html = MuseSound.state.currentPlaylist.map((t, i) => `
                 <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-all select-none" 
                      onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'playlist')" 
                      onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'playlist')"
@@ -712,6 +778,12 @@ const MuseSound = {
                     </div>
                 </div>
             `).join('');
+
+            if (MuseSound.state.isFetchingMore) {
+                html += `<div class="flex justify-center p-6"><span class="animate-spin material-symbols-outlined text-primary">sync</span></div>`;
+            }
+
+            container.innerHTML = html;
         },
 
         renderQueue() {
@@ -841,7 +913,7 @@ const MuseSound = {
                 container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">featured_play_list</span><p>Aucune playlist trouvée.</p></div>`;
                 return;
             }
-            container.innerHTML = MuseSound.state.foundPlaylists.map(pl => `
+            let html = MuseSound.state.foundPlaylists.map(pl => `
                 <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
                     <div class="relative">
                         <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
@@ -853,6 +925,12 @@ const MuseSound = {
                     </div>
                 </div>
             `).join('');
+
+            if (MuseSound.state.isFetchingMore) {
+                html += `<div class="flex justify-center p-6"><span class="animate-spin material-symbols-outlined text-primary">sync</span></div>`;
+            }
+
+            container.innerHTML = html;
         },
 
         initStaticControls() {
@@ -906,6 +984,13 @@ const MuseSound = {
             // Fullscreen
             document.getElementById('fullscreen-btn')?.addEventListener('click', () => this.toggleFullscreen());
 
+            // Infinite Scroll
+            const trackContainer = document.getElementById('playlist-container');
+            const plContainer = document.getElementById('playlists-results');
+            
+            trackContainer?.addEventListener('scroll', () => this.handleScroll(trackContainer));
+            plContainer?.addEventListener('scroll', () => this.handleScroll(plContainer));
+
             // Volume
             const volSlider = document.getElementById('volume-slider');
             if (volSlider) {
@@ -919,6 +1004,14 @@ const MuseSound = {
             this.updateShuffleRepeatUI();
             this.updateVolumeUI();
             this.updateEcoUI();
+        },
+
+        handleScroll(el) {
+            if (MuseSound.state.isFetchingMore) return;
+            if (el.scrollTop + el.clientHeight >= el.scrollHeight - 150) {
+                const hasMore = MuseSound.state.uiMode === 'playlist' ? MuseSound.state.nextPageTokenTracks : MuseSound.state.nextPageTokenPlaylists;
+                if (hasMore) MuseSound.importer.fetchMore();
+            }
         },
 
         updateStats(list) {
