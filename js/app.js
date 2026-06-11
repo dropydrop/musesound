@@ -377,25 +377,45 @@ const MuseSound = {
                 suggestedQuality: MuseSound.state.ecoMode ? 'tiny' : 'hd720'
             });
 
+            // Update metadata early for responsive UI
+            this.updateMediaSession(track);
+
             setTimeout(() => {
-                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') this.ytPlayer.playVideo();
+                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                    this.ytPlayer.playVideo();
+                    if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+                }
             }, 150);
             
             MuseSound.ui.updateNowPlaying(track);
-            this.updateMediaSession(track);
             MuseSound.ui.setLoading(false);
         },
 
         updateMediaSession(track) {
-            if (!('mediaSession' in navigator)) return;
+            if (!('mediaSession' in navigator) || !track) return;
+
+            // Nettoyage et Initialisation
             navigator.mediaSession.metadata = new MediaMetadata({
-                title: track.title, artist: track.author, album: 'MuseSound',
-                artwork: [{ src: track.thumbnail, sizes: '512x512', type: 'image/jpeg' }]
+                title: track.title || 'Sans titre',
+                artist: track.author || 'Artiste inconnu',
+                album: 'MuseSound',
+                artwork: [
+                    { src: track.thumbnail, sizes: '96x96', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '128x128', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '192x192', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '256x256', type: 'image/jpeg' },
+                    { src: track.thumbnail, sizes: '512x512', type: 'image/jpeg' }
+                ]
             });
+
+            // Action Handlers
             navigator.mediaSession.setActionHandler('play', () => this.toggle());
             navigator.mediaSession.setActionHandler('pause', () => this.toggle());
             navigator.mediaSession.setActionHandler('previoustrack', () => this.prev());
             navigator.mediaSession.setActionHandler('nexttrack', () => this.next(true));
+            navigator.mediaSession.setActionHandler('stop', () => {
+                if (this.ytPlayer && this.ytActive) this.ytPlayer.pauseVideo();
+            });
         },
 
         next(forceNext = false) {
@@ -438,8 +458,13 @@ const MuseSound = {
         toggle() {
             if (!this.ytPlayer) return;
             const s = this.ytPlayer.getPlayerState();
-            if (s === 1) this.ytPlayer.pauseVideo();
-            else this.ytPlayer.playVideo();
+            if (s === 1) {
+                this.ytPlayer.pauseVideo();
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
+            } else {
+                this.ytPlayer.playVideo();
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+            }
         },
 
         removeFromQueue(index) {
@@ -756,9 +781,30 @@ const MuseSound = {
         },
 
         initStaticControls() {
+            // Playback Buttons
             document.getElementById('play-pause-btn')?.addEventListener('click', () => MuseSound.player.toggle());
             document.getElementById('next-btn')?.addEventListener('click', () => MuseSound.player.next(true));
             document.getElementById('prev-btn')?.addEventListener('click', () => MuseSound.player.prev());
+
+            // Progress Bar (Click to Seek)
+            const progressContainer = document.getElementById('progress-container');
+            if (progressContainer) {
+                progressContainer.addEventListener('click', (e) => {
+                    if (!MuseSound.player.ytActive || !MuseSound.player.ytPlayer) return;
+                    
+                    const rect = progressContainer.getBoundingClientRect();
+                    const clickX = e.clientX - rect.left;
+                    const width = rect.width;
+                    const percent = clickX / width;
+                    const duration = MuseSound.player.ytPlayer.getDuration();
+                    
+                    if (duration && !isNaN(duration)) {
+                        const seekTime = percent * duration;
+                        MuseSound.player.ytPlayer.seekTo(seekTime, true);
+                    }
+                });
+            }
+
             document.getElementById('shuffle-btn')?.addEventListener('click', () => { MuseSound.state.shuffle = !MuseSound.state.shuffle; localStorage.setItem('MS_SHUFFLE', MuseSound.state.shuffle); this.updateShuffleRepeatUI(); });
             document.getElementById('repeat-btn')?.addEventListener('click', () => {
                 const modes = ['none', 'all', 'one'];
