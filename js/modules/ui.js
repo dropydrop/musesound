@@ -298,46 +298,96 @@ export const ui = {
     handlePointerDown(e, index, type) {
         if (e.button !== 0 && e.pointerType === 'mouse') return;
         if (e.target.closest('button')) return;
+        
         state.draggedIndex = index;
         state.draggedType = type;
         state.startY = e.clientY;
+        const currentEl = e.currentTarget;
+        
         state.dragTimer = setTimeout(() => {
-            e.currentTarget.classList.add('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1');
+            currentEl.classList.add('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1');
             document.body.style.cursor = 'grabbing';
             utils.showToast("Déplacement activé");
+            
+            // On capture le pointeur pour continuer à recevoir les événements
+            currentEl.setPointerCapture(e.pointerId);
         }, 500);
     },
 
     handlePointerMove(e) {
         if (state.dragTimer && !document.body.style.cursor) {
-            if (Math.abs(e.clientY - state.startY) > 10) { clearTimeout(state.dragTimer); state.dragTimer = null; }
+            if (Math.abs(e.clientY - state.startY) > 10) { 
+                clearTimeout(state.dragTimer); 
+                state.dragTimer = null; 
+            }
+        }
+
+        if (document.body.style.cursor === 'grabbing') {
+            // Empêcher le scroll par défaut
+            e.preventDefault();
+            
+            // Trouver l'élément sous le doigt/souris
+            const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('[onpointerdown]');
+            
+            // Nettoyage
+            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+            
+            if (target && target.getAttribute('onpointerdown').includes(state.draggedType)) {
+                target.classList.add('drag-over', 'border-t-2', 'border-primary');
+            }
         }
     },
 
     handlePointerUp(e, toIndex, type) {
-        clearTimeout(state.dragTimer); state.dragTimer = null;
+        clearTimeout(state.dragTimer);
+        state.dragTimer = null;
+        
         const fromIndex = state.draggedIndex;
         const fromType = state.draggedType;
+        
         document.body.style.cursor = '';
-        if (fromIndex !== -1 && fromIndex !== toIndex && fromType === type) {
+        
+        // Nettoyage visuel
+        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+        
+        // On relâche la capture
+        try { e.currentTarget.releasePointerCapture(e.pointerId); } catch(err) {}
+        
+        const currentEl = e.currentTarget;
+        currentEl.classList.remove('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1');
+
+        // On détermine le vrai index de destination basé sur l'élément survolé au relâchement
+        const dropTarget = document.elementFromPoint(e.clientX, e.clientY)?.closest('[onpointerdown]');
+        let finalToIndex = toIndex;
+        
+        if (dropTarget && dropTarget.getAttribute('onpointerdown').includes(fromType)) {
+            // On extrait l'index depuis l'attribut data-index ou on le cherche dans le DOM
+            const match = dropTarget.getAttribute('onpointerdown').match(/event,\s*(\d+)/);
+            if (match) finalToIndex = parseInt(match[1]);
+        }
+
+        if (fromIndex !== -1 && fromIndex !== finalToIndex && fromType === type) {
             const list = type === 'playlist' ? state.currentPlaylist : state.queue;
             const [movedItem] = list.splice(fromIndex, 1);
-            list.splice(toIndex, 0, movedItem);
+            list.splice(finalToIndex, 0, movedItem);
+            
             if (type === 'playlist') {
-                if (state.currentIndex === fromIndex) state.currentIndex = toIndex;
-                else if (fromIndex < state.currentIndex && toIndex >= state.currentIndex) state.currentIndex--;
-                else if (fromIndex > state.currentIndex && toIndex <= state.currentIndex) state.currentIndex++;
+                if (state.currentIndex === fromIndex) state.currentIndex = finalToIndex;
+                else if (fromIndex < state.currentIndex && finalToIndex >= state.currentIndex) state.currentIndex--;
+                else if (fromIndex > state.currentIndex && finalToIndex <= state.currentIndex) state.currentIndex++;
                 localStorage.setItem('MS_CURRENT_PLAYLIST', JSON.stringify(list));
                 this.renderPlaylist();
             } else {
-                if (state.playingQueueIndex === fromIndex) state.playingQueueIndex = toIndex;
-                else if (fromIndex < state.playingQueueIndex && toIndex >= state.playingQueueIndex) state.playingQueueIndex--;
-                else if (fromIndex > state.playingQueueIndex && toIndex <= state.playingQueueIndex) state.playingQueueIndex++;
+                if (state.playingQueueIndex === fromIndex) state.playingQueueIndex = finalToIndex;
+                else if (fromIndex < state.playingQueueIndex && finalToIndex >= state.playingQueueIndex) state.playingQueueIndex--;
+                else if (fromIndex > state.playingQueueIndex && finalToIndex <= state.playingQueueIndex) state.playingQueueIndex++;
                 localStorage.setItem('MS_QUEUE', JSON.stringify(list));
                 this.renderQueue();
             }
         }
-        state.draggedIndex = -1; state.draggedType = null;
+        
+        state.draggedIndex = -1;
+        state.draggedType = null;
     },
 
     updateStats(list) {
