@@ -455,6 +455,78 @@ const MuseSound = {
             MuseSound.state.playingQueueIndex = -1;
             localStorage.removeItem('MS_QUEUE');
             MuseSound.ui.renderQueue();
+            MuseSound.showToast("File d'attente vidée");
+            
+            // Retour automatique à la playlist si la queue est vide
+            setTimeout(() => {
+                MuseSound.state.uiMode = 'playlist';
+                MuseSound.ui.syncTabs();
+            }, 1000);
+        },
+
+        exportQueueToFile() {
+            if (MuseSound.state.queue.length === 0) {
+                MuseSound.showToast("La file d'attente est vide !");
+                return;
+            }
+
+            const data = {
+                version: 1,
+                exportedAt: new Date().toISOString(),
+                tracks: MuseSound.state.queue
+            };
+
+            const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            
+            const now = new Date();
+            const dateStr = now.toISOString().split('T')[0];
+            const timeStr = now.getHours().toString().padStart(2, '0') + '-' + now.getMinutes().toString().padStart(2, '0');
+            const filename = `musesound_playlist_${dateStr}_${timeStr}.json`;
+
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            a.click();
+            URL.revokeObjectURL(url);
+            MuseSound.showToast("Exportation réussie");
+        },
+
+        async importQueueFromFile(event) {
+            const file = event.target.files[0];
+            if (!file) return;
+
+            const reader = new FileReader();
+            reader.onload = async (e) => {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    if (!data.tracks || !Array.isArray(data.tracks)) {
+                        throw new Error("Format invalide");
+                    }
+
+                    // On remplace intégralement
+                    MuseSound.state.queue = data.tracks;
+                    localStorage.setItem('MS_QUEUE', JSON.stringify(MuseSound.state.queue));
+                    MuseSound.state.playingQueueIndex = -1;
+
+                    MuseSound.showToast(`File d'attente importée (${data.tracks.length} titres)`);
+                    
+                    // On bascule sur la vue queue
+                    MuseSound.state.uiMode = 'queue';
+                    MuseSound.ui.syncTabs();
+                    
+                    // Lecture automatique du premier titre
+                    if (data.tracks.length > 0) {
+                        this.playQueueTrack(0);
+                    }
+                } catch (err) {
+                    console.error("Erreur import:", err);
+                    MuseSound.showToast("Erreur : Fichier invalide");
+                }
+            };
+            reader.readAsText(file);
+            // Reset input
+            event.target.value = '';
         },
 
         setVolume(val) {
@@ -695,6 +767,14 @@ const MuseSound = {
                 this.updateShuffleRepeatUI();
             });
             document.getElementById('clear-queue-btn')?.addEventListener('click', () => MuseSound.player.clearQueue());
+
+            // Export / Import Queue
+            document.getElementById('export-queue-btn')?.addEventListener('click', () => MuseSound.player.exportQueueToFile());
+            document.getElementById('import-queue-btn')?.addEventListener('click', () => {
+                document.getElementById('queue-file-input')?.click();
+            });
+            document.getElementById('queue-file-input')?.addEventListener('change', (e) => MuseSound.player.importQueueFromFile(e));
+
             document.getElementById('eco-btn')?.addEventListener('click', () => {
                 MuseSound.state.ecoMode = !MuseSound.state.ecoMode;
                 localStorage.setItem('MS_ECO_MODE', MuseSound.state.ecoMode);
