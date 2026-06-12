@@ -302,14 +302,18 @@ export const ui = {
         state.draggedIndex = index;
         state.draggedType = type;
         state.startY = e.clientY;
+        state.lastX = e.clientX;
+        state.lastY = e.clientY;
         const currentEl = e.currentTarget;
         
         state.dragTimer = setTimeout(() => {
-            currentEl.classList.add('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1');
+            currentEl.classList.add('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1', 'is-dragging');
+            // Crucial: Rendre l'élément invisible aux événements pour détecter ce qu'il y a dessous
+            currentEl.style.pointerEvents = 'none';
             document.body.style.cursor = 'grabbing';
             utils.showToast("Déplacement activé");
             
-            // On capture le pointeur pour continuer à recevoir les événements
+            // On capture le pointeur sur l'élément (nécessaire pour le suivi hors zone)
             currentEl.setPointerCapture(e.pointerId);
         }, 500);
     },
@@ -323,17 +327,21 @@ export const ui = {
         }
 
         if (document.body.style.cursor === 'grabbing') {
-            // Empêcher le scroll par défaut
-            e.preventDefault();
-            
-            // Trouver l'élément sous le doigt/souris
+            state.lastX = e.clientX;
+            state.lastY = e.clientY;
+
+            // Trouver l'élément sous le doigt/souris (grâce au pointer-events: none sur le drag)
             const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('[onpointerdown]');
             
-            // Nettoyage
-            document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
+            // Nettoyage systématique des anciens highlights
+            document.querySelectorAll('.drag-over').forEach(el => {
+                el.classList.remove('drag-over', 'border-t-4', 'border-primary');
+            });
             
             if (target && target.getAttribute('onpointerdown').includes(state.draggedType)) {
-                target.classList.add('drag-over', 'border-t-2', 'border-primary');
+                if (target !== e.currentTarget) {
+                    target.classList.add('drag-over', 'border-t-4', 'border-primary');
+                }
             }
         }
     },
@@ -344,28 +352,30 @@ export const ui = {
         
         const fromIndex = state.draggedIndex;
         const fromType = state.draggedType;
+        const currentEl = e.currentTarget;
         
         document.body.style.cursor = '';
         
-        // Nettoyage visuel
-        document.querySelectorAll('.drag-over').forEach(el => el.classList.remove('drag-over', 'border-t-2', 'border-primary'));
-        
-        // On relâche la capture
-        try { e.currentTarget.releasePointerCapture(e.pointerId); } catch(err) {}
-        
-        const currentEl = e.currentTarget;
-        currentEl.classList.remove('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1');
+        // 1. Détection de la cible finale basée sur la dernière position connue
+        const dropTarget = document.elementFromPoint(state.lastX, state.lastY)?.closest('[onpointerdown]');
+        let finalToIndex = fromIndex; 
 
-        // On détermine le vrai index de destination basé sur l'élément survolé au relâchement
-        const dropTarget = document.elementFromPoint(e.clientX, e.clientY)?.closest('[onpointerdown]');
-        let finalToIndex = toIndex;
-        
         if (dropTarget && dropTarget.getAttribute('onpointerdown').includes(fromType)) {
-            // On extrait l'index depuis l'attribut data-index ou on le cherche dans le DOM
             const match = dropTarget.getAttribute('onpointerdown').match(/event,\s*(\d+)/);
             if (match) finalToIndex = parseInt(match[1]);
         }
 
+        // 2. Nettoyage visuel et restauration technique
+        document.querySelectorAll('.drag-over').forEach(el => {
+            el.classList.remove('drag-over', 'border-t-4', 'border-primary');
+        });
+        
+        currentEl.classList.remove('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1', 'is-dragging');
+        currentEl.style.pointerEvents = '';
+        
+        try { currentEl.releasePointerCapture(e.pointerId); } catch(err) {}
+
+        // 3. Exécution de la réorganisation
         if (fromIndex !== -1 && fromIndex !== finalToIndex && fromType === type) {
             const list = type === 'playlist' ? state.currentPlaylist : state.queue;
             const [movedItem] = list.splice(fromIndex, 1);

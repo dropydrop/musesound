@@ -23,6 +23,8 @@ export const state = {
     draggedType: null,
     dragTimer: null,
     startY: 0,
+    lastX: 0,
+    lastY: 0,
     nextPageTokenTracks: null,
     nextPageTokenPlaylists: null,
     lastSearchQuery: null,

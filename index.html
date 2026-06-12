@@ -200,6 +200,18 @@
         #queue-list > div {
             touch-action: pan-y;
             -webkit-tap-highlight-color: transparent;
+            transition: transform 0.2s ease, border 0.1s ease;
+        }
+
+        .drag-over {
+            border-top: 4px solid #4ade80 !important; /* text-primary color hex approx */
+            background: rgba(74, 222, 128, 0.05);
+            transform: translateY(4px);
+        }
+
+        .is-dragging {
+            opacity: 0.9;
+            pointer-events: none;
         }
 
         /* Landscape Mobile Optimization */
