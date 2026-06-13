@@ -257,6 +257,19 @@ export const ui = {
         list.innerHTML = state.queue.map((t, i) => `
             <div class="flex items-center gap-3 p-3 rounded-lg transition-all select-none ${i === state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
                  onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'queue')" onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'queue')" onpointermove="MuseSound.ui.handlePointerMove(event)">
+                
+                <!-- Mobile Reorder Arrows -->
+                <div class="mobile-reorder-btn flex-col gap-1 mr-1">
+                    <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                            onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
+                        <span class="material-symbols-outlined text-sm">keyboard_arrow_up</span>
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                            onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, 1)">
+                        <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+                    </button>
+                </div>
+
                 <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover pointer-events-none ${i === state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
                 <div class="flex-1 min-w-0" onclick="MuseSound.player.playQueueTrack(${i})">
                     <div class="text-sm font-medium truncate ${i === state.playingQueueIndex ? 'text-primary' : ''}">${utils.escapeHtml(t.title)}</div>
@@ -272,6 +285,28 @@ export const ui = {
                 </div>
             </div>
         `).join('');
+    },
+
+    moveQueueItem(index, direction) {
+        const newIndex = index + direction;
+        if (newIndex < 0 || newIndex >= state.queue.length) return;
+
+        // Permutation (swap)
+        const [item] = state.queue.splice(index, 1);
+        state.queue.splice(newIndex, 0, item);
+
+        // Maj de l'index de lecture
+        if (state.playingQueueIndex === index) {
+            state.playingQueueIndex = newIndex;
+        } else if (index < state.playingQueueIndex && newIndex >= state.playingQueueIndex) {
+            state.playingQueueIndex--;
+        } else if (index > state.playingQueueIndex && newIndex <= state.playingQueueIndex) {
+            state.playingQueueIndex++;
+        }
+
+        localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+        this.renderQueue();
+        utils.showToast(direction < 0 ? "Déplacé vers le haut" : "Déplacé vers le bas");
     },
 
     playResultNow(index) {
@@ -296,6 +331,9 @@ export const ui = {
     },
 
     handlePointerDown(e, index, type) {
+        // Abandon du drag-and-drop sur mobile (touch)
+        if (e.pointerType === 'touch') return;
+        
         if (e.button !== 0 && e.pointerType === 'mouse') return;
         if (e.target.closest('button')) return;
         
@@ -308,12 +346,9 @@ export const ui = {
         
         state.dragTimer = setTimeout(() => {
             currentEl.classList.add('scale-105', 'shadow-2xl', 'z-50', 'bg-surface-container-highest', 'rotate-1', 'is-dragging');
-            // Crucial: Rendre l'élément invisible aux événements pour détecter ce qu'il y a dessous
             currentEl.style.pointerEvents = 'none';
             document.body.style.cursor = 'grabbing';
             utils.showToast("Déplacement activé");
-            
-            // On capture le pointeur sur l'élément (nécessaire pour le suivi hors zone)
             currentEl.setPointerCapture(e.pointerId);
         }, 500);
     },

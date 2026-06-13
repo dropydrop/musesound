@@ -214,6 +214,17 @@
             pointer-events: none;
         }
 
+        /* Mobile Reorder Buttons */
+        .mobile-reorder-btn {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .mobile-reorder-btn {
+                display: flex;
+            }
+        }
+
         /* Landscape Mobile Optimization */
         @media (max-height: 500px) and (orientation: landscape) {
             body.is-cinema-mode footer {
