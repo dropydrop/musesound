@@ -258,24 +258,24 @@ export const ui = {
             <div class="flex items-center gap-3 p-3 rounded-lg transition-all select-none ${i === state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
                  onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'queue')" onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'queue')" onpointermove="MuseSound.ui.handlePointerMove(event)">
                 
-                <!-- Mobile Reorder Arrows -->
-                <div class="mobile-reorder-btn flex-col gap-1 mr-1">
-                    <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
-                            onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
-                        <span class="material-symbols-outlined text-sm">keyboard_arrow_up</span>
-                    </button>
-                    <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
-                            onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, 1)">
-                        <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
-                    </button>
-                </div>
-
                 <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover pointer-events-none ${i === state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
                 <div class="flex-1 min-w-0" onclick="MuseSound.player.playQueueTrack(${i})">
                     <div class="text-sm font-medium truncate ${i === state.playingQueueIndex ? 'text-primary' : ''}">${utils.escapeHtml(t.title)}</div>
                     <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
                 </div>
-                <div class="flex items-center">
+                <div class="flex items-center gap-1">
+                    <!-- Mobile Reorder Arrows -->
+                    <div class="mobile-reorder-btn flex-col gap-1 mr-1">
+                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                                onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
+                            <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>
+                        </button>
+                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                                onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, 1)">
+                            <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
+                        </button>
+                    </div>
+
                     <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.queue[${i}])'>
                         <span class="material-symbols-outlined text-sm">radio</span>
                     </button>
