@@ -3,6 +3,7 @@ name: Deploy to GitHub Pages
 on:
   push:
     branches: [ main, master ]
+  workflow_dispatch:
 
 permissions:
   contents: write
@@ -18,12 +19,36 @@ jobs:
         id: vars
         run: echo "sha_short=$(git rev-parse --short HEAD)" >> $GITHUB_OUTPUT
 
-      - name: Inject cache-busting SHA into index.html
+      - name: Create cache-busting injector script
         run: |
-          sed -i "s/%%CACHE_BUST%%/${{ steps.vars.outputs.sha_short }}/g" index.html
+          cat << 'EOF' > inject_cache_bust.py
+          import glob, re, sys
+          sha = sys.argv[1]
+          
+          # Replace %%CACHE_BUST%% in index.html
+          with open('index.html', 'r', encoding='utf-8') as f:
+              html = f.read()
+          html = html.replace('%%CACHE_BUST%%', sha)
+          with open('index.html', 'w', encoding='utf-8') as f:
+              f.write(html)
+          
+          # Replace .js imports in all JS files
+          for path in ['js/app.js'] + glob.glob('js/modules/*.js'):
+              with open(path, 'r', encoding='utf-8') as f:
+                  content = f.read()
+              content = re.sub(r"from\s+'([^']+)\.js'", r"from '\1.js?v=" + sha + "'", content)
+              with open(path, 'w', encoding='utf-8') as f:
+                  f.write(content)
+          EOF
+
+      - name: Run cache-busting injector script
+        run: python3 inject_cache_bust.py ${{ steps.vars.outputs.sha_short }}
+
+      - name: Clean up injector script
+        run: rm inject_cache_bust.py
 
       - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v3
+        uses: peaceiris/actions-gh-pages@v4
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           publish_dir: ./
