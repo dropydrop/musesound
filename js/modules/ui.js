@@ -94,7 +94,7 @@ export const ui = {
             state.ecoMode = !state.ecoMode;
             localStorage.setItem('MS_ECO_MODE', state.ecoMode);
             this.updateEcoUI();
-            utils.showToast(state.ecoMode ? "Mode Éco (144p)" : "Mode HD (720p)");
+            utils.showToast(state.ecoMode ? "Mode Éco (144p)" : "Mode HQ (360p)");
         });
 
         document.getElementById('fullscreen-btn')?.addEventListener('click', () => this.toggleFullscreen());
@@ -264,8 +264,8 @@ export const ui = {
                     <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
                 </div>
                 <div class="flex items-center gap-1">
-                    <!-- Mobile Reorder Arrows -->
-                    <div class="mobile-reorder-btn flex-col gap-1 mr-1">
+                    <!-- Reorder Arrows -->
+                    <div class="reorder-btn-group flex-col gap-1 mr-1">
                         <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
                                 onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
                             <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>

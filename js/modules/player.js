@@ -38,7 +38,7 @@ export const player = {
             this.startProgressTracking();
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
-                this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'hd720');
+                this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
             }
         } else if (event.data === YT.PlayerState.PAUSED) {
             state.isPlaying = false;
@@ -146,12 +146,12 @@ export const player = {
         this.ytPlayer.loadVideoById({
             videoId: track.id,
             startSeconds: startTime,
-            suggestedQuality: state.ecoMode ? 'tiny' : 'hd720'
+            suggestedQuality: state.ecoMode ? 'tiny' : 'medium'
         });
 
         // Forçage immédiat
         if (this.ytPlayer && typeof this.ytPlayer.setPlaybackQuality === 'function') {
-            this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'hd720');
+            this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
 
         setTimeout(() => {
