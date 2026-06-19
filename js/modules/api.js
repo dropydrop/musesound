@@ -184,8 +184,14 @@ export const api = {
 
         async fetchPlaylist(playlistId, isQuiet = false) {
         const { ui, player } = window.MuseSound;
+        // Pour les playlists privées, il faut utiliser l'autorisation OAuth
+        const token = state.googleToken;
         const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${CONFIG.YOUTUBE_API_KEY}`;
-        const response = await fetch(url);
+        
+        const headers = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        const response = await fetch(url, { headers });
         const data = await response.json();
         if (!data.items?.length) return false;
 
