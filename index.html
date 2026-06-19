@@ -294,6 +294,7 @@
         <div class="flex border-b border-outline-variant px-4 bg-background/50 overflow-x-auto hide-scrollbar">
             <button id="tab-playlist" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-primary text-primary transition-all whitespace-nowrap">Morceaux</button>
             <button id="tab-playlists" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Playlists</button>
+            <button id="tab-library" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Bibliothèque</button>
             <button id="tab-queue" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-2 whitespace-nowrap">
                 File d'attente
                 <span id="queue-badge" class="hidden bg-primary text-background text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center">0</span>
@@ -313,6 +314,14 @@
             <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
                 <span class="material-symbols-outlined text-6xl mb-4">featured_play_list</span>
                 <p>Aucune playlist trouvée.</p>
+            </div>
+        </div>
+
+        <!-- Library Results (Hidden by default) -->
+        <div id="library-container" class="hidden flex-1 overflow-y-auto p-4 flex flex-col gap-1 hide-scrollbar transition-all duration-300">
+            <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
+                <span class="material-symbols-outlined text-6xl mb-4">video_library</span>
+                <p>Chargement de la bibliothèque...</p>
             </div>
         </div>
 

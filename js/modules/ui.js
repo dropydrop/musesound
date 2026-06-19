@@ -26,8 +26,18 @@ export const ui = {
             }
         });
 
-        document.getElementById('tab-playlist')?.addEventListener('click', () => { state.uiMode = 'playlist'; state.searchTab = 'tracks'; this.syncTabs(); });
+                document.getElementById('tab-playlist')?.addEventListener('click', () => { state.uiMode = 'playlist'; state.searchTab = 'tracks'; this.syncTabs(); });
         document.getElementById('tab-playlists')?.addEventListener('click', () => { state.uiMode = 'playlists'; state.searchTab = 'playlists'; this.syncTabs(); });
+        document.getElementById('tab-library')?.addEventListener('click', async () => {
+            state.uiMode = 'library';
+            this.syncTabs();
+            if (state.libraryFetched) return;
+            const module = await import('./youtube-private.js');
+            const data = await module.fetchMyPlaylists();
+            state.foundLibrary = data;
+            state.libraryFetched = true;
+            this.renderLibrary();
+        });
         document.getElementById('tab-queue')?.addEventListener('click', () => { state.uiMode = 'queue'; this.syncTabs(); });
 
         document.getElementById('nowplaying-radio-btn')?.addEventListener('click', () => {
@@ -163,12 +173,12 @@ export const ui = {
 
     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
 
-    syncTabs() {
+        syncTabs() {
         const m = state.uiMode;
-        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', queue: 'queue-view' };
+        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-container', queue: 'queue-view' };
         Object.keys(containers).forEach(key => {
             const el = document.getElementById(containers[key]);
-            const tab = document.getElementById('tab-' + (key === 'playlist' ? 'playlist' : key === 'playlists' ? 'playlists' : 'queue'));
+            const tab = document.getElementById('tab-' + (key === 'playlist' ? 'playlist' : key === 'playlists' ? 'playlists' : key === 'library' ? 'library' : 'queue'));
             if (el) el.classList.toggle('hidden', m !== key);
             if (tab) {
                 tab.classList.toggle('border-primary', m === key);
@@ -180,6 +190,7 @@ export const ui = {
         this.renderPlaylist();
         this.renderQueue();
         if (m === 'playlists') this.renderPlaylistsResults();
+        if (m === 'library') this.renderLibrary();
     },
 
     renderPlaylist() {
@@ -218,28 +229,25 @@ export const ui = {
         container.innerHTML = html;
     },
 
-    renderPlaylistsResults() {
-        const { importer } = window.MuseSound;
-        const container = document.getElementById('playlists-results') || this.createPlaylistsResultsContainer();
-        if (!container) return;
-        if (state.foundPlaylists.length === 0) {
-            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">featured_play_list</span><p>Aucune playlist trouvée.</p></div>`;
+        renderLibrary() {
+        const container = document.getElementById('library-container');
+        if (!container || state.uiMode !== 'library' || !state.foundLibrary) return;
+        if (state.foundLibrary.length === 0) {
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">video_library</span><p>Aucune playlist privée trouvée.</p></div>`;
             return;
         }
-        let html = state.foundPlaylists.map(pl => `
+        container.innerHTML = state.foundLibrary.map(pl => `
             <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
                 <div class="relative">
-                    <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
+                    <img src="${pl.snippet.thumbnails?.medium?.url}" class="w-16 h-16 rounded object-cover shadow-lg">
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate">${utils.escapeHtml(pl.title)}</div>
-                    <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
+                    <div class="font-bold truncate">${utils.escapeHtml(pl.snippet.title)}</div>
+                    <div class="text-xs text-primary">${pl.contentDetails.itemCount} morceaux</div>
                 </div>
             </div>
         `).join('');
-        if (state.isFetchingMore) html += `<div class="flex justify-center p-6"><span class="animate-spin material-symbols-outlined text-primary">sync</span></div>`;
-        container.innerHTML = html;
     },
 
     renderQueue() {
