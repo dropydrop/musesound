@@ -189,8 +189,31 @@ export const ui = {
         });
         this.renderPlaylist();
         this.renderQueue();
-        if (m === 'playlists') this.renderPlaylistsResults();
+                if (m === 'playlists') this.renderPlaylistsResults();
         if (m === 'library') this.renderLibrary();
+    },
+
+    renderPlaylistsResults() {
+        const container = document.getElementById('playlists-results');
+        if (!container || state.uiMode !== 'playlists') return;
+        
+        if (!state.foundPlaylists || state.foundPlaylists.length === 0) {
+            container.innerHTML = `<div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-6xl mb-4">video_library</span><p>Aucune playlist trouvée.</p></div>`;
+            return;
+        }
+
+        container.innerHTML = state.foundPlaylists.map(pl => `
+            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}', false)">
+                <div class="relative">
+                    <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
+                    <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
+                </div>
+                <div class="flex-1 min-w-0">
+                    <div class="font-bold truncate">${utils.escapeHtml(pl.title)}</div>
+                    <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
+                </div>
+            </div>
+        `).join('');
     },
 
     renderPlaylist() {

@@ -22,7 +22,7 @@ export const api = {
                 const playlistId = urlObj.searchParams.get("list");
                 if (playlistId) {
                     state.queue = [];
-                    success = await this.fetchPlaylist(playlistId, true);
+                    success = await this.fetchPlaylist(playlistId, false);
                     if (success) {
                         state.uiMode = 'queue';
                         player.playQueueTrack(0);
@@ -182,7 +182,7 @@ export const api = {
         state.isFetchingMore = false;
     },
 
-    async fetchPlaylist(playlistId, isQuiet = false) {
+        async fetchPlaylist(playlistId, isQuiet = false) {
         const { ui, player } = window.MuseSound;
         const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${CONFIG.YOUTUBE_API_KEY}`;
         const response = await fetch(url);
@@ -202,10 +202,11 @@ export const api = {
         if (isQuiet) {
             state.queue = [...state.queue, ...enriched];
         } else {
-            state.queue = [...state.queue, ...enriched];
+            state.queue = [...enriched];
             state.uiMode = 'queue';
             ui.syncTabs();
-            utils.showToast(`${enriched.length} titres ajoutés à la file`);
+            utils.showToast(`${enriched.length} titres chargés`);
+            player.playQueueTrack(0);
         }
         
         localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
