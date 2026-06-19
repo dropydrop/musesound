@@ -1,4 +1,4 @@
-# MuseSound - Lecteur Audio YouTube Résilient & Léger
+# MuseSound - Lecteur Audio YouTube léger
 
 MuseSound est un lecteur audio haute fidélité léger conçu pour diffuser de la musique à partir de playlists et de vidéos YouTube/YouTube Music. Il met l'accent sur la résilience grâce à un système de rotation automatique d'instances alternatives (Piped et Invidious).
 
