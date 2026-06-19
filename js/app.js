@@ -9,22 +9,76 @@ import { api } from './modules/api.js';
 import { player } from './modules/player.js';
 import { ui } from './modules/ui.js';
 
-// Global Namespace for internal references (compatible with current logic)
+const SUPABASE_URL = 'https://jothxhslawjggrcbcdhq.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGh4aHNsYXdqZ2dyY2JjZGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNjUzMjIsImV4cCI6MjA4NTY0MTMyMn0.FuPqkPmTSM3Wr_skgVZmbzHrXZ77GIaMSEFVHPHoGbY';
+const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
 window.MuseSound = {
     state,
     utils,
     importer: api,
     player,
     ui,
+    supabase,
     
-    init() {
+    async init() {
         console.log("MuseSound V7.5 - Modular (ES6)");
         this.ui.init();
         this.player.init();
         
+        this.handleAuthErrors();
+        await this.setupAuth();
+        
         if (this.state.currentPlaylist.length > 0) {
             this.ui.renderPlaylist();
             this.ui.checkResumeState();
+        }
+    },
+
+    handleAuthErrors() {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const queryParams = new URLSearchParams(window.location.search);
+        
+        const error = hashParams.get('error') || queryParams.get('error');
+        const errorDesc = hashParams.get('error_description') || queryParams.get('error_description');
+        
+        if (error) {
+            this.showToast(`Auth refusée : ${decodeURIComponent(errorDesc || error)}`);
+            window.history.replaceState({}, document.title, window.location.pathname);
+        }
+    },
+
+    async setupAuth() {
+        const loginBtn = document.getElementById('btn-login');
+        if (!loginBtn) return;
+
+        loginBtn.classList.remove('hidden');
+
+        // Supabase lit l'URL automatiquement au chargement et valide la session
+        const { data: { session } } = await this.supabase.auth.getSession();
+
+        if (session) {
+            console.log("Accès Google autorisé. Provider Token prêt.");
+            this.state.googleToken = session.provider_token; 
+            
+            loginBtn.innerHTML = '<span class="material-symbols-outlined mr-2 text-xl">logout</span> Déconnecter';
+            loginBtn.classList.add('text-on-surface-variant');
+            
+            loginBtn.onclick = async () => {
+                await this.supabase.auth.signOut();
+                window.location.reload();
+            };
+        } else {
+            loginBtn.onclick = async () => {
+                const { error } = await this.supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin, 
+                        scopes: 'https://www.googleapis.com/auth/youtube.readonly'
+                    }
+                });
+                if (error) this.showToast("Erreur d'initialisation Google");
+            };
         }
     },
 
@@ -33,5 +87,4 @@ window.MuseSound = {
     }
 };
 
-// Start Application
 document.addEventListener('DOMContentLoaded', () => window.MuseSound.init());
