@@ -11,7 +11,6 @@ import { ui } from './modules/ui.js';
 
 const SUPABASE_URL = 'https://jothxhslawjggrcbcdhq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGh4aHNsYXdqZ2dyY2JjZGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNjUzMjIsImV4cCI6MjA4NTY0MTMyMn0.FuPqkPmTSM3Wr_skgVZmbzHrXZ77GIaMSEFVHPHoGbY';
-const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 window.MuseSound = {
     state,
@@ -19,15 +18,25 @@ window.MuseSound = {
     importer: api,
     player,
     ui,
-    supabase,
+    supabase: null,
     
     async init() {
         console.log("MuseSound V7.5 - Modular (ES6)");
+        
+        // Initialisation sécurisée du client Supabase
+        if (window.supabase) {
+            this.supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+        } else {
+            console.error("Le CDN Supabase n'a pas pu être chargé à temps.");
+        }
+
         this.ui.init();
         this.player.init();
         
-        this.handleAuthErrors();
-        await this.setupAuth();
+        if (this.supabase) {
+            this.handleAuthErrors();
+            await this.setupAuth();
+        }
         
         if (this.state.currentPlaylist.length > 0) {
             this.ui.renderPlaylist();
@@ -50,11 +59,10 @@ window.MuseSound = {
 
     async setupAuth() {
         const loginBtn = document.getElementById('btn-login');
-        if (!loginBtn) return;
+        if (!loginBtn || !this.supabase) return;
 
         loginBtn.classList.remove('hidden');
 
-        // Supabase lit l'URL automatiquement au chargement et valide la session
         const { data: { session } } = await this.supabase.auth.getSession();
 
         if (session) {
