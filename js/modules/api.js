@@ -191,24 +191,36 @@ export const api = {
         const headers = { 'Accept': 'application/json' };
         if (token) headers['Authorization'] = `Bearer ${token}`;
 
-        const response = await fetch(url, { headers });
-        const data = await response.json();
-        if (!data.items?.length) return false;
+        // Augmentation de la limite : récupérer jusqu'à 500 morceaux si possible (via pagination)
+        let allTracks = [];
+        let nextPageToken = "";
+        
+        while (allTracks.length < 500) {
+            const pageUrl = `${url}${nextPageToken ? `&pageToken=${nextPageToken}` : ""}`;
+            const response = await fetch(pageUrl, { headers });
+            const data = await response.json();
+            
+            if (!data.items?.length) break;
 
-        const tracks = data.items.map(item => ({
-            id: item.snippet.resourceId.videoId,
-            title: item.snippet.title,
-            author: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
-            thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
-            duration: 0
-        }));
+            const tracks = data.items.map(item => ({
+                id: item.snippet.resourceId.videoId,
+                title: item.snippet.title,
+                author: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
+                thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+                duration: 0
+            }));
+            
+            allTracks = [...allTracks, ...tracks];
+            nextPageToken = data.nextPageToken;
+            if (!nextPageToken || allTracks.length >= 500) break;
+        }
 
-        const enriched = await this.enrichTracksData(tracks);
+        const enriched = await this.enrichTracksData(allTracks.slice(0, 500));
         
         if (isQuiet) {
-            state.queue = [...state.queue, ...enriched];
+            state.queue = [...state.queue, ...enriched].slice(0, 500);
         } else {
-            state.queue = [...enriched];
+            state.queue = enriched.slice(0, 500);
             state.uiMode = 'queue';
             ui.syncTabs();
             utils.showToast(`${enriched.length} titres chargés`);
