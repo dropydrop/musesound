@@ -137,11 +137,13 @@ export const player = {
         this.doPlay(track, startTime);
     },
 
-    doPlay(track, startTime = 0) {
+        doPlay(track, startTime = 0) {
         const { ui } = window.MuseSound;
         this.ytActive = true;
         this.isFadingOut = false;
-        if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
+        // Forçage du volume avant lecture
+        if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume > 0 ? state.volume : 100);
+
         
         this.ytPlayer.loadVideoById({
             videoId: track.id,
@@ -207,16 +209,34 @@ export const player = {
         utils.showToast("Ajouté à la file d'attente");
     },
 
-    next(forceNext = false) {
+        next(forceNext = false) {
         const { ui } = window.MuseSound;
-        if (state.playingQueueIndex >= 0) {
-            state.queue.splice(state.playingQueueIndex, 1);
-            state.playingQueueIndex = -1;
-        }
-
+        
+        // Si on joue depuis la queue, on ne supprime PAS avant de savoir si le prochain existe ou de finir la queue
+        let currentQueueIndex = state.playingQueueIndex;
+        
         if (state.queue.length > 0) {
-            this.playQueueTrack(0);
+            // Passer au prochain morceau dans la queue
+            let nextIndex = (currentQueueIndex >= 0) ? currentQueueIndex + 1 : 0;
+            
+            if (nextIndex < state.queue.length) {
+                // Supprimer le morceau précédent UNIQUEMENT si on passe au suivant dans la queue
+                if (currentQueueIndex >= 0) state.queue.splice(currentQueueIndex, 1);
+                this.playQueueTrack(nextIndex);
+            } else {
+                // Queue terminée, vider et passer à la playlist
+                state.queue = [];
+                state.playingQueueIndex = -1;
+                localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+                ui.renderQueue();
+                
+                // Transition automatique vers playlist si disponible
+                if (state.currentPlaylist.length > 0) {
+                    this.playTrack(state.currentIndex + 1 >= state.currentPlaylist.length ? 0 : state.currentIndex + 1);
+                }
+            }
         } else if (state.currentPlaylist.length > 0) {
+            // Logique de playlist standard
             if (!forceNext && state.repeat === 'one') {
                 if (this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
                     this.ytPlayer.seekTo(0, true);
@@ -242,6 +262,7 @@ export const player = {
         localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
         ui.renderQueue();
     },
+
 
     prev() {
         if (!this.ytPlayer) return;

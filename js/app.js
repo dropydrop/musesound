@@ -32,6 +32,7 @@ window.MuseSound = {
 
         this.ui.init();
         this.player.init();
+        this.state.initVolume();
         
         if (this.supabase) {
             this.handleAuthErrors();
@@ -66,8 +67,16 @@ window.MuseSound = {
         const { data: { session } } = await this.supabase.auth.getSession();
 
         if (session) {
-            console.log("Accès Google autorisé. Provider Token prêt.");
+            console.log("Accès Google autorisé.");
             this.state.googleToken = session.provider_token; 
+            
+            // Gestion auto-rafraîchissement de la session via Supabase
+            this.supabase.auth.onAuthStateChange((event, session) => {
+                if (event === 'TOKEN_REFRESHED') {
+                    console.log("Token rafraîchi avec succès");
+                    this.state.googleToken = session.provider_token;
+                }
+            });
             
             loginBtn.innerHTML = '<span class="material-symbols-outlined mr-2 text-xl">logout</span> Déconnecter';
             loginBtn.classList.add('text-on-surface-variant');

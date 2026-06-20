@@ -27,6 +27,13 @@ export const state = {
     lastY: 0,
     nextPageTokenTracks: null,
     nextPageTokenPlaylists: null,
-    lastSearchQuery: null,
-    isFetchingMore: false
+        lastSearchQuery: null,
+    isFetchingMore: false,
+    initVolume() {
+        if (this.volume <= 0) {
+            this.volume = 100;
+            localStorage.setItem('MS_VOLUME', 100);
+        }
+    }
 };
+
