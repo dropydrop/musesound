@@ -212,17 +212,15 @@ export const player = {
         next(forceNext = false) {
         const { ui } = window.MuseSound;
         
-        // Si on joue depuis la queue, on ne supprime PAS avant de savoir si le prochain existe ou de finir la queue
         let currentQueueIndex = state.playingQueueIndex;
         
         if (state.queue.length > 0) {
-            // Passer au prochain morceau dans la queue
             let nextIndex = (currentQueueIndex >= 0) ? currentQueueIndex + 1 : 0;
             
             if (nextIndex < state.queue.length) {
-                // Supprimer le morceau précédent UNIQUEMENT si on passe au suivant dans la queue
+                // Supprimer le morceau terminé ET jouer le suivant (qui est maintenant à la position currentQueueIndex après splice)
                 if (currentQueueIndex >= 0) state.queue.splice(currentQueueIndex, 1);
-                this.playQueueTrack(nextIndex);
+                this.playQueueTrack(currentQueueIndex >= 0 ? currentQueueIndex : 0);
             } else {
                 // Queue terminée, vider et passer à la playlist
                 state.queue = [];
