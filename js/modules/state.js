@@ -12,6 +12,8 @@ export const state = {
     shuffle: localStorage.getItem('MS_SHUFFLE') === 'true',
     repeat: localStorage.getItem('MS_REPEAT') || 'none',
     isCinemaMode: false,
+    isRadioMode: true,
+    lastPlayedTrack: null,
     uiMode: 'playlist',
     searchTab: 'tracks',
     ecoMode: localStorage.getItem('MS_ECO_MODE') === 'true',

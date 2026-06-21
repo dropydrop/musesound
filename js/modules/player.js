@@ -146,9 +146,10 @@ export const player = {
     },
 
         doPlay(track, startTime = 0) {
-        const { ui } = window.MuseSound;
+const { ui } = window.MuseSound;
         this.ytActive = true;
         this.isFadingOut = false;
+        state.lastPlayedTrack = track;
         // Forçage du volume avant lecture
         if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume > 0 ? state.volume : 100);
 
@@ -232,6 +233,8 @@ export const player = {
             this.nextQueue();
         } else if (state.currentPlaylist.length > 0) {
             this.nextPlaylist();
+        } else if (state.isRadioMode && state.lastPlayedTrack) {
+            this.triggerRadioMix();
         } else if (this.ytPlayer) {
             this.ytPlayer.stopVideo();
             this.ytActive = false;
@@ -259,6 +262,8 @@ export const player = {
                     localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
                     ui.renderQueue();
                     this.nextPlaylist();
+                } else if (state.isRadioMode && state.lastPlayedTrack) {
+                    this.triggerRadioMix();
                 } else {
                     if (this.ytPlayer) this.ytPlayer.stopVideo();
                     this.ytActive = false;
@@ -282,6 +287,8 @@ export const player = {
                 ui.renderQueue();
                 if (state.currentPlaylist.length > 0) {
                     this.nextPlaylist();
+                } else if (state.isRadioMode && state.lastPlayedTrack) {
+                    this.triggerRadioMix();
                 }
             }
         }
@@ -299,6 +306,8 @@ export const player = {
                 if (state.repeat === 'all') {
                     const nextIdx = Math.floor(Math.random() * state.currentPlaylist.length);
                     this.playTrack(nextIdx);
+                } else if (state.isRadioMode && state.lastPlayedTrack) {
+                    this.triggerRadioMix();
                 } else {
                     if (this.ytPlayer) this.ytPlayer.stopVideo();
                     this.ytActive = false;
@@ -306,12 +315,14 @@ export const player = {
             } else {
                 const randIdx = Math.floor(Math.random() * unplayed.length);
                 this.playTrack(unplayed[randIdx]);
-            }
         } else {
             let nextIndex = state.currentIndex + 1;
             if (nextIndex >= state.currentPlaylist.length) {
                 if (state.repeat === 'all') nextIndex = 0;
-                else {
+                else if (state.isRadioMode && state.lastPlayedTrack) {
+                    this.triggerRadioMix();
+                    return;
+                } else {
                     if (this.ytPlayer) this.ytPlayer.stopVideo();
                     this.ytActive = false;
                     return;
@@ -410,6 +421,20 @@ export const player = {
 
     saveShuffleHistory() {
         localStorage.setItem('MS_SHUFFLE_HISTORY', JSON.stringify(state.shuffleHistory));
+    },
+
+    async triggerRadioMix() {
+        const { importer, ui } = window.MuseSound;
+        const track = state.lastPlayedTrack;
+        if (!track || !track.author) return;
+        const query = `${track.author} - ${track.title || ''}`;
+        await importer.searchTracks(query);
+        state.queue = state.queue.filter(t => t.id !== track.id).slice(0, 3);
+        if (state.queue.length === 0) return;
+        state.playingQueueIndex = -1;
+        localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+        ui.renderQueue();
+        this.playQueueTrack(0);
     },
 
     exportQueueToFile() {
