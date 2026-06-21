@@ -27,8 +27,9 @@ export const state = {
     lastY: 0,
     nextPageTokenTracks: null,
     nextPageTokenPlaylists: null,
-        lastSearchQuery: null,
+    lastSearchQuery: null,
     isFetchingMore: false,
+    shuffleHistory: JSON.parse(localStorage.getItem('MS_SHUFFLE_HISTORY')) || [],
     initVolume() {
         if (this.volume <= 0) {
             this.volume = 100;

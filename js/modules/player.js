@@ -109,6 +109,10 @@ export const player = {
         if (index < 0 || index >= state.queue.length) return;
         state.playingQueueIndex = index;
         state.currentIndex = -1;
+        if (state.shuffle && !state.shuffleHistory.includes(index)) {
+            state.shuffleHistory.push(index);
+            this.saveShuffleHistory();
+        }
         const track = state.queue[index];
         this.doPlay(track, startTime);
         ui.renderQueue();
@@ -119,6 +123,10 @@ export const player = {
         if (index < 0 || index >= state.currentPlaylist.length) return;
         state.currentIndex = index;
         state.playingQueueIndex = -1;
+        if (state.shuffle && !state.shuffleHistory.includes(index)) {
+            state.shuffleHistory.push(index);
+            this.saveShuffleHistory();
+        }
         const track = state.currentPlaylist[index];
         ui.setLoading(true);
         if (this.ytPlayer && typeof this.ytPlayer.stopVideo === 'function') this.ytPlayer.stopVideo();
@@ -209,56 +217,109 @@ export const player = {
         utils.showToast("Ajouté à la file d'attente");
     },
 
-        next(forceNext = false) {
+    next(forceNext = false) {
         const { ui } = window.MuseSound;
-        
-        let currentQueueIndex = state.playingQueueIndex;
-        
-        if (state.queue.length > 0) {
-            let nextIndex = (currentQueueIndex >= 0) ? currentQueueIndex + 1 : 0;
-            
-            if (nextIndex < state.queue.length) {
-                // Supprimer le morceau terminé ET jouer le suivant (qui est maintenant à la position currentQueueIndex après splice)
-                if (currentQueueIndex >= 0) state.queue.splice(currentQueueIndex, 1);
-                this.playQueueTrack(currentQueueIndex >= 0 ? currentQueueIndex : 0);
-            } else {
-                // Queue terminée, vider et passer à la playlist
-                state.queue = [];
-                state.playingQueueIndex = -1;
-                localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
-                ui.renderQueue();
-                
-                // Transition automatique vers playlist si disponible
-                if (state.currentPlaylist.length > 0) {
-                    this.playTrack(state.currentIndex + 1 >= state.currentPlaylist.length ? 0 : state.currentIndex + 1);
-                }
-            }
-        } else if (state.currentPlaylist.length > 0) {
-            // Logique de playlist standard
-            if (!forceNext && state.repeat === 'one') {
-                if (this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
-                    this.ytPlayer.seekTo(0, true);
-                    this.ytPlayer.playVideo();
-                    return;
-                }
-            }
 
-            let nextIndex = state.currentIndex + 1;
-            if (state.shuffle) {
-                state.shuffleHistory.push(state.currentIndex);
-                nextIndex = Math.floor(Math.random() * state.currentPlaylist.length);
+        if (!forceNext && state.repeat === 'one') {
+            if (this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
+                this.ytPlayer.seekTo(0, true);
+                this.ytPlayer.playVideo();
+                return;
             }
-            if (nextIndex >= state.currentPlaylist.length) {
-                if (state.repeat === 'all') nextIndex = 0;
-                else { if (this.ytPlayer) this.ytPlayer.stopVideo(); this.ytActive = false; return; }
-            }
-            this.playTrack(nextIndex);
+        }
+
+        if (state.queue.length > 0) {
+            this.nextQueue();
+        } else if (state.currentPlaylist.length > 0) {
+            this.nextPlaylist();
         } else if (this.ytPlayer) {
             this.ytPlayer.stopVideo();
             this.ytActive = false;
         }
         localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
         ui.renderQueue();
+    },
+
+    nextQueue() {
+        const { ui } = window.MuseSound;
+
+        if (state.shuffle) {
+            const unplayed = [];
+            for (let i = 0; i < state.queue.length; i++) {
+                if (!state.shuffleHistory.includes(i)) unplayed.push(i);
+            }
+            if (unplayed.length === 0) {
+                state.shuffleHistory = [];
+                if (state.repeat === 'all') {
+                    const nextIdx = Math.floor(Math.random() * state.queue.length);
+                    this.playQueueTrack(nextIdx);
+                } else if (state.currentPlaylist.length > 0) {
+                    state.queue = [];
+                    state.playingQueueIndex = -1;
+                    localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+                    ui.renderQueue();
+                    this.nextPlaylist();
+                } else {
+                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+                    this.ytActive = false;
+                }
+            } else {
+                const randIdx = Math.floor(Math.random() * unplayed.length);
+                this.playQueueTrack(unplayed[randIdx]);
+            }
+        } else {
+            let currentQueueIndex = state.playingQueueIndex;
+            if (currentQueueIndex >= 0) {
+                state.queue.splice(currentQueueIndex, 1);
+            }
+            const nextIdx = currentQueueIndex >= 0 ? currentQueueIndex : 0;
+            if (nextIdx < state.queue.length) {
+                this.playQueueTrack(nextIdx);
+            } else {
+                state.queue = [];
+                state.playingQueueIndex = -1;
+                localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+                ui.renderQueue();
+                if (state.currentPlaylist.length > 0) {
+                    this.nextPlaylist();
+                }
+            }
+        }
+        this.saveShuffleHistory();
+    },
+
+    nextPlaylist() {
+        if (state.shuffle) {
+            const unplayed = [];
+            for (let i = 0; i < state.currentPlaylist.length; i++) {
+                if (!state.shuffleHistory.includes(i)) unplayed.push(i);
+            }
+            if (unplayed.length === 0) {
+                state.shuffleHistory = [];
+                if (state.repeat === 'all') {
+                    const nextIdx = Math.floor(Math.random() * state.currentPlaylist.length);
+                    this.playTrack(nextIdx);
+                } else {
+                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+                    this.ytActive = false;
+                }
+            } else {
+                const randIdx = Math.floor(Math.random() * unplayed.length);
+                this.playTrack(unplayed[randIdx]);
+            }
+        } else {
+            let nextIndex = state.currentIndex + 1;
+            if (nextIndex >= state.currentPlaylist.length) {
+                if (state.repeat === 'all') nextIndex = 0;
+                else {
+                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+                    this.ytActive = false;
+                    return;
+                }
+            }
+            this.playTrack(nextIndex);
+        }
+        this.saveShuffleHistory();
     },
 
 
@@ -269,16 +330,37 @@ export const player = {
             this.ytPlayer.seekTo(0, true);
             return;
         }
-        if (state.playingQueueIndex < 0 && state.currentPlaylist.length > 0) {
-            let prevIndex = state.currentIndex - 1;
-            if (state.shuffle && state.shuffleHistory.length > 0) {
-                prevIndex = state.shuffleHistory.pop();
+
+        if (state.playingQueueIndex >= 0) {
+            if (state.shuffle) {
+                const idx = state.shuffleHistory.indexOf(state.playingQueueIndex);
+                if (idx > 0) {
+                    this.playQueueTrack(state.shuffleHistory[idx - 1]);
+                } else {
+                    this.playQueueTrack(state.playingQueueIndex);
+                }
+            } else {
+                this.playQueueTrack(state.playingQueueIndex);
             }
-            if (prevIndex < 0) {
-                if (state.repeat === 'all') prevIndex = state.currentPlaylist.length - 1;
-                else prevIndex = 0;
+            return;
+        }
+
+        if (state.currentPlaylist.length > 0) {
+            if (state.shuffle) {
+                const idx = state.shuffleHistory.indexOf(state.currentIndex);
+                if (idx > 0) {
+                    this.playTrack(state.shuffleHistory[idx - 1]);
+                } else {
+                    this.playTrack(state.currentIndex);
+                }
+            } else {
+                let prevIndex = state.currentIndex - 1;
+                if (prevIndex < 0) {
+                    if (state.repeat === 'all') prevIndex = state.currentPlaylist.length - 1;
+                    else prevIndex = 0;
+                }
+                this.playTrack(prevIndex);
             }
-            this.playTrack(prevIndex);
         }
     },
 
@@ -324,6 +406,10 @@ export const player = {
             this.ytPlayer.setVolume(val);
         }
         ui.updateVolumeUI();
+    },
+
+    saveShuffleHistory() {
+        localStorage.setItem('MS_SHUFFLE_HISTORY', JSON.stringify(state.shuffleHistory));
     },
 
     exportQueueToFile() {
