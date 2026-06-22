@@ -62,7 +62,7 @@ export const jam = {
 
   async createJamSession() {
     if (!db || !this.userId) {
-      window.MuseSound.utils.showToast('Jam: authentification en cours…');
+      window.MuseSound.utils.showToast('Jam: authentication in progress…');
       return null;
     }
 
@@ -78,8 +78,9 @@ export const jam = {
       tries++;
     }
 
-    const sessionRef = db.ref('jam_sessions').push();
-    const sessionId = sessionRef.key;
+    // Generate ID manually instead of using push()
+    const sessionId = db.ref('jam_sessions').push().key;
+    const sessionRef = db.ref(`jam_sessions/${sessionId}`);
     const url = `https://musesound.vercel.app/jam?code=${code}`;
 
     await sessionRef.set({
