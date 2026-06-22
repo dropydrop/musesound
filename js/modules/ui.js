@@ -296,8 +296,8 @@ export const ui = {
                     <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
                 </div>
                 ${state.jamActive
-                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" title="Ajouter la playlist au Jam" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
-                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">group</span>
+                    ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
                        </button>`
                     : ''
                 }
@@ -365,8 +365,8 @@ export const ui = {
                     <div class="text-xs text-primary">${pl.contentDetails.itemCount} morceaux</div>
                 </div>
                 ${state.jamActive
-                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" title="Ajouter la playlist au Jam" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
-                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">group</span>
+                    ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                        <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
                        </button>`
                     : ''
                 }
