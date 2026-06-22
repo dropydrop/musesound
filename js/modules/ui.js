@@ -168,7 +168,7 @@ export const ui = {
         document.getElementById('jam-btn-copy')?.addEventListener('click', () => {
             const { code } = window.MuseSound.jam;
             if (!code) return;
-            const url = `https://musesound.vercel.app/jam?code=${code}`;
+            const url = `https://musesound.vercel.app/?code=${code}`;
             navigator.clipboard.writeText(url).then(() => {
                 utils.showToast('Lien copié !');
             }).catch(() => {
@@ -180,9 +180,19 @@ export const ui = {
             const modal = document.getElementById('jam-qr-modal');
             const img = document.getElementById('jam-qr-image');
             const display = document.getElementById('jam-qr-code-display');
+            const fallback = document.getElementById('jam-qr-fallback');
             const url = window.MuseSound.jam.generateQRUrl();
-            if (img && url) img.src = url;
             if (display) display.textContent = window.MuseSound.jam.code || '';
+            if (img && fallback) {
+                img.classList.remove('hidden');
+                fallback.classList.add('hidden');
+                if (url) {
+                    img.src = url;
+                } else {
+                    img.classList.add('hidden');
+                    fallback.classList.remove('hidden');
+                }
+            }
             if (modal) modal.classList.remove('hidden');
         });
 
@@ -515,7 +525,7 @@ export const ui = {
         const enriched = await importer.enrichTracksData(allTracks.slice(0, 500));
 
         for (const track of enriched) {
-            await jam.addTrackToJam(track);
+            await jam.addTrackToJam(track, true);
         }
 
         utils.showToast(`Playlist ajoutée au Jam (${enriched.length} morceaux)`);
@@ -742,6 +752,17 @@ export const ui = {
         const b = document.getElementById('resume-banner');
         if (b) { b.classList.remove('visible'); setTimeout(() => b.classList.add('hidden'), 500); }
         localStorage.removeItem('MS_LAST_INDEX'); localStorage.removeItem('MS_LAST_POS');
+    },
+
+    copyJamLink() {
+        const { code } = window.MuseSound.jam;
+        if (!code) return;
+        const url = `https://musesound.vercel.app/?code=${code}`;
+        navigator.clipboard.writeText(url).then(() => {
+            utils.showToast('Lien copié !');
+        }).catch(() => {
+            utils.showToast('Erreur de copie');
+        });
     },
 
     toggleFullscreen(f = false) {

@@ -88,7 +88,7 @@ export const jam = {
 
     const sessionId = db.ref('jam_sessions').push().key;
     const sessionRef = db.ref(`jam_sessions/${sessionId}`);
-    const url = `https://musesound.vercel.app/jam?code=${code}`;
+    const url = `https://musesound.vercel.app/?code=${code}`;
 
     await sessionRef.set({
       code,
@@ -165,7 +165,7 @@ export const jam = {
     }
 
     this._listen(sessionId);
-    return { sessionId, code: data.code, url: `https://musesound.vercel.app/jam?code=${data.code}`, data };
+    return { sessionId, code: data.code, url: `https://musesound.vercel.app/?code=${data.code}`, data };
   },
 
   leaveJamSession() {
@@ -187,7 +187,7 @@ export const jam = {
     window.MuseSound.ui.renderJam();
   },
 
-  async addTrackToJam(track) {
+  async addTrackToJam(track, silent = false) {
     if (!db || !this.sessionId || !this.userId) return;
     const clean = sanitizeTrack(track);
     const ref = db.ref(`jam_sessions/${this.sessionId}/queue`);
@@ -196,7 +196,7 @@ export const jam = {
       current.push(clean);
       return current;
     });
-    window.MuseSound.utils.showToast('Ajouté au Jam');
+    if (!silent) window.MuseSound.utils.showToast('Ajouté au Jam');
   },
 
   async removeTrackFromJam(index) {
@@ -336,6 +336,6 @@ export const jam = {
 
   generateQRUrl() {
     if (!this.code) return null;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`https://musesound.vercel.app/jam?code=${this.code}`)}`;
+    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`https://musesound.vercel.app/?code=${this.code}`)}`;
   }
 };
