@@ -337,5 +337,70 @@ export const jam = {
   generateQRUrl() {
     if (!this.code) return null;
     return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`https://musesound.vercel.app/?code=${this.code}`)}`;
+  },
+
+  async moveJamTrack(index, direction) {
+    if (!this.isHost || !db || !this.sessionId) return;
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= state.jamQueue.length) return;
+    const queue = [...state.jamQueue];
+    const [item] = queue.splice(index, 1);
+    queue.splice(newIndex, 0, item);
+    await db.ref(`jam_sessions/${this.sessionId}/queue`).set(queue);
+  },
+
+  async clearJamQueue() {
+    if (!this.isHost || !db || !this.sessionId) return;
+    await db.ref(`jam_sessions/${this.sessionId}/queue`).set([]);
+    window.MuseSound.utils.showToast('File Jam vidée');
+  },
+
+  exportJamQueue() {
+    if (state.jamQueue.length === 0) {
+      window.MuseSound.utils.showToast('La file Jam est vide');
+      return;
+    }
+    const data = { version: 1, exportedAt: new Date().toISOString(), tracks: state.jamQueue };
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const now = new Date();
+    const dateStr = now.toISOString().split('T')[0];
+    const timeStr = now.getHours().toString().padStart(2, '0') + '-' + now.getMinutes().toString().padStart(2, '0');
+    const filename = `musesound_jam_${dateStr}_${timeStr}.json`;
+    const a = document.createElement('a'); a.href = url; a.download = filename; a.click();
+    URL.revokeObjectURL(url);
+    window.MuseSound.utils.showToast('Exportation réussie');
+  },
+
+  importJamQueueFromFile(file) {
+    if (!file || !this.isHost || !db || !this.sessionId) return;
+    const self = this;
+    const reader = new FileReader();
+    reader.onload = async (e) => {
+      try {
+        const data = JSON.parse(e.target.result);
+        if (!data.tracks || !Array.isArray(data.tracks)) throw new Error('Format invalide');
+        const tracks = data.tracks.map(t => sanitizeTrack(t));
+        await db.ref(`jam_sessions/${self.sessionId}/queue`).set(tracks);
+        window.MuseSound.utils.showToast(`File Jam importée (${tracks.length} titres)`);
+      } catch (err) {
+        window.MuseSound.utils.showToast('Erreur : Fichier invalide');
+      }
+    };
+    reader.readAsText(file);
+  },
+
+  async generateRadioMix(index) {
+    if (!this.isHost || !db || !this.sessionId) return;
+    const track = state.jamQueue[index];
+    if (!track || !track.author) return;
+    const { importer } = window.MuseSound;
+    const query = `${track.author} - ${track.title || ''}`;
+    await importer.searchTracks(query);
+    const results = state.currentPlaylist.filter(t => t.id !== track.id).slice(0, 20);
+    if (results.length === 0) return;
+    const sanitized = results.map(t => sanitizeTrack(t));
+    await db.ref(`jam_sessions/${this.sessionId}/queue`).set(sanitized);
+    window.MuseSound.utils.showToast(`Radio générée (${sanitized.length} morceaux)`);
   }
 };

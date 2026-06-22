@@ -209,6 +209,23 @@ export const ui = {
             const { player } = window.MuseSound;
             player.toggle();
         });
+
+        document.getElementById('jam-btn-export')?.addEventListener('click', () => {
+            window.MuseSound.jam.exportJamQueue();
+        });
+
+        document.getElementById('jam-btn-import')?.addEventListener('click', () => {
+            document.getElementById('jam-file-input')?.click();
+        });
+
+        document.getElementById('jam-file-input')?.addEventListener('change', (e) => {
+            window.MuseSound.jam.importJamQueueFromFile(e.target.files[0]);
+            e.target.value = '';
+        });
+
+        document.getElementById('jam-btn-clear')?.addEventListener('click', () => {
+            window.MuseSound.jam.clearJamQueue();
+        });
     },
 
     handleScroll(el) {
@@ -444,6 +461,9 @@ export const ui = {
         const hostControls = document.getElementById('jam-host-controls');
         if (hostControls) hostControls.classList.toggle('hidden', !state.jamIsHost);
 
+        const queueTools = document.getElementById('jam-queue-tools');
+        if (queueTools) queueTools.classList.toggle('hidden', !state.jamIsHost);
+
         const playPauseIcon = document.getElementById('jam-btn-playpause')?.querySelector('.material-symbols-outlined');
         if (playPauseIcon) playPauseIcon.textContent = state.isPlaying ? 'pause' : 'play_arrow';
 
@@ -474,12 +494,24 @@ export const ui = {
                     <div class="text-sm font-medium truncate">${utils.escapeHtml(t.title)}</div>
                     <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
                 </div>
-                ${state.jamIsHost
-                    ? `<button class="w-8 h-8 flex items-center justify-center opacity-60 hover:opacity-100 hover:text-red-400" onclick="MuseSound.jam.removeTrackFromJam(${i})">
+                ${state.jamIsHost ? `
+                    <div class="reorder-btn-group flex-col gap-1 mr-1">
+                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === 0 ? 'opacity-30 pointer-events-none' : ''}"
+                                onclick="event.stopPropagation(); MuseSound.jam.moveJamTrack(${i}, -1)">
+                            <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>
+                        </button>
+                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === state.jamQueue.length - 1 ? 'opacity-30 pointer-events-none' : ''}"
+                                onclick="event.stopPropagation(); MuseSound.jam.moveJamTrack(${i}, 1)">
+                            <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
+                        </button>
+                    </div>
+                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.generateRadioMix(${i})'>
+                        <span class="material-symbols-outlined text-sm">radio</span>
+                    </button>
+                    <button class="w-8 h-8 flex items-center justify-center opacity-60 hover:opacity-100 hover:text-red-400" onclick="MuseSound.jam.removeTrackFromJam(${i})">
                         <span class="material-symbols-outlined text-sm">close</span>
-                       </button>`
-                    : ''
-                }
+                    </button>
+                ` : ''}
             </div>
         `).join('');
     },
