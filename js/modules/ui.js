@@ -188,6 +188,16 @@ export const ui = {
         document.getElementById('jam-btn-next')?.addEventListener('click', () => {
             window.MuseSound.jam.nextJamTrack();
         });
+
+        document.getElementById('jam-btn-prev')?.addEventListener('click', () => {
+            const { player } = window.MuseSound;
+            player.prev();
+        });
+
+        document.getElementById('jam-btn-playpause')?.addEventListener('click', () => {
+            const { player } = window.MuseSound;
+            player.toggle();
+        });
     },
 
     handleScroll(el) {
@@ -410,6 +420,9 @@ export const ui = {
 
         const hostControls = document.getElementById('jam-host-controls');
         if (hostControls) hostControls.classList.toggle('hidden', !state.jamIsHost);
+
+        const playPauseIcon = document.getElementById('jam-btn-playpause')?.querySelector('.material-symbols-outlined');
+        if (playPauseIcon) playPauseIcon.textContent = state.isPlaying ? 'pause' : 'play_arrow';
 
         const nowPlaying = document.getElementById('jam-nowplaying');
         if (state.jamCurrentTrack) {
