@@ -387,13 +387,19 @@ const { ui } = window.MuseSound;
 
     toggle() {
         if (!this.ytPlayer) return;
+        const jam = window.MuseSound?.jam;
+        if (jam?._updatingFromFirebase) return;
         const s = this.ytPlayer.getPlayerState();
-        if (s === 1) {
+        const wasPlaying = s === 1;
+        if (wasPlaying) {
             this.ytPlayer.pauseVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else {
             this.ytPlayer.playVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+        }
+        if (state.jamActive && state.jamIsHost) {
+            jam?.updatePlaybackState(!wasPlaying);
         }
     },
 

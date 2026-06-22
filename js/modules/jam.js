@@ -29,6 +29,8 @@ export const jam = {
   sessionId: null,
   code: null,
   isHost: false,
+  _updatingFromFirebase: false,
+  _prevIsPlaying: null,
 
   init() {
     if (!window.firebase) return;
@@ -256,7 +258,7 @@ async createJamSession() {
         state.currentIndex = -1;
         player.doPlay(track);
         if (data.isPlaying) {
-          setTimeout(() => player.toggle(), 200);
+          setTimeout(() => { if (player.ytPlayer?.playVideo) player.ytPlayer.playVideo(); }, 200);
         }
       }
 
@@ -266,6 +268,22 @@ async createJamSession() {
         if (player.ytPlayer && player.ytActive) {
           player.ytPlayer.pauseVideo();
           player.ytActive = false;
+        }
+      }
+
+      const playingChanged = typeof data.isPlaying === 'boolean' && data.isPlaying !== this._prevIsPlaying;
+      this._prevIsPlaying = data.isPlaying;
+
+      if (playingChanged && !trackChanged && !this.isHost) {
+        const { player } = window.MuseSound;
+        if (player.ytPlayer && player.ytActive) {
+          this._updatingFromFirebase = true;
+          if (data.isPlaying) {
+            player.ytPlayer.playVideo();
+          } else {
+            player.ytPlayer.pauseVideo();
+          }
+          this._updatingFromFirebase = false;
         }
       }
 
