@@ -10,6 +10,9 @@
     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
     <link href="https://fonts.googleapis.com/css2?family=Geist:wght@400;500;600;700&family=Geist+Mono:wght@400&display=swap" rel="stylesheet"/>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-auth-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/11.0.2/firebase-database-compat.js"></script>
     <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
     <script id="tailwind-config">
         tailwind.config = {
@@ -299,6 +302,7 @@
                 File d'attente
                 <span id="queue-badge" class="hidden bg-primary text-background text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center">0</span>
             </button>
+            <button id="tab-jam" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Jam</button>
         </div>
 
         <!-- Playlist Items (Tracks) -->
@@ -352,6 +356,103 @@
             </div>
             <div id="queue-list" class="flex flex-col gap-1">
                 <!-- Queue items will be rendered here -->
+            </div>
+        </div>
+
+        <!-- Jam View (Hidden by default) -->
+        <div id="jam-view" class="hidden flex-1 overflow-y-auto p-4 flex flex-col gap-4 hide-scrollbar transition-all duration-300">
+
+            <!-- Lobby: Create / Join -->
+            <div id="jam-lobby" class="flex flex-col gap-6 h-full justify-center max-w-md mx-auto w-full">
+                <div class="text-center">
+                    <span class="material-symbols-outlined text-6xl text-primary">group</span>
+                    <h3 class="text-xl font-bold mt-2">Jam Session</h3>
+                    <p class="text-sm text-on-surface-variant mt-1">Écoutez de la musique en temps réel avec vos amis</p>
+                </div>
+
+                <div class="flex flex-col gap-2">
+                    <button id="jam-btn-create" class="bg-primary text-background font-bold py-3 px-6 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2">
+                        <span class="material-symbols-outlined">add_circle</span> Créer une session
+                    </button>
+                    <div class="flex gap-2">
+                        <input id="jam-code-input" type="text" placeholder="Code à 4 chiffres" maxlength="4" class="flex-1 bg-surface-container border-outline-variant rounded-lg px-4 py-3 text-sm text-center tracking-widest text-xl focus:ring-1 focus:ring-primary outline-none uppercase">
+                        <button id="jam-btn-join" class="bg-surface-container-high hover:bg-primary/20 text-on-surface font-bold py-3 px-6 rounded-lg transition-all flex items-center gap-2">
+                            <span class="material-symbols-outlined">login</span> Rejoindre
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Active Session -->
+            <div id="jam-session" class="hidden flex flex-col gap-4 h-full">
+                <!-- Session Header -->
+                <div class="flex items-center justify-between bg-surface-container rounded-lg p-4">
+                    <div class="flex items-center gap-3">
+                        <span class="material-symbols-outlined text-primary text-2xl">group</span>
+                        <div>
+                            <div class="font-bold">Jam Session</div>
+                            <div class="text-xs text-on-surface-variant">
+                                Code: <span id="jam-session-code" class="font-mono text-primary text-base tracking-widest"></span>
+                                <span id="jam-session-role" class="ml-2 px-2 py-0.5 rounded-full text-[10px] bg-primary/20 text-primary"></span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button id="jam-btn-qr" class="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-container-high hover:bg-primary/20 transition-all" title="Afficher le QR Code">
+                            <span class="material-symbols-outlined text-sm">qr_code_scanner</span>
+                        </button>
+                        <button id="jam-btn-copy" class="w-9 h-9 flex items-center justify-center rounded-lg bg-surface-container-high hover:bg-primary/20 transition-all" title="Copier le lien">
+                            <span class="material-symbols-outlined text-sm">link</span>
+                        </button>
+                        <button id="jam-btn-leave" class="text-xs text-on-surface-variant hover:text-red-400 transition-colors flex items-center gap-1 px-2 py-1 rounded">
+                            <span class="material-symbols-outlined text-sm">logout</span> Quitter
+                        </button>
+                    </div>
+                </div>
+
+                <!-- QR Code Modal -->
+                <div id="jam-qr-modal" class="hidden fixed inset-0 z-[200] bg-black/60 flex items-center justify-center p-4" onclick="if(event.target===this)document.getElementById('jam-qr-modal').classList.add('hidden')">
+                    <div class="bg-surface-container rounded-xl p-6 flex flex-col items-center gap-4 max-w-xs">
+                        <img id="jam-qr-image" src="" alt="QR Code" class="w-56 h-56 rounded-lg">
+                        <div class="text-sm text-on-surface-variant text-center">
+                            Scannez pour rejoindre<br>
+                            <span id="jam-qr-code-display" class="font-mono text-primary text-base tracking-widest"></span>
+                        </div>
+                        <button class="text-xs text-on-surface-variant hover:text-on-surface transition-colors" onclick="document.getElementById('jam-qr-modal').classList.add('hidden')">Fermer</button>
+                    </div>
+                </div>
+
+                <!-- Now Playing in Jam -->
+                <div id="jam-nowplaying" class="hidden bg-surface-container-high rounded-lg p-4 flex items-center gap-4">
+                    <img id="jam-current-art" class="w-14 h-14 rounded object-cover bg-surface-container" src="">
+                    <div class="flex-1 min-w-0">
+                        <div id="jam-current-title" class="font-bold truncate text-sm"></div>
+                        <div id="jam-current-author" class="text-xs text-on-surface-variant truncate"></div>
+                    </div>
+                    <span class="material-symbols-outlined text-primary">music_note</span>
+                </div>
+
+                <!-- Host Controls -->
+                <div id="jam-host-controls" class="hidden flex gap-2">
+                    <button id="jam-btn-next" class="flex-1 bg-primary text-background font-bold py-2 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center gap-2 text-sm">
+                        <span class="material-symbols-outlined">skip_next</span> Suivant
+                    </button>
+                </div>
+
+                <!-- Jam Queue -->
+                <div class="flex items-center justify-between">
+                    <h4 class="font-bold text-sm flex items-center gap-2">
+                        <span class="material-symbols-outlined text-sm">queue_music</span>
+                        File d'attente
+                    </h4>
+                    <span id="jam-track-count" class="text-xs text-on-surface-variant">0 morceaux</span>
+                </div>
+                <div id="jam-queue-list" class="flex flex-col gap-1 flex-1 overflow-y-auto hide-scrollbar">
+                    <div class="flex flex-col items-center justify-center py-12 text-on-surface-variant opacity-50">
+                        <span class="material-symbols-outlined text-4xl mb-2">queue_play_next</span>
+                        <p class="text-sm">La file d'attente est vide.</p>
+                    </div>
+                </div>
             </div>
         </div>
 

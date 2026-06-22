@@ -39,6 +39,7 @@ export const ui = {
             this.renderLibrary();
         });
         document.getElementById('tab-queue')?.addEventListener('click', () => { state.uiMode = 'queue'; this.syncTabs(); });
+        document.getElementById('tab-jam')?.addEventListener('click', () => { state.uiMode = 'jam'; this.syncTabs(); });
 
         document.getElementById('nowplaying-radio-btn')?.addEventListener('click', () => {
             const track = state.queue[state.playingQueueIndex] || state.currentPlaylist[state.currentIndex];
@@ -61,6 +62,7 @@ export const ui = {
             }
         });
 
+        this.initJamControls();
         this.initStaticControls();
         this.syncTabs();
     },
@@ -129,6 +131,65 @@ export const ui = {
         this.updateEcoUI();
     },
 
+    initJamControls() {
+        document.getElementById('jam-btn-create')?.addEventListener('click', async () => {
+            const result = await window.MuseSound.jam.createJamSession();
+            if (result) {
+                utils.showToast(`Session créée ! Code: ${result.code}`);
+                this.renderJam();
+            }
+        });
+
+        document.getElementById('jam-btn-join')?.addEventListener('click', async () => {
+            const input = document.getElementById('jam-code-input');
+            const code = input?.value.trim();
+            if (!code || code.length < 3) {
+                utils.showToast('Entrez un code valide');
+                return;
+            }
+            const result = await window.MuseSound.jam.joinJamSession(code);
+            if (result) {
+                utils.showToast(`Rejoint la session ${result.code}`);
+                input.value = '';
+                this.renderJam();
+            }
+        });
+
+        document.getElementById('jam-code-input')?.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') document.getElementById('jam-btn-join')?.click();
+        });
+
+        document.getElementById('jam-btn-leave')?.addEventListener('click', () => {
+            window.MuseSound.jam.leaveJamSession();
+            utils.showToast('Session quittée');
+        });
+
+        document.getElementById('jam-btn-copy')?.addEventListener('click', () => {
+            const { code } = window.MuseSound.jam;
+            if (!code) return;
+            const url = `https://musesound.vercel.app/jam?code=${code}`;
+            navigator.clipboard.writeText(url).then(() => {
+                utils.showToast('Lien copié !');
+            }).catch(() => {
+                utils.showToast('Erreur de copie');
+            });
+        });
+
+        document.getElementById('jam-btn-qr')?.addEventListener('click', () => {
+            const modal = document.getElementById('jam-qr-modal');
+            const img = document.getElementById('jam-qr-image');
+            const display = document.getElementById('jam-qr-code-display');
+            const url = window.MuseSound.jam.generateQRUrl();
+            if (img && url) img.src = url;
+            if (display) display.textContent = window.MuseSound.jam.code || '';
+            if (modal) modal.classList.remove('hidden');
+        });
+
+        document.getElementById('jam-btn-next')?.addEventListener('click', () => {
+            window.MuseSound.jam.nextJamTrack();
+        });
+    },
+
     handleScroll(el) {
         const { importer } = window.MuseSound;
         if (state.isFetchingMore) return;
@@ -175,10 +236,10 @@ export const ui = {
 
         syncTabs() {
         const m = state.uiMode;
-        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-container', queue: 'queue-view' };
+        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-container', queue: 'queue-view', jam: 'jam-view' };
         Object.keys(containers).forEach(key => {
             const el = document.getElementById(containers[key]);
-            const tab = document.getElementById('tab-' + (key === 'playlist' ? 'playlist' : key === 'playlists' ? 'playlists' : key === 'library' ? 'library' : 'queue'));
+            const tab = document.getElementById('tab-' + (key === 'playlist' ? 'playlist' : key === 'playlists' ? 'playlists' : key === 'library' ? 'library' : key === 'queue' ? 'queue' : 'jam'));
             if (el) el.classList.toggle('hidden', m !== key);
             if (tab) {
                 tab.classList.toggle('border-primary', m === key);
@@ -191,6 +252,7 @@ export const ui = {
         this.renderQueue();
                 if (m === 'playlists') this.renderPlaylistsResults();
         if (m === 'library') this.renderLibrary();
+        if (m === 'jam') this.renderJam();
     },
 
     renderPlaylistsResults() {
@@ -244,6 +306,12 @@ export const ui = {
                     <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.player.addToQueue(MuseSound.state.currentPlaylist[${i}])'>
                         <span class="material-symbols-outlined text-primary">playlist_add</span>
                     </button>
+                    ${state.jamActive
+                        ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.addTrackToJam(MuseSound.state.currentPlaylist[${i}])'>
+                            <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
+                           </button>`
+                        : ''
+                    }
                 </div>
             </div>
         `).join('');
@@ -314,6 +382,68 @@ export const ui = {
                         <span class="material-symbols-outlined text-sm">close</span>
                     </button>
                 </div>
+            </div>
+        `).join('');
+    },
+
+    renderJam() {
+        const { jam, importer } = window.MuseSound;
+        const lobby = document.getElementById('jam-lobby');
+        const session = document.getElementById('jam-session');
+        if (!lobby || !session) return;
+
+        const active = state.jamActive && jam.sessionId;
+
+        lobby.classList.toggle('hidden', active);
+        session.classList.toggle('hidden', !active);
+
+        if (!active) return;
+
+        document.getElementById('jam-session-code').textContent = state.jamCode || '';
+        const role = document.getElementById('jam-session-role');
+        if (role) {
+            role.textContent = state.jamIsHost ? 'Hôte' : 'Invité';
+            role.className = state.jamIsHost
+                ? 'ml-2 px-2 py-0.5 rounded-full text-[10px] bg-primary/20 text-primary'
+                : 'ml-2 px-2 py-0.5 rounded-full text-[10px] bg-on-surface-variant/20 text-on-surface-variant';
+        }
+
+        const hostControls = document.getElementById('jam-host-controls');
+        if (hostControls) hostControls.classList.toggle('hidden', !state.jamIsHost);
+
+        const nowPlaying = document.getElementById('jam-nowplaying');
+        if (state.jamCurrentTrack) {
+            nowPlaying?.classList.remove('hidden');
+            document.getElementById('jam-current-title').textContent = state.jamCurrentTrack.title || '';
+            document.getElementById('jam-current-author').textContent = state.jamCurrentTrack.author || '';
+            document.getElementById('jam-current-art').src = state.jamCurrentTrack.thumbnail || '';
+        } else {
+            nowPlaying?.classList.add('hidden');
+        }
+
+        const list = document.getElementById('jam-queue-list');
+        const count = document.getElementById('jam-track-count');
+        if (!list) return;
+        if (count) count.textContent = `${state.jamQueue.length} morceau${state.jamQueue.length > 1 ? 'x' : ''}`;
+
+        if (state.jamQueue.length === 0) {
+            list.innerHTML = `<div class="flex flex-col items-center justify-center py-12 text-on-surface-variant opacity-50"><span class="material-symbols-outlined text-4xl mb-2">queue_play_next</span><p class="text-sm">La file d'attente est vide.</p></div>`;
+            return;
+        }
+
+        list.innerHTML = state.jamQueue.map((t, i) => `
+            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-high transition-all">
+                <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover" onerror="this.style.display='none'">
+                <div class="flex-1 min-w-0">
+                    <div class="text-sm font-medium truncate">${utils.escapeHtml(t.title)}</div>
+                    <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
+                </div>
+                ${state.jamIsHost
+                    ? `<button class="w-8 h-8 flex items-center justify-center opacity-60 hover:opacity-100 hover:text-red-400" onclick="MuseSound.jam.removeTrackFromJam(${i})">
+                        <span class="material-symbols-outlined text-sm">close</span>
+                       </button>`
+                    : ''
+                }
             </div>
         `).join('');
     },

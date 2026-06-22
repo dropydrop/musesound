@@ -32,6 +32,15 @@ export const state = {
     lastSearchQuery: null,
     isFetchingMore: false,
     shuffleHistory: JSON.parse(localStorage.getItem('MS_SHUFFLE_HISTORY')) || [],
+    // Jam session state
+    jamActive: false,
+    jamSessionId: null,
+    jamCode: null,
+    jamIsHost: false,
+    jamQueue: [],
+    jamCurrentTrack: null,
+    jamFirebaseConfig: null,
+
     initVolume() {
         if (this.volume <= 0) {
             this.volume = 100;

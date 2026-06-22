@@ -8,6 +8,7 @@ import { utils } from './modules/utils.js';
 import { api } from './modules/api.js';
 import { player } from './modules/player.js';
 import { ui } from './modules/ui.js';
+import { jam } from './modules/jam.js';
 
 const SUPABASE_URL = 'https://jothxhslawjggrcbcdhq.supabase.co';
 const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpvdGh4aHNsYXdqZ2dyY2JjZGhxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzAwNjUzMjIsImV4cCI6MjA4NTY0MTMyMn0.FuPqkPmTSM3Wr_skgVZmbzHrXZ77GIaMSEFVHPHoGbY';
@@ -18,6 +19,7 @@ window.MuseSound = {
     importer: api,
     player,
     ui,
+    jam,
     supabase: null,
     
     async init() {
@@ -30,9 +32,18 @@ window.MuseSound = {
             console.error("Le CDN Supabase n'a pas pu être chargé à temps.");
         }
 
+        // ⚠️ Remplacez ces valeurs par votre configuration Firebase
+        state.jamFirebaseConfig = {
+            apiKey: 'AIzaSyChbZxLKNZCOpVYe-HbJLiRYOLPII6uF0g',
+            authDomain: 'musesound-jam.firebaseapp.com',
+            databaseURL: 'https://musesound-jam-default-rtdb.europe-west1.firebasedatabase.app',
+            projectId: 'musesound-jam'
+        };
+
         this.ui.init();
         this.player.init();
         this.state.initVolume();
+        this.jam.init();
         
         if (this.supabase) {
             this.handleAuthErrors();
@@ -42,6 +53,16 @@ window.MuseSound = {
         if (this.state.currentPlaylist.length > 0) {
             this.ui.renderPlaylist();
             this.ui.checkResumeState();
+        }
+
+        // Détection d'une invitation Jam via paramètre d'URL
+        const urlParams = new URLSearchParams(window.location.search);
+        const jamCode = urlParams.get('code');
+        if (jamCode) {
+            setTimeout(() => {
+                document.getElementById('tab-jam')?.click();
+                document.getElementById('jam-code-input')?.focus();
+            }, 1000);
         }
     },
 

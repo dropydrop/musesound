@@ -1,0 +1,32 @@
+{
+  "rules": {
+    "jam_sessions": {
+      "$sessionId": {
+        ".read": "auth != null",
+        ".write": "auth != null",
+        "hostId": {
+          ".validate": "newData.isString()"
+        },
+        "code": {
+          ".validate": "newData.isString()"
+        },
+        "currentTrack": {
+          ".write": "data.parent().child('hostId').val() === auth.uid"
+        },
+        "isPlaying": {
+          ".write": "data.parent().child('hostId').val() === auth.uid"
+        },
+        "currentProgress": {
+          ".write": "data.parent().child('hostId').val() === auth.uid"
+        },
+        "createdAt": {
+          ".validate": "newData.isNumber()"
+        },
+        "queue": {
+          ".write": "auth != null",
+          ".validate": "newData.isArray()"
+        }
+      }
+    }
+  }
+}
