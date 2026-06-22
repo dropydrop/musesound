@@ -2,6 +2,7 @@
  * Jam Module — Shared real-time queue via Firebase Realtime Database
  */
 import { state } from './state.js';
+import { CONFIG } from './config.js';
 
 export let db = null;
 export let auth = null;
@@ -158,7 +159,6 @@ export const jam = {
     state.jamIsHost = this.isHost;
     state.jamActive = true;
 
-    // volume à 0% pour les invités
     if (!this.isHost) {
         window.MuseSound.player.setVolume(0);
         window.MuseSound.utils.showToast('Volume mis à 0% par défaut. Ajustez-le avec le slider en bas.');
@@ -242,7 +242,6 @@ export const jam = {
 
   updatePlaybackTime(currentTime) {
     if (!db || !this.sessionId || !this.isHost) return;
-    // Éviter les écritures trop fréquentes (toutes les 2 secondes max)
     if (Math.abs(currentTime - this._lastSentTime) < 0.5) return;
     this._lastSentTime = currentTime;
     db.ref(`jam_sessions/${this.sessionId}/currentTime`).set(currentTime);
@@ -277,7 +276,6 @@ export const jam = {
         state.currentIndex = -1;
         player.doPlay(track);
 
-      // force le volume à 0 pour l'invité après chaque nouveau morceau
       if (!this.isHost) {
         setTimeout(() => {
             if (player.ytPlayer && typeof player.ytPlayer.setVolume === 'function') {
@@ -300,7 +298,6 @@ export const jam = {
         }
       }
 
-      // Synchronisation play/pause
       const playingChanged = typeof data.isPlaying === 'boolean' && data.isPlaying !== this._prevIsPlaying;
       this._prevIsPlaying = data.isPlaying;
 
@@ -317,7 +314,6 @@ export const jam = {
         }
       }
 
-      // Synchronisation du seek (position)
       if (typeof data.currentTime === 'number' && !this.isHost && !this._updatingFromFirebase) {
         const { player } = window.MuseSound;
         const localTime = player.ytPlayer?.getCurrentTime?.() || 0;
@@ -334,10 +330,8 @@ export const jam = {
     });
   },
 
-  generateQRUrl() {
-    if (!this.code) return null;
-    return `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(`https://musesound.vercel.app/?code=${this.code}`)}`;
-  },
+  // QR Code generation is now handled by ui.js with qrcode.min.js
+  // This method is kept for backward compatibility but no longer used
 
   async moveJamTrack(index, direction) {
     if (!this.isHost || !db || !this.sessionId) return;

@@ -27,7 +27,7 @@ export const ui = {
             }
         });
 
-                document.getElementById('tab-playlist')?.addEventListener('click', () => { state.uiMode = 'playlist'; state.searchTab = 'tracks'; this.syncTabs(); });
+        document.getElementById('tab-playlist')?.addEventListener('click', () => { state.uiMode = 'playlist'; state.searchTab = 'tracks'; this.syncTabs(); });
         document.getElementById('tab-playlists')?.addEventListener('click', () => { state.uiMode = 'playlists'; state.searchTab = 'playlists'; this.syncTabs(); });
         document.getElementById('tab-library')?.addEventListener('click', async () => {
             state.uiMode = 'library';
@@ -133,8 +133,10 @@ export const ui = {
     },
 
     initJamControls() {
+        const { jam } = window.MuseSound;
+        
         document.getElementById('jam-btn-create')?.addEventListener('click', async () => {
-            const result = await window.MuseSound.jam.createJamSession();
+            const result = await jam.createJamSession();
             if (result) {
                 utils.showToast(`Session créée ! Code: ${result.code}`);
                 this.renderJam();
@@ -148,7 +150,7 @@ export const ui = {
                 utils.showToast('Entrez un code valide');
                 return;
             }
-            const result = await window.MuseSound.jam.joinJamSession(code);
+            const result = await jam.joinJamSession(code);
             if (result) {
                 utils.showToast(`Rejoint la session ${result.code}`);
                 input.value = '';
@@ -161,43 +163,20 @@ export const ui = {
         });
 
         document.getElementById('jam-btn-leave')?.addEventListener('click', () => {
-            window.MuseSound.jam.leaveJamSession();
+            jam.leaveJamSession();
             utils.showToast('Session quittée');
         });
 
         document.getElementById('jam-btn-copy')?.addEventListener('click', () => {
-            const { code } = window.MuseSound.jam;
-            if (!code) return;
-            const url = `https://musesound.vercel.app/?code=${code}`;
-            navigator.clipboard.writeText(url).then(() => {
-                utils.showToast('Lien copié !');
-            }).catch(() => {
-                utils.showToast('Erreur de copie');
-            });
+            this.copyJamLink();
         });
 
         document.getElementById('jam-btn-qr')?.addEventListener('click', () => {
-            const modal = document.getElementById('jam-qr-modal');
-            const img = document.getElementById('jam-qr-image');
-            const display = document.getElementById('jam-qr-code-display');
-            const fallback = document.getElementById('jam-qr-fallback');
-            const url = window.MuseSound.jam.generateQRUrl();
-            if (display) display.textContent = window.MuseSound.jam.code || '';
-            if (img && fallback) {
-                img.classList.remove('hidden');
-                fallback.classList.add('hidden');
-                if (url) {
-                    img.src = url;
-                } else {
-                    img.classList.add('hidden');
-                    fallback.classList.remove('hidden');
-                }
-            }
-            if (modal) modal.classList.remove('hidden');
+            this.generateJamQR();
         });
 
         document.getElementById('jam-btn-next')?.addEventListener('click', () => {
-            window.MuseSound.jam.nextJamTrack();
+            jam.nextJamTrack();
         });
 
         document.getElementById('jam-btn-prev')?.addEventListener('click', () => {
@@ -211,7 +190,7 @@ export const ui = {
         });
 
         document.getElementById('jam-btn-export')?.addEventListener('click', () => {
-            window.MuseSound.jam.exportJamQueue();
+            jam.exportJamQueue();
         });
 
         document.getElementById('jam-btn-import')?.addEventListener('click', () => {
@@ -219,13 +198,82 @@ export const ui = {
         });
 
         document.getElementById('jam-file-input')?.addEventListener('change', (e) => {
-            window.MuseSound.jam.importJamQueueFromFile(e.target.files[0]);
+            jam.importJamQueueFromFile(e.target.files[0]);
             e.target.value = '';
         });
 
         document.getElementById('jam-btn-clear')?.addEventListener('click', () => {
-            window.MuseSound.jam.clearJamQueue();
+            jam.clearJamQueue();
         });
+    },
+
+    generateJamQR() {
+        const modal = document.getElementById('jam-qr-modal');
+        const img = document.getElementById('jam-qr-image');
+        const display = document.getElementById('jam-qr-code-display');
+        const fallback = document.getElementById('jam-qr-fallback');
+        const { code } = window.MuseSound.jam;
+        
+        if (display) display.textContent = code || '';
+        
+        if (!code) {
+            if (img) img.classList.add('hidden');
+            if (fallback) fallback.classList.remove('hidden');
+            if (modal) modal.classList.remove('hidden');
+            return;
+        }
+
+        // Génération du QR Code avec la librairie
+        if (typeof QRCode !== 'undefined' && img) {
+            try {
+                // Créer un canvas temporaire pour le QR
+                const qrContainer = document.createElement('div');
+                qrContainer.style.display = 'none';
+                document.body.appendChild(qrContainer);
+                
+                new QRCode(qrContainer, {
+                    text: `https://musesound.vercel.app/?code=${code}`,
+                    width: 220,
+                    height: 220,
+                    colorDark: '#53e076',
+                    colorLight: '#121414',
+                    correctLevel: QRCode.CorrectLevel.L
+                });
+                
+                // Récupérer le canvas généré
+                const canvas = qrContainer.querySelector('canvas');
+                if (canvas) {
+                    img.src = canvas.toDataURL('image/png');
+                    img.classList.remove('hidden');
+                    if (fallback) fallback.classList.add('hidden');
+                } else {
+                    this.showQRFallback(img, fallback, code);
+                }
+                document.body.removeChild(qrContainer);
+            } catch (e) {
+                console.warn('QR Code generation failed:', e);
+                this.showQRFallback(img, fallback, code);
+            }
+        } else {
+            this.showQRFallback(img, fallback, code);
+        }
+        
+        if (modal) modal.classList.remove('hidden');
+    },
+
+    showQRFallback(img, fallback, code) {
+        if (img) img.classList.add('hidden');
+        if (fallback) {
+            fallback.classList.remove('hidden');
+            fallback.innerHTML = `
+                <div class="text-on-surface-variant/70 text-sm p-4 border border-outline-variant rounded-lg text-center">
+                    <span class="material-symbols-outlined text-3xl block mb-2">qr_code_scanner</span>
+                    <p>QR Code non disponible.</p>
+                    <p class="text-xs mt-1">Code d'invitation : <strong>${code || '---'}</strong></p>
+                    ${code ? `<button onclick="navigator.clipboard?.writeText('${code}'); window.MuseSound.utils.showToast('Code copié !')" class="mt-2 text-primary text-xs underline">Copier le code</button>` : ''}
+                </div>
+            `;
+        }
     },
 
     handleScroll(el) {
@@ -272,7 +320,7 @@ export const ui = {
 
     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
 
-        syncTabs() {
+    syncTabs() {
         const m = state.uiMode;
         const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-container', queue: 'queue-view', jam: 'jam-view' };
         Object.keys(containers).forEach(key => {
@@ -288,7 +336,7 @@ export const ui = {
         });
         this.renderPlaylist();
         this.renderQueue();
-                if (m === 'playlists') this.renderPlaylistsResults();
+        if (m === 'playlists') this.renderPlaylistsResults();
         if (m === 'library') this.renderLibrary();
         if (m === 'jam') this.renderJam();
     },
@@ -364,7 +412,7 @@ export const ui = {
         container.innerHTML = html;
     },
 
-        renderLibrary() {
+    renderLibrary() {
         const container = document.getElementById('library-container');
         if (!container || state.uiMode !== 'library' || !state.foundLibrary) return;
         if (state.foundLibrary.length === 0) {
@@ -413,7 +461,6 @@ export const ui = {
                     <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
                 </div>
                 <div class="flex items-center gap-1">
-                    <!-- Reorder Arrows -->
                     <div class="reorder-btn-group flex-col gap-1 mr-1">
                         <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
                                 onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
@@ -567,11 +614,9 @@ export const ui = {
         const newIndex = index + direction;
         if (newIndex < 0 || newIndex >= state.queue.length) return;
 
-        // Permutation (swap)
         const [item] = state.queue.splice(index, 1);
         state.queue.splice(newIndex, 0, item);
 
-        // Maj de l'index de lecture
         if (state.playingQueueIndex === index) {
             state.playingQueueIndex = newIndex;
         } else if (index < state.playingQueueIndex && newIndex >= state.playingQueueIndex) {
@@ -607,9 +652,7 @@ export const ui = {
     },
 
     handlePointerDown(e, index, type) {
-        // Abandon du drag-and-drop sur mobile (touch)
         if (e.pointerType === 'touch') return;
-        
         if (e.button !== 0 && e.pointerType === 'mouse') return;
         if (e.target.closest('button')) return;
         
@@ -641,10 +684,8 @@ export const ui = {
             state.lastX = e.clientX;
             state.lastY = e.clientY;
 
-            // Trouver l'élément sous le doigt/souris (grâce au pointer-events: none sur le drag)
             const target = document.elementFromPoint(e.clientX, e.clientY)?.closest('[onpointerdown]');
             
-            // Nettoyage systématique des anciens highlights
             document.querySelectorAll('.drag-over').forEach(el => {
                 el.classList.remove('drag-over', 'border-t-4', 'border-primary');
             });
@@ -667,7 +708,6 @@ export const ui = {
         
         document.body.style.cursor = '';
         
-        // 1. Détection de la cible finale basée sur la dernière position connue
         const dropTarget = document.elementFromPoint(state.lastX, state.lastY)?.closest('[onpointerdown]');
         let finalToIndex = fromIndex; 
 
@@ -676,7 +716,6 @@ export const ui = {
             if (match) finalToIndex = parseInt(match[1]);
         }
 
-        // 2. Nettoyage visuel et restauration technique
         document.querySelectorAll('.drag-over').forEach(el => {
             el.classList.remove('drag-over', 'border-t-4', 'border-primary');
         });
@@ -686,7 +725,6 @@ export const ui = {
         
         try { currentEl.releasePointerCapture(e.pointerId); } catch(err) {}
 
-        // 3. Exécution de la réorganisation
         if (fromIndex !== -1 && fromIndex !== finalToIndex && fromType === type) {
             const list = type === 'playlist' ? state.currentPlaylist : state.queue;
             const [movedItem] = list.splice(fromIndex, 1);
