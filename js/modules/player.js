@@ -296,13 +296,16 @@ const { ui } = window.MuseSound;
     },
 
     nextPlaylist() {
+        const { ui } = window.MuseSound;
+
         if (state.shuffle) {
-            const unplayed = [];
-            for (let i = 0; i < state.currentPlaylist.length; i++) {
-                if (!state.shuffleHistory.includes(i)) unplayed.push(i);
-            }
+            const unplayed = state.currentPlaylist.filter(
+                (_, idx) => !state.shuffleHistory.includes(idx)
+            );
+
             if (unplayed.length === 0) {
                 state.shuffleHistory = [];
+
                 if (state.repeat === 'all') {
                     const nextIdx = Math.floor(Math.random() * state.currentPlaylist.length);
                     this.playTrack(nextIdx);
@@ -314,22 +317,29 @@ const { ui } = window.MuseSound;
                 }
             } else {
                 const randIdx = Math.floor(Math.random() * unplayed.length);
-                this.playTrack(unplayed[randIdx]);
+                this.playTrack(state.currentPlaylist.indexOf(unplayed[randIdx]));
+            }
         } else {
             let nextIndex = state.currentIndex + 1;
+
             if (nextIndex >= state.currentPlaylist.length) {
-                if (state.repeat === 'all') nextIndex = 0;
-                else if (state.isRadioMode && state.lastPlayedTrack) {
+                if (state.repeat === 'all') {
+                    nextIndex = 0;
+                } else if (state.isRadioMode && state.lastPlayedTrack) {
                     this.triggerRadioMix();
+                    this.saveShuffleHistory();
                     return;
                 } else {
                     if (this.ytPlayer) this.ytPlayer.stopVideo();
                     this.ytActive = false;
+                    this.saveShuffleHistory();
                     return;
                 }
             }
+
             this.playTrack(nextIndex);
         }
+
         this.saveShuffleHistory();
     },
 
