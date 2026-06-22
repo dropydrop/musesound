@@ -3,8 +3,8 @@
  */
 import { state } from './state.js';
 
-let db = null;
-let auth = null;
+export let db = null;
+export let auth = null;
 let jamRef = null;
 let jamListener = null;
 let currentTrackId = null;
@@ -37,28 +37,33 @@ export const jam = {
 
     try {
       let app;
-      try {
-        app = window.firebase.app();
-      } catch (e) {
+      if (window.firebase.apps.length === 0) {
         app = window.firebase.initializeApp(config);
+      } else {
+        app = window.firebase.apps[0];
       }
-
+      
       db = window.firebase.database(app);
       auth = window.firebase.auth(app);
 
-      auth.signInAnonymously()
-        .then(user => {
-          this.userId = user.user.uid;
-          console.log('Jam: Auth OK', this.userId);
-        })
-        .catch(err => {
-          console.error('Jam: Auth failed', err);
-          window.MuseSound.utils.showToast('Erreur d\'authentification Jam');
-        });
+      if (!auth.currentUser) {
+        auth.signInAnonymously()
+          .then(userCredential => {
+            this.userId = userCredential.user.uid;
+            console.log('Jam: Auth OK', this.userId);
+          })
+          .catch(err => {
+            console.error('Jam: Auth failed', err);
+            window.MuseSound.utils.showToast('Erreur d\'authentification Jam');
+          });
+      } else {
+        this.userId = auth.currentUser.uid;
+        console.log('Jam: Already authenticated', this.userId);
+      }
     } catch (e) {
       console.error('Jam: Firebase init error', e);
     }
-  },
+  }
 
   async createJamSession() {
     if (!db || !this.userId) {
