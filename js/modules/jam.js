@@ -31,6 +31,7 @@ export const jam = {
   isHost: false,
   _updatingFromFirebase: false,
   _prevIsPlaying: null,
+  _lastSentTime: 0,
 
   init() {
     if (!window.firebase) return;
@@ -67,50 +68,49 @@ export const jam = {
     }
   },
 
-async createJamSession() {
-  if (!db || !this.userId) {
-    window.MuseSound.utils.showToast('Jam: authentication in progress…');
-    return null;
-  }
+  async createJamSession() {
+    if (!db || !this.userId) {
+      window.MuseSound.utils.showToast('Jam: authentication in progress…');
+      return null;
+    }
 
-  let code = generateCode();
-  let tries = 0;
-  while (tries < 10) {
-    const snap = await db.ref('jam_sessions')
-      .orderByChild('code')
-      .equalTo(code)
-      .once('value');
-    if (!snap.exists()) break;
-    code = generateCode();
-    tries++;
-  }
+    let code = generateCode();
+    let tries = 0;
+    while (tries < 10) {
+      const snap = await db.ref('jam_sessions')
+        .orderByChild('code')
+        .equalTo(code)
+        .once('value');
+      if (!snap.exists()) break;
+      code = generateCode();
+      tries++;
+    }
 
-  // Generate ID manually instead of using push()
-  const sessionId = db.ref('jam_sessions').push().key;
-  const sessionRef = db.ref(`jam_sessions/${sessionId}`);
-  const url = `https://musesound.vercel.app/jam?code=${code}`;
+    const sessionId = db.ref('jam_sessions').push().key;
+    const sessionRef = db.ref(`jam_sessions/${sessionId}`);
+    const url = `https://musesound.vercel.app/jam?code=${code}`;
 
-  await sessionRef.set({
-    code,
-    hostId: this.userId,
-    createdAt: window.firebase.database.ServerValue.TIMESTAMP,
-    currentTrack: null,
-    currentProgress: 0,
-    isPlaying: false,
-    queue: []
-  });
+    await sessionRef.set({
+      code,
+      hostId: this.userId,
+      createdAt: window.firebase.database.ServerValue.TIMESTAMP,
+      currentTrack: null,
+      currentTime: 0,
+      isPlaying: false,
+      queue: []
+    });
 
-  this.sessionId = sessionId;
-  this.code = code;
-  this.isHost = true;
-  state.jamSessionId = sessionId;
-  state.jamCode = code;
-  state.jamIsHost = true;
-  state.jamActive = true;
+    this.sessionId = sessionId;
+    this.code = code;
+    this.isHost = true;
+    state.jamSessionId = sessionId;
+    state.jamCode = code;
+    state.jamIsHost = true;
+    state.jamActive = true;
 
-  this._listen(sessionId);
-  return { sessionId, code, url };
-},
+    this._listen(sessionId);
+    return { sessionId, code, url };
+  },
 
   async joinJamSession(codeOrSessionId) {
     if (!db || !this.userId) {
@@ -223,10 +223,23 @@ async createJamSession() {
     const updates = {};
     updates[`jam_sessions/${this.sessionId}/queue`] = queue;
     updates[`jam_sessions/${this.sessionId}/currentTrack`] = nextTrack;
-    updates[`jam_sessions/${this.sessionId}/currentProgress`] = 0;
+    updates[`jam_sessions/${this.sessionId}/currentTime`] = 0;
     updates[`jam_sessions/${this.sessionId}/isPlaying`] = true;
 
     await db.ref().update(updates);
+  },
+
+  updatePlaybackState(isPlaying) {
+    if (!db || !this.sessionId || !this.isHost) return;
+    db.ref(`jam_sessions/${this.sessionId}/isPlaying`).set(isPlaying);
+  },
+
+  updatePlaybackTime(currentTime) {
+    if (!db || !this.sessionId || !this.isHost) return;
+    // Éviter les écritures trop fréquentes (toutes les 2 secondes max)
+    if (Math.abs(currentTime - this._lastSentTime) < 0.5) return;
+    this._lastSentTime = currentTime;
+    db.ref(`jam_sessions/${this.sessionId}/currentTime`).set(currentTime);
   },
 
   _listen(sessionId) {
@@ -271,6 +284,7 @@ async createJamSession() {
         }
       }
 
+      // Synchronisation play/pause
       const playingChanged = typeof data.isPlaying === 'boolean' && data.isPlaying !== this._prevIsPlaying;
       this._prevIsPlaying = data.isPlaying;
 
@@ -287,13 +301,21 @@ async createJamSession() {
         }
       }
 
+      // Synchronisation du seek (position)
+      if (typeof data.currentTime === 'number' && !this.isHost && !this._updatingFromFirebase) {
+        const { player } = window.MuseSound;
+        const localTime = player.ytPlayer?.getCurrentTime?.() || 0;
+        if (Math.abs(data.currentTime - localTime) > 1) {
+          this._updatingFromFirebase = true;
+          if (player.ytPlayer && typeof player.ytPlayer.seekTo === 'function') {
+            player.ytPlayer.seekTo(data.currentTime, true);
+          }
+          this._updatingFromFirebase = false;
+        }
+      }
+
       window.MuseSound.ui.renderJam();
     });
-  },
-
-  updatePlaybackState(isPlaying) {
-    if (!db || !this.sessionId || !this.isHost) return;
-    db.ref(`jam_sessions/${this.sessionId}/isPlaying`).set(isPlaying);
   },
 
   generateQRUrl() {

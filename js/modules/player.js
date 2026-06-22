@@ -10,6 +10,7 @@ export const player = {
     progressInterval: null,
     isFadingOut: false,
     keepAliveAudio: null,
+    _seekUpdateCounter: 0,
 
     init() {
         const tag = document.createElement('script');
@@ -86,6 +87,17 @@ export const player = {
                         localStorage.setItem('MS_LAST_IS_QUEUE', isQueue);
                         localStorage.setItem('MS_LAST_POS', cur);
                     }
+
+                    // Synchronisation Jam : l'hôte écrit sa position toutes les 2 secondes
+                    if (state.jamActive && state.jamIsHost) {
+                        this._seekUpdateCounter++;
+                        if (this._seekUpdateCounter % 4 === 0) { // 4 * 500ms = 2 secondes
+                            const jam = window.MuseSound?.jam;
+                            if (jam && typeof jam.updatePlaybackTime === 'function') {
+                                jam.updatePlaybackTime(cur);
+                            }
+                        }
+                    }
                 }
             }
         }, 500);
@@ -145,22 +157,19 @@ export const player = {
         this.doPlay(track, startTime);
     },
 
-        doPlay(track, startTime = 0) {
-const { ui } = window.MuseSound;
+    doPlay(track, startTime = 0) {
+        const { ui } = window.MuseSound;
         this.ytActive = true;
         this.isFadingOut = false;
         state.lastPlayedTrack = track;
-        // Forçage du volume avant lecture
         if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume > 0 ? state.volume : 100);
 
-        
         this.ytPlayer.loadVideoById({
             videoId: track.id,
             startSeconds: startTime,
             suggestedQuality: state.ecoMode ? 'tiny' : 'medium'
         });
 
-        // Forçage immédiat
         if (this.ytPlayer && typeof this.ytPlayer.setPlaybackQuality === 'function') {
             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
@@ -347,7 +356,6 @@ const { ui } = window.MuseSound;
 
         this.saveShuffleHistory();
     },
-
 
     prev() {
         if (!this.ytPlayer) return;
