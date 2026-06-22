@@ -158,6 +158,12 @@ export const jam = {
     state.jamIsHost = this.isHost;
     state.jamActive = true;
 
+    // volume à 0% pour les invités
+    if (!this.isHost) {
+        window.MuseSound.player.setVolume(0);
+        window.MuseSound.utils.showToast('Volume mis à 0% par défaut. Ajustez-le avec le slider en bas.');
+    }
+
     this._listen(sessionId);
     return { sessionId, code: data.code, url: `https://musesound.vercel.app/jam?code=${data.code}`, data };
   },
