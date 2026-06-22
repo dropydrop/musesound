@@ -257,7 +257,7 @@ export const jam = {
       state.jamCurrentTrack = data.currentTrack || null;
 
       const trackChanged = data.currentTrack && data.currentTrack.id !== currentTrackId;
-      if (trackChanged && currentTrackId !== null) {
+      if (trackChanged) {
         currentTrackId = data.currentTrack.id;
         const { player } = window.MuseSound;
         const track = {
