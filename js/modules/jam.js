@@ -244,7 +244,7 @@ async createJamSession() {
       state.jamCurrentTrack = data.currentTrack || null;
 
       const trackChanged = data.currentTrack && data.currentTrack.id !== currentTrackId;
-      if (trackChanged) {
+      if (trackChanged && currentTrackId !== null) {
         currentTrackId = data.currentTrack.id;
         const { player } = window.MuseSound;
         const track = {

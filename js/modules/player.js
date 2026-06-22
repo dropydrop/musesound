@@ -221,6 +221,11 @@ const { ui } = window.MuseSound;
     next(forceNext = false) {
         const { ui } = window.MuseSound;
 
+        if (state.jamActive) {
+            window.MuseSound.jam.nextJamTrack();
+            return;
+        }
+
         if (!forceNext && state.repeat === 'one') {
             if (this.ytPlayer && typeof this.ytPlayer.seekTo === 'function') {
                 this.ytPlayer.seekTo(0, true);
