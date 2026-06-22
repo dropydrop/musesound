@@ -394,13 +394,26 @@ export const jam = {
     if (!this.isHost || !db || !this.sessionId) return;
     const track = state.jamQueue[index];
     if (!track || !track.author) return;
-    const { importer } = window.MuseSound;
-    const query = `${track.author} - ${track.title || ''}`;
-    await importer.searchTracks(query);
-    const results = state.currentPlaylist.filter(t => t.id !== track.id).slice(0, 20);
-    if (results.length === 0) return;
-    const sanitized = results.map(t => sanitizeTrack(t));
-    await db.ref(`jam_sessions/${this.sessionId}/queue`).set(sanitized);
-    window.MuseSound.utils.showToast(`Radio générée (${sanitized.length} morceaux)`);
+    const { importer, utils } = window.MuseSound;
+    const query = `"${track.author} mix"`;
+    const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=3&type=playlist&q=${encodeURIComponent(query)}&key=${CONFIG.YOUTUBE_API_KEY}`;
+    try {
+      const response = await fetch(url);
+      const data = await response.json();
+      if (!data.items?.length) return;
+      const savedQueue = [...state.queue];
+      state.queue = [];
+      for (const pl of data.items.slice(0, 2)) {
+        await importer.fetchPlaylist(pl.id.playlistId, true);
+      }
+      const results = [...state.queue];
+      state.queue = savedQueue;
+      if (results.length === 0) return;
+      const sanitized = results.map(t => sanitizeTrack(t));
+      await db.ref(`jam_sessions/${this.sessionId}/queue`).set(sanitized);
+      utils.showToast(`Radio générée (${sanitized.length} morceaux)`);
+    } catch (e) {
+      console.error('Radio Jam error:', e);
+    }
   }
 };
