@@ -55,14 +55,15 @@ window.MuseSound = {
             this.ui.checkResumeState();
         }
 
-        // Détection d'une invitation Jam via paramètre d'URL
+        // Détection d'une invitation Jam via paramètre d'URL — auto-join
         const urlParams = new URLSearchParams(window.location.search);
         const jamCode = urlParams.get('code');
         if (jamCode) {
-            setTimeout(() => {
+            setTimeout(async () => {
                 document.getElementById('tab-jam')?.click();
-                document.getElementById('jam-code-input')?.focus();
-            }, 1000);
+                const result = await this.jam.joinJamSession(jamCode);
+                if (result) this.ui.renderJam();
+            }, 1500);
         }
     },
 

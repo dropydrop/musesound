@@ -3,6 +3,7 @@
  */
 import { state } from './state.js';
 import { utils } from './utils.js';
+import { CONFIG } from './config.js';
 
 export const ui = {
     init() {
@@ -284,6 +285,12 @@ export const ui = {
                     <div class="font-bold truncate">${utils.escapeHtml(pl.title)}</div>
                     <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
                 </div>
+                ${state.jamActive
+                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" title="Ajouter la playlist au Jam" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">group</span>
+                       </button>`
+                    : ''
+                }
             </div>
         `).join('');
     },
@@ -347,6 +354,12 @@ export const ui = {
                     <div class="font-bold truncate">${utils.escapeHtml(pl.snippet.title)}</div>
                     <div class="text-xs text-primary">${pl.contentDetails.itemCount} morceaux</div>
                 </div>
+                ${state.jamActive
+                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" title="Ajouter la playlist au Jam" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                        <span class="material-symbols-outlined text-sm" style="font-variation-settings: 'FILL' 1;">group</span>
+                       </button>`
+                    : ''
+                }
             </div>
         `).join('');
     },
@@ -459,6 +472,53 @@ export const ui = {
                 }
             </div>
         `).join('');
+    },
+
+    async addPlaylistToJam(playlistId) {
+        const { jam, utils, importer } = window.MuseSound;
+        if (!jam.sessionId) {
+            utils.showToast('Rejoignez une session Jam d\'abord');
+            return;
+        }
+
+        const token = state.googleToken;
+        const url = `https://www.googleapis.com/youtube/v3/playlistItems?part=snippet&maxResults=50&playlistId=${playlistId}&key=${CONFIG.YOUTUBE_API_KEY}`;
+        const headers = { 'Accept': 'application/json' };
+        if (token) headers['Authorization'] = `Bearer ${token}`;
+
+        let allTracks = [];
+        let nextPageToken = '';
+        while (allTracks.length < 500) {
+            const pageUrl = `${url}${nextPageToken ? `&pageToken=${nextPageToken}` : ''}`;
+            const response = await fetch(pageUrl, { headers });
+            const data = await response.json();
+            if (!data.items?.length) break;
+
+            const tracks = data.items.map(item => ({
+                id: item.snippet.resourceId.videoId,
+                title: item.snippet.title,
+                author: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
+                thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+                duration: 0
+            }));
+
+            allTracks = [...allTracks, ...tracks];
+            nextPageToken = data.nextPageToken;
+            if (!nextPageToken) break;
+        }
+
+        if (allTracks.length === 0) {
+            utils.showToast('Aucun morceau trouvé dans cette playlist');
+            return;
+        }
+
+        const enriched = await importer.enrichTracksData(allTracks.slice(0, 500));
+
+        for (const track of enriched) {
+            await jam.addTrackToJam(track);
+        }
+
+        utils.showToast(`Playlist ajoutée au Jam (${enriched.length} morceaux)`);
     },
 
     moveQueueItem(index, direction) {
