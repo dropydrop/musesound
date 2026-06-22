@@ -32,24 +32,29 @@ export const jam = {
 
   init() {
     if (!window.firebase) return;
-    const { state } = window.MuseSound;
-    const config = state.jamFirebaseConfig;
+    const config = window.MuseSound.state.jamFirebaseConfig;
     if (!config) return;
 
     try {
-      const app = window.firebase.initializeApp(config, 'musesound-jam');
+      let app;
+      try {
+        app = window.firebase.app();
+      } catch (e) {
+        app = window.firebase.initializeApp(config);
+      }
+
       db = window.firebase.database(app);
       auth = window.firebase.auth(app);
 
-      auth.signInAnonymously().catch(err => {
-        console.error('Jam: anonymous auth failed', err);
-      });
-
-      auth.onAuthStateChanged(user => {
-        if (user) {
-          this.userId = user.uid;
-        }
-      });
+      auth.signInAnonymously()
+        .then(user => {
+          this.userId = user.user.uid;
+          console.log('Jam: Auth OK', this.userId);
+        })
+        .catch(err => {
+          console.error('Jam: Auth failed', err);
+          window.MuseSound.utils.showToast('Erreur d\'authentification Jam');
+        });
     } catch (e) {
       console.error('Jam: Firebase init error', e);
     }
