@@ -63,52 +63,52 @@ export const jam = {
     } catch (e) {
       console.error('Jam: Firebase init error', e);
     }
+  },
+
+async createJamSession() {
+  if (!db || !this.userId) {
+    window.MuseSound.utils.showToast('Jam: authentication in progress…');
+    return null;
   }
 
-  async createJamSession() {
-    if (!db || !this.userId) {
-      window.MuseSound.utils.showToast('Jam: authentication in progress…');
-      return null;
-    }
+  let code = generateCode();
+  let tries = 0;
+  while (tries < 10) {
+    const snap = await db.ref('jam_sessions')
+      .orderByChild('code')
+      .equalTo(code)
+      .once('value');
+    if (!snap.exists()) break;
+    code = generateCode();
+    tries++;
+  }
 
-    let code = generateCode();
-    let tries = 0;
-    while (tries < 10) {
-      const snap = await db.ref('jam_sessions')
-        .orderByChild('code')
-        .equalTo(code)
-        .once('value');
-      if (!snap.exists()) break;
-      code = generateCode();
-      tries++;
-    }
+  // Generate ID manually instead of using push()
+  const sessionId = db.ref('jam_sessions').push().key;
+  const sessionRef = db.ref(`jam_sessions/${sessionId}`);
+  const url = `https://musesound.vercel.app/jam?code=${code}`;
 
-    // Generate ID manually instead of using push()
-    const sessionId = db.ref('jam_sessions').push().key;
-    const sessionRef = db.ref(`jam_sessions/${sessionId}`);
-    const url = `https://musesound.vercel.app/jam?code=${code}`;
+  await sessionRef.set({
+    code,
+    hostId: this.userId,
+    createdAt: window.firebase.database.ServerValue.TIMESTAMP,
+    currentTrack: null,
+    currentProgress: 0,
+    isPlaying: false,
+    queue: []
+  });
 
-    await sessionRef.set({
-      code,
-      hostId: this.userId,
-      createdAt: window.firebase.database.ServerValue.TIMESTAMP,
-      currentTrack: null,
-      currentProgress: 0,
-      isPlaying: false,
-      queue: []
-    });
+  this.sessionId = sessionId;
+  this.code = code;
+  this.isHost = true;
+  state.jamSessionId = sessionId;
+  state.jamCode = code;
+  state.jamIsHost = true;
+  state.jamActive = true;
 
-    this.sessionId = sessionId;
-    this.code = code;
-    this.isHost = true;
-    state.jamSessionId = sessionId;
-    state.jamCode = code;
-    state.jamIsHost = true;
-    state.jamActive = true;
-
-    this._listen(sessionId);
-    return { sessionId, code, url };
-  },
+  this._listen(sessionId);
+  return { sessionId, code, url };
+},
 
   async joinJamSession(codeOrSessionId) {
     if (!db || !this.userId) {
