@@ -276,6 +276,16 @@ export const jam = {
         state.playingQueueIndex = -1;
         state.currentIndex = -1;
         player.doPlay(track);
+
+      // force le volume à 0 pour l'invité après chaque nouveau morceau
+      if (!this.isHost) {
+        setTimeout(() => {
+            if (player.ytPlayer && typeof player.ytPlayer.setVolume === 'function') {
+                player.ytPlayer.setVolume(0);
+            }
+        }, 300);
+    }
+
         if (data.isPlaying) {
           setTimeout(() => { if (player.ytPlayer?.playVideo) player.ytPlayer.playVideo(); }, 200);
         }
