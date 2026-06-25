@@ -3,6 +3,14 @@
  * Entry point and orchestrator
  */
 
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('./service-worker.js')
+      .then(reg => console.log('Service Worker de MuseSound enregistré avec succès.'))
+      .catch(err => console.error('Échec de l\'enregistrement du SW:', err));
+  });
+}
+
 import { state } from './modules/state.js';
 import { utils } from './modules/utils.js';
 import { api } from './modules/api.js';
