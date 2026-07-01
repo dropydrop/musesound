@@ -393,20 +393,17 @@ export const ui = {
     },
 
     createSuggestionsContainer() {
-        const input = document.getElementById('playlist-url');
-        const div = document.createElement('div');
-        div.id = 'suggestions-container';
-        if (this.mobileSearchOpen) {
-            div.className = 'fixed left-4 right-4 z-[60] bg-surface-container-high rounded-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
-            const overlay = document.getElementById('mobile-search-overlay');
-            div.style.top = (overlay.getBoundingClientRect().bottom + 4) + 'px';
-            document.body.appendChild(div);
-        } else {
-            div.className = 'absolute top-full left-0 right-0 bg-surface-container-high z-[110] rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
-            input.parentNode.style.position = 'relative';
-            input.parentNode.appendChild(div);
+        const mInput = document.getElementById('playlist-url');
+        let mSuggest = document.getElementById('suggestions-container');
+        if (mSuggest) return mSuggest;
+        mSuggest = document.createElement('div');
+        mSuggest.id = 'suggestions-container';
+        mSuggest.className = 'absolute left-0 right-0 z-[10000] bg-surface-container-high rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
+        if (mInput && mInput.parentElement) {
+            mInput.parentElement.style.position = 'relative';
+            mInput.parentElement.appendChild(mSuggest);
         }
-        return div;
+        return mSuggest;
     },
 
     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
