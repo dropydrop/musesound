@@ -252,6 +252,36 @@
                 gap: 0.5rem;
             }
         }
+
+        /* === Progress bar : zone de clic élargie (12px de padding invisible) === */
+        #progress-container {
+            padding-top: 12px;
+            padding-bottom: 12px;
+            margin-top: -12px;
+            margin-bottom: -12px;
+        }
+
+        /* === Mobile : icônes et hauteur du lecteur agrandies === */
+        @media (max-width: 767px) {
+            footer {
+                min-height: 112px;
+            }
+            #play-pause-btn {
+                width: 48px;
+                height: 48px;
+            }
+            #play-pause-btn span {
+                font-size: 30px !important;
+            }
+            #prev-btn span,
+            #next-btn span {
+                font-size: 30px !important;
+            }
+            #shuffle-btn span,
+            #repeat-btn span {
+                font-size: 24px !important;
+            }
+        }
     </style>
 </head>
 <body class="bg-background text-on-surface font-body-md h-[100dvh] w-screen overflow-hidden flex flex-col">
