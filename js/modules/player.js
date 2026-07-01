@@ -9,7 +9,6 @@ export const player = {
     ytPlayer: null,
     ytActive: false,
     progressInterval: null,
-    keepAliveAudio: null,
     _seekUpdateCounter: 0,
 
     init() {
@@ -247,25 +246,50 @@ export const player = {
 
     _startKeepAliveOnInteraction() {
         const start = () => {
-            if (!this.keepAliveAudio) this._initKeepAlive();
+            this.startKeepAlive();
             document.removeEventListener('pointerdown', start);
             document.removeEventListener('touchstart', start);
         };
         document.addEventListener('pointerdown', start, { once: true });
         document.addEventListener('touchstart', start, { once: true });
+        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
+    },
+
+    _onVisibilityChange() {
+        if (!document.hidden && this.ytActive && state.isPlaying) {
+            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                this.ytPlayer.playVideo();
+            }
+        }
     },
 
     _initKeepAlive() {
-        if (this.keepAliveAudio) return;
+        if (this._keepAliveActive) return;
+        this._keepAliveActive = true;
+
+        const AudioCtx = window.AudioContext || window.webkitAudioContext;
+        if (AudioCtx) {
+            try {
+                this._keepCtx = new AudioCtx();
+                this._keepOsc = this._keepCtx.createOscillator();
+                this._keepGain = this._keepCtx.createGain();
+                this._keepGain.gain.value = 0.001;
+                this._keepOsc.frequency.value = 55;
+                this._keepOsc.connect(this._keepGain);
+                this._keepGain.connect(this._keepCtx.destination);
+                this._keepOsc.start();
+            } catch (e) {}
+        }
+
         const silentB64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/AA==";
-        this.keepAliveAudio = new Audio(silentB64);
-        this.keepAliveAudio.loop = true;
-        this.keepAliveAudio.volume = 0;
-        this.keepAliveAudio.play().catch(() => {});
+        this._keepAudio = new Audio(silentB64);
+        this._keepAudio.loop = true;
+        this._keepAudio.volume = 0.01;
+        this._keepAudio.play().catch(() => {});
     },
 
     startKeepAlive() {
-        if (this.keepAliveAudio) return;
+        if (this._keepAliveActive) return;
         this._initKeepAlive();
     },
 

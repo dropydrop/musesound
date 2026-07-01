@@ -528,17 +528,17 @@ export const ui = {
         }
 
         container.innerHTML = state.foundPlaylists.map(pl => `
-            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}', false)">
-                <div class="relative">
+            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}', false)">
+                <div class="relative shrink-0 mr-3">
                     <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate text-sm">${utils.escapeHtml(pl.title)}</div>
-                    <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
+                <div class="flex-1 min-w-0 mr-1">
+                    <div class="font-bold truncate text-xs">${pl.title}</div>
+                    <div class="text-[11px] text-primary">${pl.author}</div>
                 </div>
                 ${state.jamActive
-                    ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
                         <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
                        </button>`
                     : ''
@@ -559,24 +559,24 @@ export const ui = {
         }
 
         let html = state.currentPlaylist.map((t, i) => `
-            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-all select-none" 
+            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-all select-none" 
                  onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'playlist')" 
                  onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'playlist')"
                  onpointermove="MuseSound.ui.handlePointerMove(event)">
-                <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover pointer-events-none" onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
-                <div class="flex-1 min-w-0" onclick="MuseSound.ui.playResultNow(${i})">
-                    <div class="font-medium truncate text-sm">${utils.escapeHtml(t.title)}</div>
-                    <div class="text-xs text-on-surface-variant truncate">${utils.escapeHtml(t.author)} • ${this.formatViews(t.views)} écoutes</div>
+                <img src="${t.thumbnail}" class="w-12 h-12 shrink-0 mr-3 rounded object-cover pointer-events-none" onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
+                <div class="flex-1 min-w-0 mr-1" onclick="MuseSound.ui.playResultNow(${i})">
+                    <div class="font-medium truncate text-xs">${t.title}</div>
+                    <div class="text-[11px] text-on-surface-variant truncate">${t.author} • ${this.formatViews(t.views)} écoutes</div>
                 </div>
-                <div class="flex items-center gap-1">
-                    <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.currentPlaylist[${i}])'>
-                        <span class="material-symbols-outlined text-primary">radio</span>
+                <div class="flex items-center gap-0 shrink-0">
+                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.currentPlaylist[${i}])'>
+                        <span class="material-symbols-outlined text-primary text-xl">radio</span>
                     </button>
-                    <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.player.addToQueue(MuseSound.state.currentPlaylist[${i}])'>
+                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.player.addToQueue(MuseSound.state.currentPlaylist[${i}])'>
                         <span class="material-symbols-outlined text-primary">playlist_add</span>
                     </button>
                     ${state.jamActive
-                        ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.addTrackToJam(MuseSound.state.currentPlaylist[${i}])'>
+                        ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" onclick='event.stopPropagation(); MuseSound.jam.addTrackToJam(MuseSound.state.currentPlaylist[${i}])'>
                             <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
                            </button>`
                         : ''
@@ -597,17 +597,17 @@ export const ui = {
             return;
         }
         container.innerHTML = state.foundLibrary.map(pl => `
-            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
-                <div class="relative">
+            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
+                <div class="relative shrink-0 mr-3">
                     <img src="${pl.snippet.thumbnails?.medium?.url}" class="w-16 h-16 rounded object-cover shadow-lg">
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
                 </div>
-                <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate text-sm">${utils.escapeHtml(pl.snippet.title)}</div>
-                    <div class="text-xs text-primary">${pl.contentDetails.itemCount} morceaux</div>
+                <div class="flex-1 min-w-0 mr-1">
+                    <div class="font-bold truncate text-xs">${pl.snippet.title}</div>
+                    <div class="text-[11px] text-primary">${pl.contentDetails.itemCount} morceaux</div>
                 </div>
                 ${state.jamActive
-                    ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
                         <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
                        </button>`
                     : ''
@@ -629,30 +629,30 @@ export const ui = {
             return;
         }
         list.innerHTML = state.queue.map((t, i) => `
-            <div class="flex items-center gap-3 p-3 rounded-lg transition-all select-none ${i === state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
+            <div class="flex items-center p-3 rounded-lg transition-all select-none ${i === state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
                  onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'queue')" onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'queue')" onpointermove="MuseSound.ui.handlePointerMove(event)">
                 
-                <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover pointer-events-none ${i === state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
-                <div class="flex-1 min-w-0" onclick="MuseSound.player.playQueueTrack(${i})">
-                    <div class="text-sm font-medium truncate ${i === state.playingQueueIndex ? 'text-primary' : ''}">${utils.escapeHtml(t.title)}</div>
-                    <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
+                <img src="${t.thumbnail}" class="w-10 h-10 shrink-0 mr-3 rounded object-cover pointer-events-none ${i === state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
+                <div class="flex-1 min-w-0 mr-1" onclick="MuseSound.player.playQueueTrack(${i})">
+                    <div class="text-[10px] font-medium truncate ${i === state.playingQueueIndex ? 'text-primary' : ''}">${t.title}</div>
+                    <div class="text-[9px] text-on-surface-variant truncate">${t.author}</div>
                 </div>
-                <div class="flex items-center gap-1">
-                    <div class="reorder-btn-group flex-col gap-1 mr-1">
-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                <div class="flex items-center gap-0 shrink-0 ml-2">
+                    <div class="reorder-btn-group flex-col gap-0 mr-1">
+                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
                                 onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
-                            <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>
+                            <span class="material-symbols-outlined text-sm">keyboard_arrow_up</span>
                         </button>
-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
                                 onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, 1)">
-                            <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
+                            <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
                         </button>
                     </div>
 
-                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.queue[${i}])'>
+                    <button class="w-9 h-9 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.queue[${i}])'>
                         <span class="material-symbols-outlined text-sm">radio</span>
                     </button>
-                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
+                    <button class="w-9 h-9 flex items-center justify-center opacity-60 hover:opacity-100" onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
                         <span class="material-symbols-outlined text-sm">close</span>
                     </button>
                 </div>
@@ -712,25 +712,25 @@ export const ui = {
         }
 
         list.innerHTML = state.jamQueue.map((t, i) => `
-            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-high transition-all">
-                <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover" onerror="this.style.display='none'">
-                <div class="flex-1 min-w-0">
-                    <div class="text-sm font-medium truncate">${utils.escapeHtml(t.title)}</div>
-                    <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
+            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high transition-all">
+                <img src="${t.thumbnail}" class="w-10 h-10 shrink-0 mr-3 rounded object-cover" onerror="this.style.display='none'">
+                <div class="flex-1 min-w-0 mr-1">
+                    <div class="text-[10px] font-medium truncate">${t.title}</div>
+                    <div class="text-[9px] text-on-surface-variant truncate">${t.author}</div>
                 </div>
                 ${state.jamIsHost ? `
-                    <div class="reorder-btn-group flex-col gap-1 mr-1">
-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === 0 ? 'opacity-30 pointer-events-none' : ''}"
+                    <div class="reorder-btn-group flex-col gap-0 mr-1">
+                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === 0 ? 'opacity-30 pointer-events-none' : ''}"
                                 onclick="event.stopPropagation(); MuseSound.jam.moveJamTrack(${i}, -1)">
-                            <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>
+                            <span class="material-symbols-outlined text-sm">keyboard_arrow_up</span>
                         </button>
-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === state.jamQueue.length - 1 ? 'opacity-30 pointer-events-none' : ''}"
+                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === state.jamQueue.length - 1 ? 'opacity-30 pointer-events-none' : ''}"
                                 onclick="event.stopPropagation(); MuseSound.jam.moveJamTrack(${i}, 1)">
-                            <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
+                            <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
                         </button>
                     </div>
-                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.generateRadioMix(${i})'>
-                        <span class="material-symbols-outlined text-sm">radio</span>
+                    <button class="w-9 h-9 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.generateRadioMix(${i})'>
+                        <span class="material-symbols-outlined text-xs">radio</span>
                     </button>
                     <button class="w-8 h-8 flex items-center justify-center opacity-60 hover:opacity-100 hover:text-red-400" onclick="MuseSound.jam.removeTrackFromJam(${i})">
                         <span class="material-symbols-outlined text-sm">close</span>
