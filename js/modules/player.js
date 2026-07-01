@@ -15,6 +15,8 @@ export const player = {
     _keepAliveActive: false,
     _userWantsPlaying: false,
     _bgWatchdog: null,
+    _keepCtx: null,
+    _keepAudio: null,
 
     init() {
         const tag = document.createElement('script');
@@ -34,36 +36,29 @@ export const player = {
                 }
             });
         };
+        // Écoute des changements de visibilité pour forcer la reprise
         document.addEventListener('visibilitychange', () => this._onVisibilityChange());
     },
 
     onPlayerStateChange(event) {
         const { ui } = window.MuseSound;
         if (!this.ytActive) return;
+        
         if (event.data === YT.PlayerState.PLAYING) {
             this._userWantsPlaying = true;
             state.isPlaying = true;
             ui.updatePlayerControls();
             this.startProgressTracking();
-
-            setTimeout(() => {
-                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
-                    this.ytPlayer.setVolume(state.volume);
-                }
-            }, 50);
+            this._ensureAudioContextRunning(); // Renforcement keep-alive
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
-                this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
             }
         } else if (event.data === YT.PlayerState.PAUSED) {
+            // Si le doc est caché et qu'on voulait jouer, YouTube a forcé la pause
             if (this._userWantsPlaying && document.hidden) {
-                console.log('[MuseSound] Auto-pause détectée en arrière-plan, relance forcée...');
-                setTimeout(() => {
-                    if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
-                        this.ytPlayer.playVideo();
-                    }
-                }, 200);
+                console.log('[MuseSound] Auto-pause arrière-plan, relance...');
+                setTimeout(() => this.ytPlayer?.playVideo(), 200);
                 return;
             }
             state.isPlaying = false;
@@ -237,7 +232,9 @@ export const player = {
         this._userWantsPlaying = true;
         state.lastPlayedTrack = track;
 
+        // Force le keep-alive
         this.startKeepAlive();
+        this._ensureAudioContextRunning();
 
         if (this.fadeOutInterval) {
             clearInterval(this.fadeOutInterval);
@@ -269,6 +266,8 @@ export const player = {
     },
 
     _onVisibilityChange() {
+        this._ensureAudioContextRunning();
+        
         if (document.hidden) {
             if (this._userWantsPlaying && this.ytActive) {
                 console.log('[MuseSound] Page cachée, activation du watchdog arrière-plan');
@@ -287,12 +286,15 @@ export const player = {
                     this.ytPlayer.setVolume(state.volume);
                 }
             }
-            if (this._keepAudio && this._keepAudio.paused) {
-                this._keepAudio.play().catch(() => {});
-            }
-            if (this._keepCtx && this._keepCtx.state === 'suspended') {
-                this._keepCtx.resume().catch(() => {});
-            }
+        }
+    },
+
+    _ensureAudioContextRunning() {
+        if (this._keepCtx && this._keepCtx.state === 'suspended') {
+            this._keepCtx.resume().catch(console.error);
+        }
+        if (this._keepAudio && this._keepAudio.paused) {
+            this._keepAudio.play().catch(console.error);
         }
     },
 
@@ -328,13 +330,13 @@ export const player = {
         if (AudioCtx) {
             try {
                 this._keepCtx = new AudioCtx();
-                this._keepOsc = this._keepCtx.createOscillator();
-                this._keepGain = this._keepCtx.createGain();
-                this._keepGain.gain.value = 0.001;
-                this._keepOsc.frequency.value = 55;
-                this._keepOsc.connect(this._keepGain);
-                this._keepGain.connect(this._keepCtx.destination);
-                this._keepOsc.start();
+                const osc = this._keepCtx.createOscillator();
+                const gain = this._keepCtx.createGain();
+                gain.gain.value = 0.001; // Inaudible
+                osc.frequency.value = 55;
+                osc.connect(gain);
+                gain.connect(this._keepCtx.destination);
+                osc.start();
             } catch (e) {}
         }
 
