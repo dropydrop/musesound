@@ -76,13 +76,24 @@ export const api = {
 
     async searchTracks(query, isMore = false) {
         const { ui, player } = window.MuseSound;
+
+        // Spécification 1 : !yt → globale, sinon musique uniquement
+        let cleanQuery = isMore ? state.lastSearchQuery : query.trim();
+        if (!cleanQuery) return false;
+        let categoryParam = '&videoCategoryId=10';
+        if (cleanQuery.startsWith('!yt')) {
+            categoryParam = '';
+            cleanQuery = cleanQuery.replace('!yt', '').trim();
+            if (!cleanQuery) return false;
+        }
+
         if (!isMore) {
-            state.lastSearchQuery = query;
+            state.lastSearchQuery = cleanQuery;
             state.nextPageTokenTracks = null;
         } else if (!state.nextPageTokenTracks) return false;
 
         const tokenParam = state.nextPageTokenTracks ? `&pageToken=${state.nextPageTokenTracks}` : "";
-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&type=video&q=${encodeURIComponent(query)}${tokenParam}&key=${CONFIG.YOUTUBE_API_KEY}`;
+        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&type=video${categoryParam}&q=${encodeURIComponent(cleanQuery)}${tokenParam}&key=${CONFIG.YOUTUBE_API_KEY}`;
 
         try {
             const response = await fetch(url);
