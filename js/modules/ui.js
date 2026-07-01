@@ -534,7 +534,7 @@ export const ui = {
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate">${utils.escapeHtml(pl.title)}</div>
+                    <div class="font-bold truncate text-sm">${utils.escapeHtml(pl.title)}</div>
                     <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
                 </div>
                 ${state.jamActive
@@ -565,7 +565,7 @@ export const ui = {
                  onpointermove="MuseSound.ui.handlePointerMove(event)">
                 <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover pointer-events-none" onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
                 <div class="flex-1 min-w-0" onclick="MuseSound.ui.playResultNow(${i})">
-                    <div class="font-medium truncate">${utils.escapeHtml(t.title)}</div>
+                    <div class="font-medium truncate text-sm">${utils.escapeHtml(t.title)}</div>
                     <div class="text-xs text-on-surface-variant truncate">${utils.escapeHtml(t.author)} • ${this.formatViews(t.views)} écoutes</div>
                 </div>
                 <div class="flex items-center gap-1">
@@ -603,7 +603,7 @@ export const ui = {
                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
                 </div>
                 <div class="flex-1 min-w-0">
-                    <div class="font-bold truncate">${utils.escapeHtml(pl.snippet.title)}</div>
+                    <div class="font-bold truncate text-sm">${utils.escapeHtml(pl.snippet.title)}</div>
                     <div class="text-xs text-primary">${pl.contentDetails.itemCount} morceaux</div>
                 </div>
                 ${state.jamActive

@@ -30,13 +30,7 @@ export const utils = {
 
     escapeHtml(s) {
         if (!s) return '';
-        return s.replace(/[&<>"']/g, m => ({
-            '&': '&amp;',
-            '<': '&lt;',
-            '>': '&gt;',
-            '"': '&quot;',
-            "'": '&#39;'
-        }[m]));
+        return s.replace(/[<>]/g, m => ({ '<': '&lt;', '>': '&gt;' }[m]));
     },
 
     safeString(obj) {
