@@ -287,28 +287,9 @@
         #eco-btn { display: none; }
         body.is-cinema-mode #eco-btn { display: flex; }
 
-        /* === Desktop Mode sur mobile tactile (Version ordinateur Brave/Chrome) === */
-        @media (min-width: 768px) and (hover: none) and (pointer: coarse) {
-            #main-header {
-                padding-top: 10px;
-                padding-bottom: 10px;
-            }
-            #main-header .text-2xl {
-                font-size: 1.25rem;
-            }
-            #playlist-url {
-                font-size: 16px !important;
-            }
-            footer {
-                min-height: 80px;
-            }
-            #play-pause-btn {
-                width: 44px;
-                height: 44px;
-            }
-            #play-pause-btn span {
-                font-size: 26px !important;
-            }
+        /* === Mobile : masquer le header === */
+        @media (max-width: 767px) {
+            #main-header { display: none; }
         }
     </style>
 </head>
