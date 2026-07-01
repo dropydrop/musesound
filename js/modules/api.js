@@ -209,6 +209,31 @@ export const api = {
         while (allTracks.length < 500) {
             const pageUrl = `${url}${nextPageToken ? `&pageToken=${nextPageToken}` : ""}`;
             const response = await fetch(pageUrl, { headers });
+            
+            // Token expiré → tentative de refresh puis retry de la page courante
+            if (response.status === 401 && token) {
+                const newToken = await window.MuseSound.refreshGoogleToken();
+                if (newToken) {
+                    headers['Authorization'] = `Bearer ${newToken}`;
+                    const retry = await fetch(pageUrl, { headers });
+                    if (!retry.ok) throw new Error("Session expirée, veuillez vous reconnecter.");
+                    const data = await retry.json();
+                    if (!data.items?.length) break;
+                    const tracks = data.items.map(item => ({
+                        id: item.snippet.resourceId.videoId,
+                        title: item.snippet.title,
+                        author: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
+                        thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
+                        duration: 0
+                    }));
+                    allTracks = [...allTracks, ...tracks];
+                    nextPageToken = data.nextPageToken;
+                    if (!nextPageToken || allTracks.length >= 500) break;
+                    continue;
+                }
+                throw new Error("Session expirée, veuillez vous reconnecter.");
+            }
+            
             const data = await response.json();
             
             if (!data.items?.length) break;

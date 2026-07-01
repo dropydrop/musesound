@@ -10,6 +10,24 @@ export async function fetchMyPlaylists() {
             }
         });
 
+        if (response.status === 401) {
+            // Token expiré → tentative de refresh
+            const newToken = await window.MuseSound.refreshGoogleToken();
+            if (newToken) {
+                const retry = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50", {
+                    headers: {
+                        "Authorization": `Bearer ${newToken}`,
+                        "Accept": "application/json"
+                    }
+                });
+                if (retry.ok) {
+                    const data = await retry.json();
+                    return data.items;
+                }
+            }
+            throw new Error("Session expirée, veuillez vous reconnecter.");
+        }
+
         if (!response.ok) throw new Error("Impossible de charger les playlists");
 
         const data = await response.json();

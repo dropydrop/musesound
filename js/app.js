@@ -94,13 +94,22 @@ window.MuseSound = {
 
         loginBtn.classList.remove('hidden');
 
-        // Détection immédiate de session via getSession() (page reload)
+        // Restaure le provider_token depuis localStorage si Supabase ne le renvoie pas
         const { data: { session } } = await this.supabase.auth.getSession();
 
         if (session) {
             console.log("Accès Google autorisé.");
-            this.state.googleToken = session.provider_token;
+            this.state.googleToken = session.provider_token || localStorage.getItem('MS_GOOGLE_TOKEN');
+            if (session.provider_token) localStorage.setItem('MS_GOOGLE_TOKEN', session.provider_token);
             await this._switchToLibrary();
+        } else {
+            // Pas de session Supabase mais un token stocké → on tente un refresh
+            const savedToken = localStorage.getItem('MS_GOOGLE_TOKEN');
+            if (savedToken) {
+                this.state.googleToken = savedToken;
+                const refreshed = await this.refreshGoogleToken();
+                if (refreshed) await this._switchToLibrary();
+            }
         }
 
         // Écoute les événements d'auth — couvre le retour OAuth et les changements d'état
@@ -108,7 +117,8 @@ window.MuseSound = {
             if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 if (session) {
                     console.log(`Auth event: ${event}`);
-                    this.state.googleToken = session.provider_token;
+                    this.state.googleToken = session.provider_token || localStorage.getItem('MS_GOOGLE_TOKEN');
+                    if (session.provider_token) localStorage.setItem('MS_GOOGLE_TOKEN', session.provider_token);
                     await this._switchToLibrary();
                 }
             }
@@ -119,11 +129,13 @@ window.MuseSound = {
             loginBtn.classList.add('text-on-surface-variant');
             
             loginBtn.onclick = async () => {
+                localStorage.removeItem('MS_GOOGLE_TOKEN');
                 await this.supabase.auth.signOut();
                 window.location.reload();
             };
         } else {
             loginBtn.onclick = async () => {
+                localStorage.removeItem('MS_GOOGLE_TOKEN');
                 const { error } = await this.supabase.auth.signInWithOAuth({
                     provider: 'google',
                     options: {
@@ -134,6 +146,24 @@ window.MuseSound = {
                 if (error) this.showToast("Erreur d'initialisation Google");
             };
         }
+    },
+
+    async refreshGoogleToken() {
+        if (!this.supabase) return null;
+        try {
+            const { data, error } = await this.supabase.auth.refreshSession();
+            if (error) throw error;
+            if (data.session?.provider_token) {
+                this.state.googleToken = data.session.provider_token;
+                localStorage.setItem('MS_GOOGLE_TOKEN', data.session.provider_token);
+                return data.session.provider_token;
+            }
+        } catch (e) {
+            console.error("Refresh Google token failed:", e);
+        }
+        this.state.googleToken = null;
+        localStorage.removeItem('MS_GOOGLE_TOKEN');
+        return null;
     },
 
     async _switchToLibrary() {
