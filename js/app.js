@@ -94,32 +94,27 @@ window.MuseSound = {
 
         loginBtn.classList.remove('hidden');
 
+        // Détection immédiate de session via getSession() (page reload)
         const { data: { session } } = await this.supabase.auth.getSession();
 
         if (session) {
             console.log("Accès Google autorisé.");
-            this.state.googleToken = session.provider_token; 
-            
-            // Basculement automatique vers l'onglet bibliothèque post-connexion
-            if (this.ui && typeof this.ui.syncTabs === 'function') {
-                this.state.uiMode = 'library';
-                this.ui.syncTabs();
-                if (!this.state.libraryFetched) {
-                    import('./modules/youtube-private.js').then(async (m) => {
-                        this.state.libraryFetched = true;
-                        this.ui.renderLibrary();
-                    }).catch(err => console.error("Erreur chargement module privé:", err));
+            this.state.googleToken = session.provider_token;
+            this._switchToLibrary();
+        }
+
+        // Écoute les événements d'auth — couvre le retour OAuth et les changements d'état
+        this.supabase.auth.onAuthStateChange((event, session) => {
+            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+                if (session) {
+                    console.log(`Auth event: ${event}`);
+                    this.state.googleToken = session.provider_token;
+                    this._switchToLibrary();
                 }
             }
-            
-            // Gestion auto-rafraîchissement de la session via Supabase
-            this.supabase.auth.onAuthStateChange((event, session) => {
-                if (event === 'TOKEN_REFRESHED') {
-                    console.log("Token rafraîchi avec succès");
-                    this.state.googleToken = session.provider_token;
-                }
-            });
-            
+        });
+
+        if (session) {
             loginBtn.innerHTML = '<span class="material-symbols-outlined mr-2 text-xl">logout</span> Déconnecter';
             loginBtn.classList.add('text-on-surface-variant');
             
@@ -138,6 +133,19 @@ window.MuseSound = {
                 });
                 if (error) this.showToast("Erreur d'initialisation Google");
             };
+        }
+    },
+
+    _switchToLibrary() {
+        if (this.ui && typeof this.ui.syncTabs === 'function') {
+            this.state.uiMode = 'library';
+            this.ui.syncTabs();
+            if (!this.state.libraryFetched) {
+                import('./modules/youtube-private.js').then(async (m) => {
+                    this.state.libraryFetched = true;
+                    this.ui.renderLibrary();
+                }).catch(err => console.error("Erreur chargement module privé:", err));
+            }
         }
     },
 

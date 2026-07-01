@@ -229,11 +229,9 @@ export const player = {
             this.nextQueue();
         } else if (state.currentPlaylist.length > 0) {
             this.nextPlaylist();
-        } else if (state.isRadioMode && state.lastPlayedTrack) {
+        } else {
+            // Autoplay Radio par défaut si aucune liste n'est chargée
             this.triggerRadioMix();
-        } else if (this.ytPlayer) {
-            this.ytPlayer.stopVideo();
-            this.ytActive = false;
         }
         localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
         ui.renderQueue();
@@ -258,11 +256,9 @@ export const player = {
                     localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
                     ui.renderQueue();
                     this.nextPlaylist();
-                } else if (state.isRadioMode && state.lastPlayedTrack) {
-                    this.triggerRadioMix();
                 } else {
-                    if (this.ytPlayer) this.ytPlayer.stopVideo();
-                    this.ytActive = false;
+                    // Autoplay Radio permanent en fin de queue avec Shuffle
+                    this.triggerRadioMix();
                 }
             } else {
                 const randIdx = Math.floor(Math.random() * unplayed.length);
@@ -283,7 +279,8 @@ export const player = {
                 ui.renderQueue();
                 if (state.currentPlaylist.length > 0) {
                     this.nextPlaylist();
-                } else if (state.isRadioMode && state.lastPlayedTrack) {
+                } else {
+                    // Autoplay Radio permanent en fin de queue linéaire
                     this.triggerRadioMix();
                 }
             }
@@ -305,11 +302,9 @@ export const player = {
                 if (state.repeat === 'all') {
                     const nextIdx = Math.floor(Math.random() * state.currentPlaylist.length);
                     this.playTrack(nextIdx);
-                } else if (state.isRadioMode && state.lastPlayedTrack) {
-                    this.triggerRadioMix();
                 } else {
-                    if (this.ytPlayer) this.ytPlayer.stopVideo();
-                    this.ytActive = false;
+                    // Autoplay Radio permanent en fin de playlist avec Shuffle
+                    this.triggerRadioMix();
                 }
             } else {
                 const randIdx = Math.floor(Math.random() * unplayed.length);
@@ -321,13 +316,9 @@ export const player = {
             if (nextIndex >= state.currentPlaylist.length) {
                 if (state.repeat === 'all') {
                     nextIndex = 0;
-                } else if (state.isRadioMode && state.lastPlayedTrack) {
-                    this.triggerRadioMix();
-                    this.saveShuffleHistory();
-                    return;
                 } else {
-                    if (this.ytPlayer) this.ytPlayer.stopVideo();
-                    this.ytActive = false;
+                    // Autoplay Radio permanent en fin de playlist linéaire
+                    this.triggerRadioMix();
                     this.saveShuffleHistory();
                     return;
                 }
