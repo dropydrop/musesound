@@ -51,6 +51,16 @@ export const ui = {
             if (this.mobileSearchOpen && window.innerWidth >= 768) this.toggleMobileSearch(false);
         });
 
+        // Scope pills
+        document.getElementById('scope-tracks')?.addEventListener('click', () => {
+            state.searchTab = 'tracks';
+            this.updateScopePills();
+        });
+        document.getElementById('scope-playlists')?.addEventListener('click', () => {
+            state.searchTab = 'playlists';
+            this.updateScopePills();
+        });
+
         document.getElementById('nowplaying-radio-btn')?.addEventListener('click', () => {
             const track = state.queue[state.playingQueueIndex] || state.currentPlaylist[state.currentIndex];
             if (track) importer.fetchRadio(track);
@@ -352,22 +362,34 @@ export const ui = {
         const headerContainer = document.getElementById('header-search-container');
 
         if (show) {
-            wrapper.append(input, btn);
-            overlay.classList.remove('hidden');
-            overlay.classList.add('flex');
+            wrapper.append(input);
+            overlay.style.display = 'flex';
             input.value = '';
             this.mobileSearchOpen = true;
+            this.updateScopePills();
             setTimeout(() => input?.focus(), 100);
         } else {
             headerContainer.prepend(btn);
             headerContainer.prepend(input);
-            overlay.classList.add('hidden');
-            overlay.classList.remove('flex');
+            overlay.style.display = 'none';
             this.hideSuggestions();
             const container = document.getElementById('suggestions-container');
             if (container) container.remove();
             this.mobileSearchOpen = false;
         }
+    },
+
+    updateScopePills() {
+        const isTracks = state.searchTab === 'tracks';
+        const tracksBtn = document.getElementById('scope-tracks');
+        const playlistsBtn = document.getElementById('scope-playlists');
+        if (!tracksBtn || !playlistsBtn) return;
+        tracksBtn.className = isTracks
+            ? 'px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap'
+            : 'px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap';
+        playlistsBtn.className = isTracks
+            ? 'px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap'
+            : 'px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap';
     },
 
     syncTabs() {
@@ -389,6 +411,7 @@ export const ui = {
         if (m === 'playlists') this.renderPlaylistsResults();
         if (m === 'library') this.renderLibrary();
         if (m === 'jam') this.renderJam();
+        this.updateScopePills();
     },
 
     updateShuffleRepeatUI() {

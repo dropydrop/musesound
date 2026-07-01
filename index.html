@@ -291,14 +291,6 @@
         @media (max-width: 767px) {
             #main-header { display: none; }
         }
-
-        /* === Overlay de recherche mobile === */
-        #mobile-search-overlay {
-            position: fixed;
-            inset: 0;
-            z-index: 50;
-            background: #121414;
-        }
     </style>
 </head>
 <body class="bg-background text-on-surface font-body-md h-[100dvh] w-screen overflow-hidden flex flex-col">
@@ -357,12 +349,16 @@
         </div>
 
         <!-- Mobile Search Overlay (Hidden by default) -->
-        <div id="mobile-search-overlay" class="hidden md:hidden flex-col p-3 gap-2">
-            <div class="flex items-center gap-3">
-                <button id="mobile-search-back" class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center w-8 h-8 -ml-1">
+        <div id="mobile-search-overlay" class="hidden md:hidden fixed inset-0 z-50 bg-background flex-col p-3 gap-2">
+            <div class="flex items-center gap-2">
+                <button id="mobile-search-back" class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center w-8 h-8 -ml-1 shrink-0">
                     <span class="material-symbols-outlined text-2xl">arrow_back</span>
                 </button>
                 <div id="mobile-search-input-wrapper" class="flex-1 flex items-center gap-2">
+                </div>
+                <div id="mobile-search-scope" class="flex items-center gap-1 shrink-0">
+                    <button id="scope-tracks" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap">Morceaux</button>
+                    <button id="scope-playlists" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap">Playlists</button>
                 </div>
             </div>
         </div>
