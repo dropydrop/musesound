@@ -3,6 +3,7 @@
  */
 import { state } from './state.js';
 import { utils } from './utils.js';
+import { CONFIG } from './config.js';
 
 export const player = {
     ytPlayer: null,
@@ -49,12 +50,81 @@ export const player = {
         }
     },
 
-    handleError(error) {
+    async handleError(error) {
         const { ui } = window.MuseSound;
         console.error("YouTube Player error:", error);
         ui.setLoading(false);
-        utils.showToast("Morceau non disponible, passage au suivant...");
-        setTimeout(() => this.next(true), 1500);
+
+        const track = state.lastPlayedTrack;
+        
+        // Anti-boucle infinie si le fallback lui-même plante ou s'il n'y a pas de morceau chargé
+        if (!track || state.isAttemptingFallback) {
+            state.isAttemptingFallback = false;
+            utils.showToast("Échec du fallback, passage au suivant...");
+            setTimeout(() => this.next(true), 1200);
+            return;
+        }
+
+        utils.showToast("Erreur de lecture. Recherche d'une alternative...");
+        state.isAttemptingFallback = true;
+
+        try {
+            const artist = track.author || "";
+            const title = track.title || "";
+            const query = `${artist} ${title}`.trim();
+
+            if (!query) throw new Error("Métadonnées insuffisantes");
+
+            // Recherche ciblant la catégorie Musique (videoCategoryId=10)
+            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&videoCategoryId=10&q=${encodeURIComponent(query)}&key=${CONFIG.YOUTUBE_API_KEY}`;
+            const res = await fetch(searchUrl);
+            const data = await res.json();
+
+            if (!data.items || data.items.length === 0) {
+                throw new Error("Aucune alternative trouvée sur YouTube");
+            }
+
+            // Éliminer la vidéo qui vient de planter
+            const candidates = data.items.filter(item => item.id.videoId !== track.id);
+            if (candidates.length === 0) throw new Error("Seul le doublon défectueux est disponible");
+
+            // Filtrage : On cherche d'abord une version qui n'est NI un "Topic" automatique, NI un clip "VEVO" souvent trop long/pollué
+            let bestMatch = candidates.find(item => {
+                const chTitle = item.snippet.channelTitle.toLowerCase();
+                return !chTitle.includes("topic") && !chTitle.includes("vevo");
+            });
+
+            // Dernier recours : Si on n'a rien trouvé d'autre, on accepte le Topic ou le VEVO
+            if (!bestMatch) {
+                console.log("Fallback : Aucun canal indépendant trouvé, utilisation du dernier recours (Topic/VEVO).");
+                bestMatch = candidates[0];
+            }
+
+            const alternativeTrack = {
+                id: bestMatch.id.videoId,
+                title: bestMatch.snippet.title,
+                author: bestMatch.snippet.channelTitle,
+                thumbnail: bestMatch.snippet.thumbnails?.default?.url || track.thumbnail
+            };
+
+            console.log("Fallback réussi ! Nouvelle ID :", alternativeTrack.id);
+            utils.showToast("Version alternative trouvée !");
+            
+            // Mise à jour de la piste courante
+            state.lastPlayedTrack = alternativeTrack;
+            
+            // On relance la lecture sur l'ID alternative
+            setTimeout(() => {
+                state.isAttemptingFallback = false;
+                this.doPlay(alternativeTrack, 0);
+            }, 1000);
+
+        } catch (err) {
+            console.error("Le Fallback Intelligent a échoué :", err);
+            state.isAttemptingFallback = false;
+            utils.showToast("Morceau indisponible, passage au suivant...");
+            setTimeout(() => this.next(true), 1200);
+        }
     },
 
     startProgressTracking() {
