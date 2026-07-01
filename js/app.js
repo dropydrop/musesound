@@ -100,6 +100,19 @@ window.MuseSound = {
             console.log("Accès Google autorisé.");
             this.state.googleToken = session.provider_token; 
             
+            // Basculement automatique vers l'onglet bibliothèque post-connexion
+            if (this.ui && typeof this.ui.syncTabs === 'function') {
+                this.state.uiMode = 'library';
+                this.ui.syncTabs();
+                // Lance le chargement privé si nécessaire
+                if (!this.state.libraryFetched) {
+                    import('./modules/youtube-private.js').then(async (m) => {
+                        this.state.libraryFetched = true;
+                        this.ui.renderLibrary();
+                    });
+                }
+            }
+            
             // Gestion auto-rafraîchissement de la session via Supabase
             this.supabase.auth.onAuthStateChange((event, session) => {
                 if (event === 'TOKEN_REFRESHED') {
