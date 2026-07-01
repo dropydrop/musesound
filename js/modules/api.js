@@ -57,6 +57,7 @@ export const api = {
         } catch (error) { console.error("Importer Error:", error); }
         ui.setLoading(false);
         ui.syncTabs();
+        if (ui.mobileSearchOpen) ui.toggleMobileSearch(false);
     },
 
     async getTrackInfo(videoId) {

@@ -286,6 +286,19 @@
         /* === Eco Data : masqué partout sauf en mode cinéma === */
         #eco-btn { display: none; }
         body.is-cinema-mode #eco-btn { display: flex; }
+
+        /* === Mobile : masquer le header === */
+        @media (max-width: 767px) {
+            #main-header { display: none; }
+        }
+
+        /* === Overlay de recherche mobile === */
+        #mobile-search-overlay {
+            position: fixed;
+            inset: 0;
+            z-index: 50;
+            background: #121414;
+        }
     </style>
 </head>
 <body class="bg-background text-on-surface font-body-md h-[100dvh] w-screen overflow-hidden flex flex-col">
@@ -319,7 +332,7 @@
             </div>
 
             <!-- Import Section (Moved to Header) -->
-            <div class="flex items-center gap-2 w-full">
+            <div id="header-search-container" class="flex items-center gap-2 w-full">
                 <input id="playlist-url" type="text" placeholder="Rechercher par titre, artiste ou URL..." class="w-full bg-surface-container border-outline-variant rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
                 <button id="btn-import" class="bg-primary text-background font-bold py-2 px-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center">
                     <span class="material-symbols-outlined">search</span>
@@ -330,6 +343,9 @@
 
         <!-- View Tabs -->
         <div class="flex border-b border-outline-variant px-4 bg-background/50 overflow-x-auto hide-scrollbar">
+            <button id="tab-search-icon" class="md:hidden px-1.5 py-4 text-on-surface-variant hover:text-primary transition-all">
+                <span class="material-symbols-outlined text-xl">search</span>
+            </button>
             <button id="tab-playlist" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-primary text-primary transition-all whitespace-nowrap">Morceaux</button>
             <button id="tab-playlists" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Playlists</button>
             <button id="tab-library" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Bibliothèque</button>
@@ -338,6 +354,17 @@
                 <span id="queue-badge" class="hidden bg-primary text-background text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center">0</span>
             </button>
             <button id="tab-jam" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Jam</button>
+        </div>
+
+        <!-- Mobile Search Overlay (Hidden by default) -->
+        <div id="mobile-search-overlay" class="hidden md:hidden flex-col p-3 gap-2">
+            <div class="flex items-center gap-3">
+                <button id="mobile-search-back" class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center w-8 h-8 -ml-1">
+                    <span class="material-symbols-outlined text-2xl">arrow_back</span>
+                </button>
+                <div id="mobile-search-input-wrapper" class="flex-1 flex items-center gap-2">
+                </div>
+            </div>
         </div>
 
         <!-- Playlist Items (Tracks) -->

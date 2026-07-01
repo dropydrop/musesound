@@ -6,6 +6,8 @@ import { utils } from './utils.js';
 import { CONFIG } from './config.js';
 
 export const ui = {
+    mobileSearchOpen: false,
+
     init() {
         const { importer, player } = window.MuseSound;
         const input = document.getElementById('playlist-url');
@@ -41,6 +43,13 @@ export const ui = {
         });
         document.getElementById('tab-queue')?.addEventListener('click', () => { state.uiMode = 'queue'; this.syncTabs(); });
         document.getElementById('tab-jam')?.addEventListener('click', () => { state.uiMode = 'jam'; this.syncTabs(); });
+
+        // Mobile search toggle
+        document.getElementById('tab-search-icon')?.addEventListener('click', () => this.toggleMobileSearch(true));
+        document.getElementById('mobile-search-back')?.addEventListener('click', () => this.toggleMobileSearch(false));
+        window.addEventListener('resize', () => {
+            if (this.mobileSearchOpen && window.innerWidth >= 768) this.toggleMobileSearch(false);
+        });
 
         document.getElementById('nowplaying-radio-btn')?.addEventListener('click', () => {
             const track = state.queue[state.playingQueueIndex] || state.currentPlaylist[state.currentIndex];
@@ -320,13 +329,46 @@ export const ui = {
         const input = document.getElementById('playlist-url');
         const div = document.createElement('div');
         div.id = 'suggestions-container';
-        div.className = 'absolute top-full left-0 right-0 bg-surface-container-high z-[110] rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
-        input.parentNode.style.position = 'relative';
-        input.parentNode.appendChild(div);
+        if (this.mobileSearchOpen) {
+            div.className = 'fixed left-4 right-4 z-[60] bg-surface-container-high rounded-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
+            const overlay = document.getElementById('mobile-search-overlay');
+            div.style.top = (overlay.getBoundingClientRect().bottom + 4) + 'px';
+            document.body.appendChild(div);
+        } else {
+            div.className = 'absolute top-full left-0 right-0 bg-surface-container-high z-[110] rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
+            input.parentNode.style.position = 'relative';
+            input.parentNode.appendChild(div);
+        }
         return div;
     },
 
     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
+
+    toggleMobileSearch(show) {
+        const input = document.getElementById('playlist-url');
+        const btn = document.getElementById('btn-import');
+        const overlay = document.getElementById('mobile-search-overlay');
+        const wrapper = document.getElementById('mobile-search-input-wrapper');
+        const headerContainer = document.getElementById('header-search-container');
+
+        if (show) {
+            wrapper.append(input, btn);
+            overlay.classList.remove('hidden');
+            overlay.classList.add('flex');
+            input.value = '';
+            this.mobileSearchOpen = true;
+            setTimeout(() => input?.focus(), 100);
+        } else {
+            headerContainer.prepend(btn);
+            headerContainer.prepend(input);
+            overlay.classList.add('hidden');
+            overlay.classList.remove('flex');
+            this.hideSuggestions();
+            const container = document.getElementById('suggestions-container');
+            if (container) container.remove();
+            this.mobileSearchOpen = false;
+        }
+    },
 
     syncTabs() {
         const m = state.uiMode;
