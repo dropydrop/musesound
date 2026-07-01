@@ -13,10 +13,6 @@ export const player = {
     fadeOutInterval: null,
     isFadingOut: false,
     _keepAliveActive: false,
-    _userWantsPlaying: false,
-    _bgWatchdog: null,
-    _keepCtx: null,
-    _keepAudio: null,
 
     init() {
         const tag = document.createElement('script');
@@ -30,6 +26,7 @@ export const player = {
                 events: {
                     onReady: () => {
                         if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
+                        this._startKeepAliveOnInteraction();
                     },
                     onStateChange: (e) => this.onPlayerStateChange(e),
                     onError: (e) => this.handleError(e)
@@ -39,43 +36,30 @@ export const player = {
         document.addEventListener('visibilitychange', () => this._onVisibilityChange());
     },
 
-    _viewportDesktop() {
-        const meta = document.getElementById('viewport-meta');
-        if (meta) meta.setAttribute('content', 'width=1024, initial-scale=1.0');
-    },
-
-    _viewportMobile() {
-        const meta = document.getElementById('viewport-meta');
-        if (meta) meta.setAttribute('content', 'width=device-width, initial-scale=1.0');
-    },
-
     onPlayerStateChange(event) {
         const { ui } = window.MuseSound;
         if (!this.ytActive) return;
-        
         if (event.data === YT.PlayerState.PLAYING) {
-            this._userWantsPlaying = true;
+            this.startKeepAlive();
             state.isPlaying = true;
             ui.updatePlayerControls();
             this.startProgressTracking();
-            this._ensureAudioContextRunning();
-            this._viewportDesktop(); // Force viewport desktop dès la lecture détectée
+
+            setTimeout(() => {
+                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                    this.ytPlayer.setVolume(state.volume);
+                }
+            }, 50);
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
+                this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
             }
         } else if (event.data === YT.PlayerState.PAUSED) {
-            // Si le doc est caché et qu'on voulait jouer, YouTube a forcé la pause
-            if (this._userWantsPlaying && document.hidden) {
-                console.log('[MuseSound] Auto-pause arrière-plan, relance...');
-                setTimeout(() => this.ytPlayer?.playVideo(), 200);
-                return;
-            }
             state.isPlaying = false;
             ui.updatePlayerControls();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else if (event.data === YT.PlayerState.ENDED) {
-            this._userWantsPlaying = false;
             this.next(false);
         }
     },
@@ -121,10 +105,12 @@ export const player = {
             });
 
             if (!bestMatch) {
+                console.log("Fallback : Aucun canal indépendant trouvé, utilisation du dernier recours (Topic/VEVO).");
                 bestMatch = candidates[0];
             }
 
             if (!this._isCandidateRelevant(track, bestMatch.snippet)) {
+                console.log("Fallback : la meilleure alternative trouvée n'est pas pertinente, passage au suivant.");
                 throw new Error("Alternative non pertinente");
             }
 
@@ -135,6 +121,9 @@ export const player = {
                 thumbnail: bestMatch.snippet.thumbnails?.default?.url || track.thumbnail
             };
 
+            console.log("Fallback réussi ! Nouvelle ID :", alternativeTrack.id);
+            utils.showToast("Version alternative trouvée !");
+            
             state.lastPlayedTrack = alternativeTrack;
             
             setTimeout(() => {
@@ -179,6 +168,16 @@ export const player = {
                         localStorage.setItem('MS_LAST_IS_QUEUE', isQueue);
                         localStorage.setItem('MS_LAST_POS', cur);
                     }
+
+                    if (state.jamActive && state.jamIsHost) {
+                        this._seekUpdateCounter++;
+                        if (this._seekUpdateCounter % 4 === 0) {
+                            const jam = window.MuseSound?.jam;
+                            if (jam && typeof jam.updatePlaybackTime === 'function') {
+                                jam.updatePlaybackTime(cur);
+                            }
+                        }
+                    }
                 }
             }
         }, 500);
@@ -208,6 +207,10 @@ export const player = {
         if (index < 0 || index >= state.queue.length) return;
         state.playingQueueIndex = index;
         state.currentIndex = -1;
+        if (state.shuffle && !state.shuffleHistory.includes(index)) {
+            state.shuffleHistory.push(index);
+            this.saveShuffleHistory();
+        }
         const track = state.queue[index];
         this.doPlay(track, startTime);
         ui.renderQueue();
@@ -218,6 +221,10 @@ export const player = {
         if (index < 0 || index >= state.currentPlaylist.length) return;
         state.currentIndex = index;
         state.playingQueueIndex = -1;
+        if (state.shuffle && !state.shuffleHistory.includes(index)) {
+            state.shuffleHistory.push(index);
+            this.saveShuffleHistory();
+        }
         const track = state.currentPlaylist[index];
         ui.setLoading(true);
         if (this.ytPlayer && typeof this.ytPlayer.stopVideo === 'function') this.ytPlayer.stopVideo();
@@ -239,18 +246,7 @@ export const player = {
     doPlay(track, startTime = 0) {
         const { ui } = window.MuseSound;
         this.ytActive = true;
-        this._userWantsPlaying = true;
         state.lastPlayedTrack = track;
-
-        // Force le keep-alive
-        this.startKeepAlive();
-        this._ensureAudioContextRunning();
-
-        if (this.fadeOutInterval) {
-            clearInterval(this.fadeOutInterval);
-            this.fadeOutInterval = null;
-        }
-        this.isFadingOut = false;
         
         if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
             this.ytPlayer.setVolume(state.volume);
@@ -275,62 +271,22 @@ export const player = {
         ui.setLoading(false);
     },
 
+    _startKeepAliveOnInteraction() {
+        const start = () => {
+            this.startKeepAlive();
+            document.removeEventListener('pointerdown', start);
+            document.removeEventListener('touchstart', start);
+        };
+        document.addEventListener('pointerdown', start, { once: true });
+        document.addEventListener('touchstart', start, { once: true });
+        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
+    },
+
     _onVisibilityChange() {
-        this._ensureAudioContextRunning();
-        
-        if (document.hidden) {
-            this._viewportDesktop();
-            if (this._userWantsPlaying && this.ytActive) {
-                console.log('[MuseSound] Page cachée, activation du watchdog arrière-plan');
-                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
-                    this.ytPlayer.playVideo();
-                }
-                this._startBgWatchdog();
+        if (!document.hidden && this.ytActive && state.isPlaying) {
+            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                this.ytPlayer.playVideo();
             }
-        } else {
-            this._viewportMobile();
-            this._stopBgWatchdog();
-            if (this._userWantsPlaying && this.ytActive) {
-                if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
-                    this.ytPlayer.playVideo();
-                }
-                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
-                    this.ytPlayer.setVolume(state.volume);
-                }
-            }
-        }
-    },
-
-    _ensureAudioContextRunning() {
-        if (this._keepCtx && this._keepCtx.state === 'suspended') {
-            this._keepCtx.resume().catch(console.error);
-        }
-        if (this._keepAudio && this._keepAudio.paused) {
-            this._keepAudio.play().catch(console.error);
-        }
-    },
-
-    _startBgWatchdog() {
-        this._stopBgWatchdog();
-        this._bgWatchdog = setInterval(() => {
-            if (!this._userWantsPlaying || !this.ytActive || !document.hidden) {
-                this._stopBgWatchdog();
-                return;
-            }
-            if (this.ytPlayer && typeof this.ytPlayer.getPlayerState === 'function') {
-                const s = this.ytPlayer.getPlayerState();
-                if (s !== YT.PlayerState.PLAYING && s !== YT.PlayerState.BUFFERING) {
-                    console.log('[MuseSound] Watchdog: relance forcée');
-                    this.ytPlayer.playVideo();
-                }
-            }
-        }, 1000);
-    },
-
-    _stopBgWatchdog() {
-        if (this._bgWatchdog) {
-            clearInterval(this._bgWatchdog);
-            this._bgWatchdog = null;
         }
     },
 
@@ -342,13 +298,13 @@ export const player = {
         if (AudioCtx) {
             try {
                 this._keepCtx = new AudioCtx();
-                const osc = this._keepCtx.createOscillator();
-                const gain = this._keepCtx.createGain();
-                gain.gain.value = 0.001; // Inaudible
-                osc.frequency.value = 55;
-                osc.connect(gain);
-                gain.connect(this._keepCtx.destination);
-                osc.start();
+                this._keepOsc = this._keepCtx.createOscillator();
+                this._keepGain = this._keepCtx.createGain();
+                this._keepGain.gain.value = 0.001;
+                this._keepOsc.frequency.value = 55;
+                this._keepOsc.connect(this._keepGain);
+                this._keepGain.connect(this._keepCtx.destination);
+                this._keepOsc.start();
             } catch (e) {}
         }
 
@@ -566,12 +522,9 @@ export const player = {
         const s = this.ytPlayer.getPlayerState();
         const wasPlaying = s === 1;
         if (wasPlaying) {
-            this._userWantsPlaying = false;
-            this._stopBgWatchdog();
             this.ytPlayer.pauseVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else {
-            this._userWantsPlaying = true;
             this.ytPlayer.playVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         }
