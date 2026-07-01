@@ -19,7 +19,7 @@ export const player = {
 
         window.onYouTubeIframeAPIReady = () => {
             this.ytPlayer = new YT.Player('yt-player-fallback', {
-                height: '0', width: '0',
+                height: '1', width: '1',
                 playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, fs: 0, disablekb: 1 },
                 events: {
                     onReady: () => {
@@ -37,6 +37,7 @@ export const player = {
         const { ui } = window.MuseSound;
         if (!this.ytActive) return;
         if (event.data === YT.PlayerState.PLAYING) {
+            this.startKeepAlive();
             state.isPlaying = true;
             ui.updatePlayerControls();
             this.startProgressTracking();
@@ -234,8 +235,6 @@ export const player = {
         if (this.ytPlayer && typeof this.ytPlayer.setPlaybackQuality === 'function') {
             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
-
-        this.startKeepAlive();
 
         if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
             this.ytPlayer.playVideo();
