@@ -36,8 +36,17 @@ export const player = {
                 }
             });
         };
-        // Écoute des changements de visibilité pour forcer la reprise
         document.addEventListener('visibilitychange', () => this._onVisibilityChange());
+    },
+
+    _viewportDesktop() {
+        const meta = document.getElementById('viewport-meta');
+        if (meta) meta.setAttribute('content', 'width=1024, initial-scale=1.0');
+    },
+
+    _viewportMobile() {
+        const meta = document.getElementById('viewport-meta');
+        if (meta) meta.setAttribute('content', 'width=device-width, initial-scale=1.0');
     },
 
     onPlayerStateChange(event) {
@@ -49,7 +58,8 @@ export const player = {
             state.isPlaying = true;
             ui.updatePlayerControls();
             this.startProgressTracking();
-            this._ensureAudioContextRunning(); // Renforcement keep-alive
+            this._ensureAudioContextRunning();
+            this._viewportDesktop(); // Force viewport desktop dès la lecture détectée
 
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
@@ -269,6 +279,7 @@ export const player = {
         this._ensureAudioContextRunning();
         
         if (document.hidden) {
+            this._viewportDesktop();
             if (this._userWantsPlaying && this.ytActive) {
                 console.log('[MuseSound] Page cachée, activation du watchdog arrière-plan');
                 if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
@@ -277,6 +288,7 @@ export const player = {
                 this._startBgWatchdog();
             }
         } else {
+            this._viewportMobile();
             this._stopBgWatchdog();
             if (this._userWantsPlaying && this.ytActive) {
                 if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
