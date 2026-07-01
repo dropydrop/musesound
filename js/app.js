@@ -100,16 +100,16 @@ window.MuseSound = {
         if (session) {
             console.log("Accès Google autorisé.");
             this.state.googleToken = session.provider_token;
-            this._switchToLibrary();
+            await this._switchToLibrary();
         }
 
         // Écoute les événements d'auth — couvre le retour OAuth et les changements d'état
-        this.supabase.auth.onAuthStateChange((event, session) => {
-            if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        this.supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
                 if (session) {
                     console.log(`Auth event: ${event}`);
                     this.state.googleToken = session.provider_token;
-                    this._switchToLibrary();
+                    await this._switchToLibrary();
                 }
             }
         });
@@ -136,15 +136,20 @@ window.MuseSound = {
         }
     },
 
-    _switchToLibrary() {
+    async _switchToLibrary() {
         if (this.ui && typeof this.ui.syncTabs === 'function') {
             this.state.uiMode = 'library';
             this.ui.syncTabs();
             if (!this.state.libraryFetched) {
-                import('./modules/youtube-private.js').then(async (m) => {
+                try {
+                    const module = await import('./modules/youtube-private.js');
+                    const data = await module.fetchMyPlaylists();
+                    this.state.foundLibrary = data;
                     this.state.libraryFetched = true;
                     this.ui.renderLibrary();
-                }).catch(err => console.error("Erreur chargement module privé:", err));
+                } catch (err) {
+                    console.error("Erreur chargement bibliothèque:", err);
+                }
             }
         }
     },
