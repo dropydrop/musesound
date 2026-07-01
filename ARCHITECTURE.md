@@ -4,317 +4,29 @@ C:.
 
 │   .gitignore
 
+│   agent-lite.md
+
 │   agent.md
+
+│   AGENTS.md
+
+│   ARCHITECTURE.md
+
+│   firebase.json
 
 │   GEMINI.md
 
 │   index.html
 
+│   INDEX\_PROJET.md
+
+│   LICENSE
+
+│   manifest.json
+
 │   README.md
 
-│
-
-├───.prompts
-
-│   ├───codebase-cleanup
-
-│   │   ├───agents
-
-│   │   │       code-reviewer.md
-
-│   │   │       test-automator.md
-
-│   │   │
-
-│   │   └───commands
-
-│   │           deps-audit.md
-
-│   │           refactor-clean.md
-
-│   │           tech-debt.md
-
-│   │
-
-│   ├───developer-essentials
-
-│   │   ├───agents
-
-│   │   │       monorepo-architect.md
-
-│   │   │
-
-│   │   └───skills
-
-│   │       ├───auth-implementation-patterns
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───bazel-build-optimization
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───code-review-excellence
-
-│   │       │       SKILL.md
-
-│   │       │
-
-│   │       ├───debugging-strategies
-
-│   │       │       SKILL.md
-
-│   │       │
-
-│   │       ├───e2e-testing-patterns
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───error-handling-patterns
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───git-advanced-workflows
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───monorepo-management
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───nx-workspace-patterns
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───sql-optimization-patterns
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       └───turborepo-caching
-
-│   │               SKILL.md
-
-│   │
-
-│   ├───error-debugging
-
-│   │   ├───agents
-
-│   │   │       debugger.md
-
-│   │   │       error-detective.md
-
-│   │   │
-
-│   │   └───commands
-
-│   │           error-analysis.md
-
-│   │           error-trace.md
-
-│   │           multi-agent-review.md
-
-│   │
-
-│   ├───frontend-mobile-development
-
-│   │   ├───agents
-
-│   │   │       frontend-developer.md
-
-│   │   │       mobile-developer.md
-
-│   │   │
-
-│   │   ├───commands
-
-│   │   │       component-scaffold.md
-
-│   │   │
-
-│   │   └───skills
-
-│   │       ├───nextjs-app-router-patterns
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───react-native-architecture
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       ├───react-state-management
-
-│   │       │   │   SKILL.md
-
-│   │       │   │
-
-│   │       │   └───references
-
-│   │       │           details.md
-
-│   │       │
-
-│   │       └───tailwind-design-system
-
-│   │           │   SKILL.md
-
-│   │           │
-
-│   │           └───references
-
-│   │                   advanced-patterns.md
-
-│   │                   details.md
-
-│   │
-
-│   └───javascript-typescript
-
-│       ├───agents
-
-│       │       javascript-pro.md
-
-│       │       typescript-pro.md
-
-│       │
-
-│       ├───commands
-
-│       │       typescript-scaffold.md
-
-│       │
-
-│       └───skills
-
-│           ├───javascript-testing-patterns
-
-│           │   │   SKILL.md
-
-│           │   │
-
-│           │   └───references
-
-│           │           advanced-testing-patterns.md
-
-│           │
-
-│           ├───modern-javascript-patterns
-
-│           │   │   SKILL.md
-
-│           │   │
-
-│           │   └───references
-
-│           │           advanced-patterns.md
-
-│           │           details.md
-
-│           │
-
-│           ├───nodejs-backend-patterns
-
-│           │   │   SKILL.md
-
-│           │   │
-
-│           │   └───references
-
-│           │           advanced-patterns.md
-
-│           │           details.md
-
-│           │
-
-│           └───typescript-advanced-types
-
-│               │   SKILL.md
-
-│               │
-
-│               └───references
-
-│                       details.md
+│   service-worker.js
 
 │
 
@@ -326,15 +38,11 @@ C:.
 
 │   │   guide\_d\_installation\_android.md
 
-│   │   IA\_prompt.txt
-
-│   │   IA\_prompt\_refactor.txt
-
 │   │   roadmap\_technique\_musesound.md
 
 │   │
 
-│   └───designs
+│   └───desktop app designs
 
 │       │   manifest.json
 
@@ -436,7 +144,11 @@ C:.
 
 &#x20;           config.js
 
+&#x20;           jam.js
+
 &#x20;           player.js
+
+&#x20;           qrcode.min.js
 
 &#x20;           state.js
 
@@ -445,6 +157,4 @@ C:.
 &#x20;           utils.js
 
 &#x20;           youtube-private.js
-
-
 

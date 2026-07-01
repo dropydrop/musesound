@@ -116,11 +116,19 @@ export const ui = {
         });
 
         const volSlider = document.getElementById('volume-slider');
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+
         if (volSlider) {
-            volSlider.value = state.volume;
-            volSlider.addEventListener('input', (e) => player.setVolume(parseInt(e.target.value)));
+            if (isMobile) {
+                // Masque ou désactive le slider inutile sur mobile
+                volSlider.style.display = 'none'; 
+                document.getElementById('volume-icon') ? document.getElementById('volume-icon').style.display = 'none' : null;
+            } else {
+                volSlider.value = state.volume;
+                volSlider.addEventListener('input', (e) => player.setVolume(parseInt(e.target.value)));
+                document.getElementById('volume-icon')?.addEventListener('click', () => player.setVolume(state.volume > 0 ? 0 : 100));
+            }
         }
-        document.getElementById('volume-icon')?.addEventListener('click', () => player.setVolume(state.volume > 0 ? 0 : 100));
 
         const trackContainer = document.getElementById('playlist-container');
         const plContainer = document.getElementById('playlists-results') || this.createPlaylistsResultsContainer();
@@ -339,6 +347,29 @@ export const ui = {
         if (m === 'playlists') this.renderPlaylistsResults();
         if (m === 'library') this.renderLibrary();
         if (m === 'jam') this.renderJam();
+    },
+
+    updateShuffleRepeatUI() {
+        const shuffleBtn = document.getElementById('shuffle-btn');
+        const repeatBtn = document.getElementById('repeat-btn');
+
+        if (shuffleBtn) {
+            shuffleBtn.classList.toggle('text-primary', state.shuffle);
+            shuffleBtn.classList.toggle('opacity-60', !state.shuffle);
+        }
+
+        if (repeatBtn) {
+            // Gère les trois états : 'none', 'all', 'one'
+            const isTargeted = state.repeat !== 'none';
+            repeatBtn.classList.toggle('text-primary', isTargeted);
+            repeatBtn.classList.toggle('opacity-60', !isTargeted);
+            
+            // Optionnel : Change l'icône si tu gères le mode 'one' distinctement
+            const icon = repeatBtn.querySelector('.material-symbols-outlined');
+            if (icon) {
+                icon.textContent = state.repeat === 'one' ? 'repeat_one' : 'repeat';
+            }
+        }
     },
 
     renderPlaylistsResults() {

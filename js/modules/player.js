@@ -162,7 +162,12 @@ export const player = {
         this.ytActive = true;
         this.isFadingOut = false;
         state.lastPlayedTrack = track;
-        if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume > 0 ? state.volume : 100);
+        
+        if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+            // Force 100% hors mode Jam pour garantir le son sur mobile, sinon respecte state.volume
+            const forcedVolume = (state.jamActive) ? state.volume : 100;
+            this.ytPlayer.setVolume(forcedVolume);
+        }
 
         this.ytPlayer.loadVideoById({
             videoId: track.id,
@@ -174,12 +179,10 @@ export const player = {
             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
 
-        setTimeout(() => {
-            if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
-                this.ytPlayer.playVideo();
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-            }
-        }, 150);
+        if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+            this.ytPlayer.playVideo();
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+        }
 
         this.startKeepAlive();
         ui.updateNowPlaying(track);
