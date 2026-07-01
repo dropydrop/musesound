@@ -320,12 +320,6 @@ export const player = {
                 if (state.repeat === 'all') {
                     const nextIdx = Math.floor(Math.random() * state.queue.length);
                     this.playQueueTrack(nextIdx);
-                } else if (state.currentPlaylist.length > 0) {
-                    state.queue = [];
-                    state.playingQueueIndex = -1;
-                    localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
-                    ui.renderQueue();
-                    this.nextPlaylist();
                 } else {
                     // Autoplay Radio permanent en fin de queue avec Shuffle
                     this.triggerRadioMix();
@@ -347,12 +341,8 @@ export const player = {
                 state.playingQueueIndex = -1;
                 localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
                 ui.renderQueue();
-                if (state.currentPlaylist.length > 0) {
-                    this.nextPlaylist();
-                } else {
-                    // Autoplay Radio permanent en fin de queue linéaire
-                    this.triggerRadioMix();
-                }
+                // Autoplay Radio permanent en fin de queue linéaire
+                this.triggerRadioMix();
             }
         }
         this.saveShuffleHistory();
