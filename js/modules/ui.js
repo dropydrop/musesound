@@ -362,16 +362,16 @@ export const ui = {
         const headerContainer = document.getElementById('header-search-container');
 
         if (show) {
-            wrapper.append(input);
             overlay.style.display = 'flex';
+            wrapper.append(input);
             input.value = '';
             this.mobileSearchOpen = true;
             this.updateScopePills();
             setTimeout(() => input?.focus(), 100);
         } else {
+            overlay.style.display = 'none';
             headerContainer.prepend(btn);
             headerContainer.prepend(input);
-            overlay.style.display = 'none';
             this.hideSuggestions();
             const container = document.getElementById('suggestions-container');
             if (container) container.remove();
@@ -384,12 +384,18 @@ export const ui = {
         const tracksBtn = document.getElementById('scope-tracks');
         const playlistsBtn = document.getElementById('scope-playlists');
         if (!tracksBtn || !playlistsBtn) return;
-        tracksBtn.className = isTracks
-            ? 'px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap'
-            : 'px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap';
-        playlistsBtn.className = isTracks
-            ? 'px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap'
-            : 'px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap';
+        tracksBtn.classList.toggle('bg-primary', isTracks);
+        tracksBtn.classList.toggle('text-background', isTracks);
+        tracksBtn.classList.toggle('border-primary', isTracks);
+        tracksBtn.classList.toggle('bg-transparent', !isTracks);
+        tracksBtn.classList.toggle('text-on-surface-variant', !isTracks);
+        tracksBtn.classList.toggle('border-outline-variant', !isTracks);
+        playlistsBtn.classList.toggle('bg-primary', !isTracks);
+        playlistsBtn.classList.toggle('text-background', !isTracks);
+        playlistsBtn.classList.toggle('border-primary', !isTracks);
+        playlistsBtn.classList.toggle('bg-transparent', isTracks);
+        playlistsBtn.classList.toggle('text-on-surface-variant', isTracks);
+        playlistsBtn.classList.toggle('border-outline-variant', isTracks);
     },
 
     syncTabs() {
