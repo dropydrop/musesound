@@ -46,7 +46,6 @@ export const player = {
             ui.updatePlayerControls();
             this.startProgressTracking();
 
-            // Forcer le volume avec un léger délai
             setTimeout(() => {
                 if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
                     this.ytPlayer.setVolume(state.volume);
@@ -58,8 +57,6 @@ export const player = {
                 this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
             }
         } else if (event.data === YT.PlayerState.PAUSED) {
-            // Si l'utilisateur veut la lecture et qu'on est en arrière-plan,
-            // c'est YouTube qui a auto-pausé → on force la reprise
             if (this._userWantsPlaying && document.hidden) {
                 console.log('[MuseSound] Auto-pause détectée en arrière-plan, relance forcée...');
                 setTimeout(() => {
@@ -67,10 +64,9 @@ export const player = {
                         this.ytPlayer.playVideo();
                     }
                 }, 200);
-                return; // Ne pas mettre à jour l'UI
+                return;
             }
             state.isPlaying = false;
-            this._userWantsPlaying = false;
             ui.updatePlayerControls();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else if (event.data === YT.PlayerState.ENDED) {
@@ -120,12 +116,10 @@ export const player = {
             });
 
             if (!bestMatch) {
-                console.log("Fallback : Aucun canal indépendant trouvé, utilisation du dernier recours (Topic/VEVO).");
                 bestMatch = candidates[0];
             }
 
             if (!this._isCandidateRelevant(track, bestMatch.snippet)) {
-                console.log("Fallback : la meilleure alternative trouvée n'est pas pertinente, passage au suivant.");
                 throw new Error("Alternative non pertinente");
             }
 
@@ -136,9 +130,6 @@ export const player = {
                 thumbnail: bestMatch.snippet.thumbnails?.default?.url || track.thumbnail
             };
 
-            console.log("Fallback réussi ! Nouvelle ID :", alternativeTrack.id);
-            utils.showToast("Version alternative trouvée !");
-            
             state.lastPlayedTrack = alternativeTrack;
             
             setTimeout(() => {
@@ -170,7 +161,6 @@ export const player = {
                         navigator.mediaSession.setPositionState({ duration: dur, playbackRate: 1, position: cur });
                     }
 
-                    // Fade-out check
                     if (dur - cur <= 5 && !this.isFadingOut) {
                         this.isFadingOut = true;
                         this.fadeOut();
@@ -183,16 +173,6 @@ export const player = {
                         localStorage.setItem('MS_LAST_INDEX', activeIdx);
                         localStorage.setItem('MS_LAST_IS_QUEUE', isQueue);
                         localStorage.setItem('MS_LAST_POS', cur);
-                    }
-
-                    if (state.jamActive && state.jamIsHost) {
-                        this._seekUpdateCounter++;
-                        if (this._seekUpdateCounter % 4 === 0) {
-                            const jam = window.MuseSound?.jam;
-                            if (jam && typeof jam.updatePlaybackTime === 'function') {
-                                jam.updatePlaybackTime(cur);
-                            }
-                        }
                     }
                 }
             }
@@ -223,10 +203,6 @@ export const player = {
         if (index < 0 || index >= state.queue.length) return;
         state.playingQueueIndex = index;
         state.currentIndex = -1;
-        if (state.shuffle && !state.shuffleHistory.includes(index)) {
-            state.shuffleHistory.push(index);
-            this.saveShuffleHistory();
-        }
         const track = state.queue[index];
         this.doPlay(track, startTime);
         ui.renderQueue();
@@ -237,10 +213,6 @@ export const player = {
         if (index < 0 || index >= state.currentPlaylist.length) return;
         state.currentIndex = index;
         state.playingQueueIndex = -1;
-        if (state.shuffle && !state.shuffleHistory.includes(index)) {
-            state.shuffleHistory.push(index);
-            this.saveShuffleHistory();
-        }
         const track = state.currentPlaylist[index];
         ui.setLoading(true);
         if (this.ytPlayer && typeof this.ytPlayer.stopVideo === 'function') this.ytPlayer.stopVideo();
@@ -265,10 +237,8 @@ export const player = {
         this._userWantsPlaying = true;
         state.lastPlayedTrack = track;
 
-        // Activer le keepalive de façon synchrone dans le geste utilisateur
         this.startKeepAlive();
 
-        // Nettoyer le fadeOut
         if (this.fadeOutInterval) {
             clearInterval(this.fadeOutInterval);
             this.fadeOutInterval = null;
@@ -300,8 +270,6 @@ export const player = {
 
     _onVisibilityChange() {
         if (document.hidden) {
-            // Page cachée : si on était en lecture, forcer la reprise immédiate
-            // et lancer un watchdog qui re-force toutes les secondes
             if (this._userWantsPlaying && this.ytActive) {
                 console.log('[MuseSound] Page cachée, activation du watchdog arrière-plan');
                 if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
@@ -310,13 +278,11 @@ export const player = {
                 this._startBgWatchdog();
             }
         } else {
-            // Page visible : arrêter le watchdog et restaurer l'état
             this._stopBgWatchdog();
             if (this._userWantsPlaying && this.ytActive) {
                 if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
                     this.ytPlayer.playVideo();
                 }
-                // Restaurer le volume (au cas où le fadeOut l'a écrasé)
                 if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
                     this.ytPlayer.setVolume(state.volume);
                 }
