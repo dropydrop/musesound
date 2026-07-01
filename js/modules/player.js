@@ -22,7 +22,10 @@ export const player = {
                 height: '0', width: '0',
                 playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, fs: 0, disablekb: 1 },
                 events: {
-                    onReady: () => { if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume); },
+                    onReady: () => {
+                        if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
+                        this._startKeepAliveOnInteraction();
+                    },
                     onStateChange: (e) => this.onPlayerStateChange(e),
                     onError: (e) => this.handleError(e)
                 }
@@ -213,9 +216,7 @@ export const player = {
         state.lastPlayedTrack = track;
         
         if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
-            // Force 100% hors mode Jam pour garantir le son sur mobile, sinon respecte state.volume
-            const forcedVolume = (state.jamActive) ? state.volume : 100;
-            this.ytPlayer.setVolume(forcedVolume);
+            this.ytPlayer.setVolume(state.volume);
         }
 
         this.ytPlayer.loadVideoById({
@@ -228,23 +229,39 @@ export const player = {
             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
 
+        this.startKeepAlive();
+
         if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
             this.ytPlayer.playVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         }
-
-        this.startKeepAlive();
         ui.updateNowPlaying(track);
         this.updateMediaSession(track);
         ui.setLoading(false);
     },
 
-    startKeepAlive() {
+    _startKeepAliveOnInteraction() {
+        const start = () => {
+            if (!this.keepAliveAudio) this._initKeepAlive();
+            document.removeEventListener('pointerdown', start);
+            document.removeEventListener('touchstart', start);
+        };
+        document.addEventListener('pointerdown', start, { once: true });
+        document.addEventListener('touchstart', start, { once: true });
+    },
+
+    _initKeepAlive() {
         if (this.keepAliveAudio) return;
         const silentB64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/AA==";
         this.keepAliveAudio = new Audio(silentB64);
         this.keepAliveAudio.loop = true;
-        this.keepAliveAudio.play().catch(() => { this.keepAliveAudio = null; });
+        this.keepAliveAudio.volume = 0;
+        this.keepAliveAudio.play().catch(() => {});
+    },
+
+    startKeepAlive() {
+        if (this.keepAliveAudio) return;
+        this._initKeepAlive();
     },
 
     updateMediaSession(track) {
