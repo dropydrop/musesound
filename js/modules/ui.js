@@ -398,9 +398,9 @@ export const ui = {
         if (mSuggest) return mSuggest;
         mSuggest = document.createElement('div');
         mSuggest.id = 'suggestions-container';
-        mSuggest.className = 'absolute left-0 right-0 z-[10000] bg-surface-container-high rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
+        mSuggest.className = 'absolute top-full left-0 w-full z-[10000] bg-surface-container-high rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden mt-1';
         if (mInput && mInput.parentElement) {
-            mInput.parentElement.style.position = 'relative';
+            mInput.parentElement.classList.add('relative');
             mInput.parentElement.appendChild(mSuggest);
         }
         return mSuggest;
