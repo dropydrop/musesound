@@ -19,7 +19,6 @@ export const state = {
     ecoMode: localStorage.getItem('MS_ECO_MODE') === 'true',
     queue: JSON.parse(localStorage.getItem('MS_QUEUE')) || [],
     debounceTimer: null,
-    isFadingOut: false,
     keepAliveAudio: null,
     draggedIndex: -1,
     draggedType: null,

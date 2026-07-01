@@ -8,7 +8,6 @@ export const player = {
     ytPlayer: null,
     ytActive: false,
     progressInterval: null,
-    isFadingOut: false,
     keepAliveAudio: null,
     _seekUpdateCounter: 0,
 
@@ -74,12 +73,6 @@ export const player = {
                         navigator.mediaSession.setPositionState({ duration: dur, playbackRate: 1, position: cur });
                     }
 
-                    if (dur - cur <= 5 && !this.isFadingOut) {
-                        this.isFadingOut = true;
-                        this.fadeOut();
-                    }
-                    if (dur - cur > 6) this.isFadingOut = false;
-
                     if (Math.floor(cur) % 5 === 0) {
                         const activeIdx = state.playingQueueIndex >= 0 ? state.playingQueueIndex : state.currentIndex;
                         const isQueue = state.playingQueueIndex >= 0;
@@ -101,19 +94,6 @@ export const player = {
                 }
             }
         }, 500);
-    },
-
-    fadeOut() {
-        let v = state.volume;
-        const interval = setInterval(() => {
-            v -= 5;
-            if (v <= 0) {
-                clearInterval(interval);
-                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') this.ytPlayer.setVolume(0);
-            } else { 
-                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') this.ytPlayer.setVolume(v); 
-            }
-        }, 200);
     },
 
     playQueueTrack(index, startTime = 0) {
@@ -160,7 +140,6 @@ export const player = {
     doPlay(track, startTime = 0) {
         const { ui } = window.MuseSound;
         this.ytActive = true;
-        this.isFadingOut = false;
         state.lastPlayedTrack = track;
         
         if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
