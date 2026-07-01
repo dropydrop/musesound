@@ -13,6 +13,8 @@ export const player = {
     fadeOutInterval: null,
     isFadingOut: false,
     _keepAliveActive: false,
+    _userWantsPlaying: false,
+    _bgWatchdog: null,
 
     init() {
         const tag = document.createElement('script');
@@ -39,6 +41,7 @@ export const player = {
         const { ui } = window.MuseSound;
         if (!this.ytActive) return;
         if (event.data === YT.PlayerState.PLAYING) {
+            this._userWantsPlaying = true;
             state.isPlaying = true;
             ui.updatePlayerControls();
             this.startProgressTracking();
@@ -55,10 +58,23 @@ export const player = {
                 this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
             }
         } else if (event.data === YT.PlayerState.PAUSED) {
+            // Si l'utilisateur veut la lecture et qu'on est en arrière-plan,
+            // c'est YouTube qui a auto-pausé → on force la reprise
+            if (this._userWantsPlaying && document.hidden) {
+                console.log('[MuseSound] Auto-pause détectée en arrière-plan, relance forcée...');
+                setTimeout(() => {
+                    if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                        this.ytPlayer.playVideo();
+                    }
+                }, 200);
+                return; // Ne pas mettre à jour l'UI
+            }
             state.isPlaying = false;
+            this._userWantsPlaying = false;
             ui.updatePlayerControls();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else if (event.data === YT.PlayerState.ENDED) {
+            this._userWantsPlaying = false;
             this.next(false);
         }
     },
@@ -246,6 +262,7 @@ export const player = {
     doPlay(track, startTime = 0) {
         const { ui } = window.MuseSound;
         this.ytActive = true;
+        this._userWantsPlaying = true;
         state.lastPlayedTrack = track;
 
         // Activer le keepalive de façon synchrone dans le geste utilisateur
@@ -282,9 +299,27 @@ export const player = {
     },
 
     _onVisibilityChange() {
-        if (!document.hidden && this.ytActive && state.isPlaying) {
-            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
-                this.ytPlayer.playVideo();
+        if (document.hidden) {
+            // Page cachée : si on était en lecture, forcer la reprise immédiate
+            // et lancer un watchdog qui re-force toutes les secondes
+            if (this._userWantsPlaying && this.ytActive) {
+                console.log('[MuseSound] Page cachée, activation du watchdog arrière-plan');
+                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                    this.ytPlayer.playVideo();
+                }
+                this._startBgWatchdog();
+            }
+        } else {
+            // Page visible : arrêter le watchdog et restaurer l'état
+            this._stopBgWatchdog();
+            if (this._userWantsPlaying && this.ytActive) {
+                if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                    this.ytPlayer.playVideo();
+                }
+                // Restaurer le volume (au cas où le fadeOut l'a écrasé)
+                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                    this.ytPlayer.setVolume(state.volume);
+                }
             }
             if (this._keepAudio && this._keepAudio.paused) {
                 this._keepAudio.play().catch(() => {});
@@ -292,6 +327,30 @@ export const player = {
             if (this._keepCtx && this._keepCtx.state === 'suspended') {
                 this._keepCtx.resume().catch(() => {});
             }
+        }
+    },
+
+    _startBgWatchdog() {
+        this._stopBgWatchdog();
+        this._bgWatchdog = setInterval(() => {
+            if (!this._userWantsPlaying || !this.ytActive || !document.hidden) {
+                this._stopBgWatchdog();
+                return;
+            }
+            if (this.ytPlayer && typeof this.ytPlayer.getPlayerState === 'function') {
+                const s = this.ytPlayer.getPlayerState();
+                if (s !== YT.PlayerState.PLAYING && s !== YT.PlayerState.BUFFERING) {
+                    console.log('[MuseSound] Watchdog: relance forcée');
+                    this.ytPlayer.playVideo();
+                }
+            }
+        }, 1000);
+    },
+
+    _stopBgWatchdog() {
+        if (this._bgWatchdog) {
+            clearInterval(this._bgWatchdog);
+            this._bgWatchdog = null;
         }
     },
 
@@ -527,9 +586,12 @@ export const player = {
         const s = this.ytPlayer.getPlayerState();
         const wasPlaying = s === 1;
         if (wasPlaying) {
+            this._userWantsPlaying = false;
+            this._stopBgWatchdog();
             this.ytPlayer.pauseVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else {
+            this._userWantsPlaying = true;
             this.ytPlayer.playVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         }
