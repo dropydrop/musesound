@@ -308,7 +308,7 @@
     <!-- Main Content -->
     <main class="flex-1 flex flex-col overflow-hidden relative transition-all duration-500" id="main-content">
         <!-- Header -->
-        <header id="main-header" class="p-4 md:p-6 border-b border-outline-variant flex flex-col md:flex-row justify-between items-start md:items-center bg-background/80 backdrop-blur-md z-10 gap-4 transition-all duration-300">
+        <header id="main-header" class="p-4 md:p-6 border-b border-outline-variant flex flex-col md:grid md:grid-cols-3 items-start md:items-center bg-background/80 backdrop-blur-md z-10 gap-4 transition-all duration-300">
             <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-primary text-3xl hidden md:block" style="font-variation-settings: 'FILL' 1;">play_circle</span>
                 <h1 class="font-headline-md text-2xl font-bold text-primary hidden md:block">MuseSound</h1>
@@ -319,12 +319,13 @@
             </div>
 
             <!-- Import Section (Moved to Header) -->
-            <div class="flex items-center gap-2 w-full md:flex-1">
-                <input id="playlist-url" type="text" placeholder="Rechercher par titre, artiste ou URL..." class="w-full bg-surface-container border-outline-variant rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
+            <div class="flex items-center gap-2 w-full">
+                <input id="playlist-url" type="text" placeholder="Rechercher par titre, artiste ou URL..." class="w-full bg-surface-container border-outline-variant rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary">
                 <button id="btn-import" class="bg-primary text-background font-bold py-2 px-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center">
                     <span class="material-symbols-outlined">search</span>
                 </button>
             </div>
+            <div class="hidden md:block"></div>
         </header>
 
         <!-- View Tabs -->
