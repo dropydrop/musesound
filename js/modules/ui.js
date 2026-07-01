@@ -362,12 +362,14 @@ export const ui = {
         const headerContainer = document.getElementById('header-search-container');
 
         if (show) {
-            overlay.style.display = 'flex';
-            wrapper.append(input);
-            input.value = '';
+            if (overlay) overlay.style.display = 'flex';
+            if (wrapper && input) wrapper.append(input);
+            if (input) input.value = '';
             this.mobileSearchOpen = true;
             this.updateScopePills();
-            setTimeout(() => input?.focus(), 100);
+            setTimeout(() => {
+                try { input?.focus(); } catch(e) { console.log("Focus bloqué par le navigateur"); }
+            }, 150);
         } else {
             overlay.style.display = 'none';
             headerContainer.prepend(btn);

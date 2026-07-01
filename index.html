@@ -348,21 +348,6 @@
             <button id="tab-jam" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Jam</button>
         </div>
 
-        <!-- Mobile Search Overlay (Hidden by default) -->
-        <div id="mobile-search-overlay" class="md:hidden fixed inset-0 z-50 bg-background flex flex-col p-3" style="display: none;">
-            <div class="flex items-center gap-2">
-                <button id="mobile-search-back" class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center w-8 h-8 -ml-1 shrink-0">
-                    <span class="material-symbols-outlined text-2xl">arrow_back</span>
-                </button>
-                <div id="mobile-search-input-wrapper" class="flex-1 flex items-center gap-2">
-                </div>
-                <div id="mobile-search-scope" class="flex items-center gap-1 shrink-0">
-                    <button id="scope-tracks" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap">Morceaux</button>
-                    <button id="scope-playlists" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap">Playlists</button>
-                </div>
-            </div>
-        </div>
-
         <!-- Playlist Items (Tracks) -->
         <div id="playlist-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1 hide-scrollbar transition-all duration-300">
             <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
@@ -607,6 +592,21 @@
 
     <!-- YouTube IFrame Player (Invisible) -->
     <div id="yt-player-fallback" style="width: 0 !important; height: 0 !important; position: absolute; left: -9999px; opacity: 0; pointer-events: none;"></div>
+
+    <!-- Mobile Search Overlay (Hidden by default) -->
+    <div id="mobile-search-overlay" class="md:hidden fixed inset-0 z-[9999] bg-background flex flex-col p-3" style="display: none;">
+        <div class="flex items-center gap-2">
+            <button id="mobile-search-back" class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center w-8 h-8 -ml-1 shrink-0">
+                <span class="material-symbols-outlined text-2xl">arrow_back</span>
+            </button>
+            <div id="mobile-search-input-wrapper" class="flex-1 flex items-center gap-2">
+            </div>
+            <div id="mobile-search-scope" class="flex items-center gap-1 shrink-0">
+                <button id="scope-tracks" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap">Morceaux</button>
+                <button id="scope-playlists" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap">Playlists</button>
+            </div>
+        </div>
+    </div>
 
     <script type="module" src="js/app.js"></script>
 </body>
