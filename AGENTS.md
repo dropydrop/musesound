@@ -45,6 +45,9 @@ All prefixed `MS_`. Clear them to reset state.
 
 ## Notable quirks
 
+- **Mobile search overlay**: `#mobile-search-overlay` is placed at `<body>` root (outside `<main>`) to avoid stacking-context conflicts with `transition-all` / `overflow`. Its trigger (`#btn-mobile-search-trigger`) uses global event delegation (`document.addEventListener('click', ..., true)`) — never re-attach direct listeners on this button, and never move the overlay back inside `<main>`. Google JSONP suggestions fall back to local title filtering after 2s timeout.
+- **Search scope isolation**: The search input (`#playlist-url`) is physically moved between the header and the mobile overlay via `toggleMobileSearch()`. Event listeners persist because the DOM node is moved, not cloned. Search is only active in Discovery tabs (Morceaux/Playlists), hidden in Bibliothèque/File d'attente/Jam.
+
 - **Eco mode**: forces YouTube player quality to `tiny` (144p) vs `medium` (360p). Toggle via eco button.
 - **Keep-alive**: silent WAV audio loop prevents mobile browsers from killing the tab during playback.
 - **Fade-out**: volume ramps down in the last 5 seconds of a track.

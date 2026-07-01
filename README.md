@@ -7,6 +7,7 @@ MuseSound est un lecteur audio haute fidélité léger conçu pour diffuser de l
 - **Importation de playlists** : Chargez instantanément n'importe quelle playlist ou vidéo YouTube publique.
 - **Résilience Automatique** : Rotation intelligente et transparente entre plusieurs serveurs d'API Piped et Invidious en cas de panne ou de saturation.
 - **Ajustement des paramètres** : Possibilité de configurer vos propres serveurs d'API personnalisés dans la barre latérale.
+- **Recherche mobile optimisée** : Barre de recherche déplacée dans un overlay plein écran via le bouton loupe des onglets, avec délégation d'événements robuste et suggestions locales de secours.
 
 ---
 

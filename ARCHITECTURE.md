@@ -158,3 +158,14 @@ C:.
 
 &#x20;           youtube-private.js
 
+## UI / Navigation
+
+### Mobile search overlay
+
+- `#mobile-search-overlay` is injected at `<body>` root (outside `<main>`) to avoid stacking-context conflicts with `<main>`'s `transition-all` and `overflow-hidden` CSS properties.
+- Triggered by `#btn-mobile-search-trigger` (formerly `#tab-search-icon`) via **global event delegation** on `document` in capture phase — immune to DOM re-renders.
+- The search input (`#playlist-url`) is physically moved between `#header-search-container` and `#mobile-search-input-wrapper` by `toggleMobileSearch()` preserving all listeners.
+- On close, the input and import button are prepended back to `#header-search-container`.
+- Suggestions: Google JSONP with 2s timeout fallback to local filtering of `state.currentPlaylist` and `state.foundPlaylists` titles.
+- Search is only visible on **Morceaux** and **Playlists** tabs. Hidden on Bibliothèque, File d'attente, Jam.
+
