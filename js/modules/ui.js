@@ -44,14 +44,18 @@ export const ui = {
         document.getElementById('tab-queue')?.addEventListener('click', () => { state.uiMode = 'queue'; this.syncTabs(); });
         document.getElementById('tab-jam')?.addEventListener('click', () => { state.uiMode = 'jam'; this.syncTabs(); });
 
-        // Mobile search toggle — propriété native .onclick pour éviter l'interception par les tabs
-        const mSearchIcon = document.getElementById('tab-search-icon');
-        if (mSearchIcon) {
-            mSearchIcon.onclick = (e) => {
+        // Mobile search toggle — phase de capture pour court-circuiter le système d'onglets
+        const mSearchTrigger = document.getElementById('btn-mobile-search-trigger');
+        if (mSearchTrigger) {
+            mSearchTrigger.addEventListener('click', (e) => {
                 e.preventDefault();
-                e.stopPropagation();
-                this.toggleMobileSearch(true);
-            };
+                e.stopImmediatePropagation();
+                if (typeof this.toggleMobileSearch === 'function') {
+                    this.toggleMobileSearch(true);
+                } else if (window.MuseSound && window.MuseSound.ui) {
+                    window.MuseSound.ui.toggleMobileSearch(true);
+                }
+            }, true);
         }
         const mSearchBack = document.getElementById('mobile-search-back');
         if (mSearchBack) {
