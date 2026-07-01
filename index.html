@@ -282,6 +282,18 @@
                 font-size: 24px !important;
             }
         }
+
+        /* === Navbar Desktop : padding vertical réduit ~30% === */
+        @media (min-width: 768px) {
+            #main-header {
+                padding-top: 16px;
+                padding-bottom: 16px;
+            }
+        }
+
+        /* === Eco Data : masqué partout sauf en mode cinéma === */
+        #eco-btn { display: none; }
+        body.is-cinema-mode #eco-btn { display: flex; }
     </style>
 </head>
 <body class="bg-background text-on-surface font-body-md h-[100dvh] w-screen overflow-hidden flex flex-col">
@@ -307,7 +319,7 @@
         <header id="main-header" class="p-4 md:p-6 border-b border-outline-variant flex flex-col md:flex-row justify-between items-start md:items-center bg-background/80 backdrop-blur-md z-10 gap-4 transition-all duration-300">
             <div class="flex items-center gap-3">
                 <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
-                <h1 class="font-headline-md text-2xl font-bold text-primary">MuseSound</h1>
+                <h1 class="font-headline-md text-2xl font-bold text-primary hidden md:block">MuseSound</h1>
                 <div class="text-sm text-on-surface-variant ml-4 hidden md:block">
                     <span id="track-count">0</span> tracks
                     <span id="total-duration" class="text-on-surface-variant/70 ml-2"></span>
