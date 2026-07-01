@@ -26,7 +26,7 @@ export const player = {
         window.onYouTubeIframeAPIReady = () => {
             this.ytPlayer = new YT.Player('yt-player-fallback', {
                 height: '1', width: '1',
-                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, fs: 0, disablekb: 1 },
+                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, fs: 0, disablekb: 1, playsinline: 1, origin: window.location.origin },
                 events: {
                     onReady: () => {
                         if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
