@@ -287,9 +287,28 @@
         #eco-btn { display: none; }
         body.is-cinema-mode #eco-btn { display: flex; }
 
-        /* === Mobile : masquer le header === */
-        @media (max-width: 767px) {
-            #main-header { display: none; }
+        /* === Desktop Mode sur mobile tactile (Version ordinateur Brave/Chrome) === */
+        @media (min-width: 768px) and (hover: none) and (pointer: coarse) {
+            #main-header {
+                padding-top: 10px;
+                padding-bottom: 10px;
+            }
+            #main-header .text-2xl {
+                font-size: 1.25rem;
+            }
+            #playlist-url {
+                font-size: 16px !important;
+            }
+            footer {
+                min-height: 80px;
+            }
+            #play-pause-btn {
+                width: 44px;
+                height: 44px;
+            }
+            #play-pause-btn span {
+                font-size: 26px !important;
+            }
         }
     </style>
 </head>
@@ -590,8 +609,8 @@
         </div>
     </footer>
 
-    <!-- YouTube IFrame Player (Container must be visible for mobile background) -->
-    <div id="yt-player-fallback" style="width: 100vw !important; height: 100vh !important; position: fixed; top: 0; left: 0; opacity: 0.01; pointer-events: none; overflow: hidden;"></div>
+    <!-- YouTube IFrame Player -->
+    <div id="yt-player-fallback" style="width: 1px !important; height: 1px !important; position: absolute; left: -9999px; opacity: 0.01; pointer-events: none; overflow: hidden;"></div>
 
     <!-- Mobile Search Overlay (Hidden by default) -->
     <div id="mobile-search-overlay" class="md:hidden fixed inset-0 z-[9999] bg-background flex flex-col p-3" style="display: none;">

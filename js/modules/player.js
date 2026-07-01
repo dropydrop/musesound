@@ -13,7 +13,6 @@ export const player = {
     fadeOutInterval: null,
     isFadingOut: false,
     _keepAliveActive: false,
-    _userWantsPlaying: false,
 
     init() {
         const tag = document.createElement('script');
@@ -41,7 +40,6 @@ export const player = {
         const { ui } = window.MuseSound;
         if (!this.ytActive) return;
         if (event.data === YT.PlayerState.PLAYING) {
-            this._userWantsPlaying = true;
             this.startKeepAlive();
             state.isPlaying = true;
             ui.updatePlayerControls();
@@ -58,20 +56,10 @@ export const player = {
                 this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
             }
         } else if (event.data === YT.PlayerState.PAUSED) {
-            if (this._userWantsPlaying && document.hidden) {
-                // Auto-pause YouTube en arrière-plan → on force la reprise immédiate
-                if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
-                    this.ytPlayer.playVideo();
-                }
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                return;
-            }
-            this._userWantsPlaying = false;
             state.isPlaying = false;
             ui.updatePlayerControls();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else if (event.data === YT.PlayerState.ENDED) {
-            this._userWantsPlaying = false;
             this.next(false);
         }
     },
@@ -190,15 +178,6 @@ export const player = {
                             }
                         }
                     }
-
-                    // Watchdog arrière-plan : si YouTube a auto-pausé, on relance
-                    if (document.hidden && this._userWantsPlaying && this.ytPlayer) {
-                        const pState = this.ytPlayer.getPlayerState();
-                        if (pState !== YT.PlayerState.PLAYING && pState !== YT.PlayerState.BUFFERING) {
-                            this.ytPlayer.playVideo();
-                            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-                        }
-                    }
                 }
             }
         }, 500);
@@ -283,15 +262,13 @@ export const player = {
             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
 
-        setTimeout(() => {
-            if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
-                this.ytPlayer.playVideo();
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-            }
-            ui.updateNowPlaying(track);
-            this.updateMediaSession(track);
-            ui.setLoading(false);
-        }, 150);
+        if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+            this.ytPlayer.playVideo();
+            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+        }
+        ui.updateNowPlaying(track);
+        this.updateMediaSession(track);
+        ui.setLoading(false);
     },
 
     _startKeepAliveOnInteraction() {
@@ -306,25 +283,9 @@ export const player = {
     },
 
     _onVisibilityChange() {
-        if (document.hidden) {
-            // Maintient le flag mediaSession actif pour que l'OS ne tue pas le process
-            if (this._userWantsPlaying && 'mediaSession' in navigator) {
-                navigator.mediaSession.playbackState = 'playing';
-            }
-        } else {
-            // Retour au premier plan : on relance tout
-            if (this._userWantsPlaying && this.ytActive) {
-                if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
-                    this.ytPlayer.playVideo();
-                }
-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-            }
-            // Relance le keep-alive audio si suspendu
-            if (this._keepAudio && this._keepAudio.paused) {
-                this._keepAudio.play().catch(() => {});
-            }
-            if (this._keepCtx && this._keepCtx.state === 'suspended') {
-                this._keepCtx.resume().catch(() => {});
+        if (!document.hidden && this.ytActive && state.isPlaying) {
+            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                this.ytPlayer.playVideo();
             }
         }
     },
@@ -561,11 +522,9 @@ export const player = {
         const s = this.ytPlayer.getPlayerState();
         const wasPlaying = s === 1;
         if (wasPlaying) {
-            this._userWantsPlaying = false;
             this.ytPlayer.pauseVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else {
-            this._userWantsPlaying = true;
             this.ytPlayer.playVideo();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
         }
