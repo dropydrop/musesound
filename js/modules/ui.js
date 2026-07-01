@@ -330,7 +330,7 @@ export const ui = {
 
     syncTabs() {
         const m = state.uiMode;
-        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-container', queue: 'queue-view', jam: 'jam-view' };
+        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-section', queue: 'queue-view', jam: 'jam-view' };
         Object.keys(containers).forEach(key => {
             const el = document.getElementById(containers[key]);
             const tab = document.getElementById('tab-' + (key === 'playlist' ? 'playlist' : key === 'playlists' ? 'playlists' : key === 'library' ? 'library' : key === 'queue' ? 'queue' : 'jam'));
