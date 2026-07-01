@@ -355,28 +355,47 @@ export const ui = {
     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
 
     toggleMobileSearch(show) {
-        const input = document.getElementById('playlist-url');
-        const btn = document.getElementById('btn-import');
-        const overlay = document.getElementById('mobile-search-overlay');
-        const wrapper = document.getElementById('mobile-search-input-wrapper');
-        const headerContainer = document.getElementById('header-search-container');
-
         if (show) {
-            if (overlay) overlay.style.display = 'flex';
-            if (wrapper && input) wrapper.append(input);
-            if (input) input.value = '';
+            const mOverlay = document.getElementById('mobile-search-overlay');
+            const mWrapper = document.getElementById('mobile-search-input-wrapper');
+            const mInput = document.getElementById('playlist-url');
+
+            if (mOverlay) {
+                mOverlay.style.setProperty('display', 'flex', 'important');
+                mOverlay.style.setProperty('visibility', 'visible', 'important');
+                mOverlay.style.setProperty('opacity', '1', 'important');
+            }
+            
+            if (mWrapper && mInput) {
+                mWrapper.appendChild(mInput);
+                mInput.value = '';
+            }
+
             this.mobileSearchOpen = true;
             this.updateScopePills();
-            setTimeout(() => {
-                try { input?.focus(); } catch(e) { console.log("Focus bloqué par le navigateur"); }
-            }, 150);
+            
+            setTimeout(() => { try { mInput?.focus(); } catch(e) {} }, 150);
         } else {
-            overlay.style.display = 'none';
-            headerContainer.prepend(btn);
-            headerContainer.prepend(input);
-            this.hideSuggestions();
-            const container = document.getElementById('suggestions-container');
-            if (container) container.remove();
+            const mOverlay = document.getElementById('mobile-search-overlay');
+            const mHeaderContainer = document.getElementById('header-search-container');
+            const mInput = document.getElementById('playlist-url');
+            const mBtn = document.getElementById('btn-import');
+
+            if (mOverlay) {
+                mOverlay.style.setProperty('display', 'none', 'important');
+            }
+            
+            if (mHeaderContainer) {
+                if (mBtn) mHeaderContainer.prepend(mBtn);
+                if (mInput) mHeaderContainer.prepend(mInput);
+            }
+            
+            if (typeof this.hideSuggestions === 'function') {
+                this.hideSuggestions();
+            }
+            const mSuggest = document.getElementById('suggestions-container');
+            if (mSuggest) mSuggest.remove();
+            
             this.mobileSearchOpen = false;
         }
     },
