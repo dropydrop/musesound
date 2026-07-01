@@ -260,6 +260,12 @@ export const player = {
             if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
                 this.ytPlayer.playVideo();
             }
+            if (this._keepAudio && this._keepAudio.paused) {
+                this._keepAudio.play().catch(() => {});
+            }
+            if (this._keepCtx && this._keepCtx.state === 'suspended') {
+                this._keepCtx.resume().catch(() => {});
+            }
         }
     },
 
