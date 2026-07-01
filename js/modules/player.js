@@ -283,13 +283,15 @@ export const player = {
             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
         }
 
-        if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
-            this.ytPlayer.playVideo();
-            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
-        }
-        ui.updateNowPlaying(track);
-        this.updateMediaSession(track);
-        ui.setLoading(false);
+        setTimeout(() => {
+            if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+                this.ytPlayer.playVideo();
+                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+            }
+            ui.updateNowPlaying(track);
+            this.updateMediaSession(track);
+            ui.setLoading(false);
+        }, 150);
     },
 
     _startKeepAliveOnInteraction() {
