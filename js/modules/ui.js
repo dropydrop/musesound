@@ -334,12 +334,49 @@ export const ui = {
 
     async fetchSuggestions(q) {
         if (q.length < 2) { this.hideSuggestions(); return; }
+        this._suggestionsQuery = q;
+        clearTimeout(this._suggestionsFallbackTimer);
+        this._suggestionsFallbackTimer = setTimeout(() => {
+            this.handleLocalSuggestions(q);
+        }, 2000);
         const script = document.createElement('script');
         script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(q)}&callback=MuseSound.ui.handleSuggestions`;
         document.body.appendChild(script);
     },
 
+    handleLocalSuggestions(q) {
+        const query = q.toLowerCase();
+        const local = [];
+        if (state.currentPlaylist && state.currentPlaylist.length) {
+            state.currentPlaylist.forEach(t => {
+                if (t.title && t.title.toLowerCase().includes(query) && !local.includes(t.title)) {
+                    local.push(t.title);
+                }
+            });
+        }
+        if (state.foundPlaylists && state.foundPlaylists.length) {
+            state.foundPlaylists.forEach(p => {
+                if (p.title && p.title.toLowerCase().includes(query) && !local.includes(p.title)) {
+                    local.push(p.title);
+                }
+            });
+        }
+        const sliced = local.slice(0, 5);
+        if (!sliced.length) return;
+        const container = document.getElementById('suggestions-container') || this.createSuggestionsContainer();
+        container.innerHTML = sliced.map(s => `<div class="p-3 hover:bg-primary/10 cursor-pointer text-sm border-b border-outline-variant/30">${s}</div>`).join('');
+        container.classList.remove('hidden');
+        container.querySelectorAll('div').forEach((el, i) => {
+            el.onclick = () => {
+                document.getElementById('playlist-url').value = sliced[i];
+                this.hideSuggestions();
+                window.MuseSound.importer.processInput(sliced[i], true);
+            };
+        });
+    },
+
     handleSuggestions(data) {
+        clearTimeout(this._suggestionsFallbackTimer);
         const { importer } = window.MuseSound;
         const suggestions = data[1];
         const container = document.getElementById('suggestions-container') || this.createSuggestionsContainer();
