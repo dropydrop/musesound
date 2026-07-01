@@ -10,6 +10,9 @@ export const player = {
     ytActive: false,
     progressInterval: null,
     _seekUpdateCounter: 0,
+    fadeOutInterval: null,
+    isFadingOut: false,
+    _keepAliveActive: false,
 
     init() {
         const tag = document.createElement('script');
@@ -23,23 +26,30 @@ export const player = {
                 events: {
                     onReady: () => {
                         if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
-                        this._startKeepAliveOnInteraction();
                     },
                     onStateChange: (e) => this.onPlayerStateChange(e),
                     onError: (e) => this.handleError(e)
                 }
             });
         };
+        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
     },
 
     onPlayerStateChange(event) {
         const { ui } = window.MuseSound;
         if (!this.ytActive) return;
         if (event.data === YT.PlayerState.PLAYING) {
-            this.startKeepAlive();
             state.isPlaying = true;
             ui.updatePlayerControls();
             this.startProgressTracking();
+
+            // Forcer le volume avec un léger délai
+            setTimeout(() => {
+                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                    this.ytPlayer.setVolume(state.volume);
+                }
+            }, 50);
+
             if ('mediaSession' in navigator) {
                 navigator.mediaSession.playbackState = 'playing';
                 this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
@@ -60,7 +70,6 @@ export const player = {
 
         const track = state.lastPlayedTrack;
         
-        // Anti-boucle infinie si le fallback lui-même plante ou s'il n'y a pas de morceau chargé
         if (!track || state.isAttemptingFallback) {
             state.isAttemptingFallback = false;
             utils.showToast("Échec du fallback, passage au suivant...");
@@ -78,7 +87,6 @@ export const player = {
 
             if (!query) throw new Error("Métadonnées insuffisantes");
 
-            // Recherche ciblant la catégorie Musique (videoCategoryId=10)
             const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&videoCategoryId=10&q=${encodeURIComponent(query)}&key=${CONFIG.YOUTUBE_API_KEY}`;
             const res = await fetch(searchUrl);
             const data = await res.json();
@@ -87,23 +95,19 @@ export const player = {
                 throw new Error("Aucune alternative trouvée sur YouTube");
             }
 
-            // Éliminer la vidéo qui vient de planter
             const candidates = data.items.filter(item => item.id.videoId !== track.id);
             if (candidates.length === 0) throw new Error("Seul le doublon défectueux est disponible");
 
-            // Filtrage : On cherche d'abord une version qui n'est NI un "Topic" automatique, NI un clip "VEVO" souvent trop long/pollué
             let bestMatch = candidates.find(item => {
                 const chTitle = item.snippet.channelTitle.toLowerCase();
                 return !chTitle.includes("topic") && !chTitle.includes("vevo");
             });
 
-            // Dernier recours : Si on n'a rien trouvé d'autre, on accepte le Topic ou le VEVO
             if (!bestMatch) {
                 console.log("Fallback : Aucun canal indépendant trouvé, utilisation du dernier recours (Topic/VEVO).");
                 bestMatch = candidates[0];
             }
 
-            // Vérifier que le candidat est sémantiquement lié au morceau d'origine
             if (!this._isCandidateRelevant(track, bestMatch.snippet)) {
                 console.log("Fallback : la meilleure alternative trouvée n'est pas pertinente, passage au suivant.");
                 throw new Error("Alternative non pertinente");
@@ -119,10 +123,8 @@ export const player = {
             console.log("Fallback réussi ! Nouvelle ID :", alternativeTrack.id);
             utils.showToast("Version alternative trouvée !");
             
-            // Mise à jour de la piste courante
             state.lastPlayedTrack = alternativeTrack;
             
-            // On relance la lecture sur l'ID alternative
             setTimeout(() => {
                 state.isAttemptingFallback = false;
                 this.doPlay(alternativeTrack, 0);
@@ -152,6 +154,13 @@ export const player = {
                         navigator.mediaSession.setPositionState({ duration: dur, playbackRate: 1, position: cur });
                     }
 
+                    // Fade-out check
+                    if (dur - cur <= 5 && !this.isFadingOut) {
+                        this.isFadingOut = true;
+                        this.fadeOut();
+                    }
+                    if (dur - cur > 6) this.isFadingOut = false;
+
                     if (Math.floor(cur) % 5 === 0) {
                         const activeIdx = state.playingQueueIndex >= 0 ? state.playingQueueIndex : state.currentIndex;
                         const isQueue = state.playingQueueIndex >= 0;
@@ -160,10 +169,9 @@ export const player = {
                         localStorage.setItem('MS_LAST_POS', cur);
                     }
 
-                    // Synchronisation Jam : l'hôte écrit sa position toutes les 2 secondes
                     if (state.jamActive && state.jamIsHost) {
                         this._seekUpdateCounter++;
-                        if (this._seekUpdateCounter % 4 === 0) { // 4 * 500ms = 2 secondes
+                        if (this._seekUpdateCounter % 4 === 0) {
                             const jam = window.MuseSound?.jam;
                             if (jam && typeof jam.updatePlaybackTime === 'function') {
                                 jam.updatePlaybackTime(cur);
@@ -173,6 +181,25 @@ export const player = {
                 }
             }
         }, 500);
+    },
+
+    fadeOut() {
+        if (this.fadeOutInterval) clearInterval(this.fadeOutInterval);
+        let v = state.volume;
+        this.fadeOutInterval = setInterval(() => {
+            v -= 5;
+            if (v <= 0) {
+                clearInterval(this.fadeOutInterval);
+                this.fadeOutInterval = null;
+                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                    this.ytPlayer.setVolume(0);
+                }
+            } else { 
+                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
+                    this.ytPlayer.setVolume(v);
+                } 
+            }
+        }, 200);
     },
 
     playQueueTrack(index, startTime = 0) {
@@ -220,6 +247,16 @@ export const player = {
         const { ui } = window.MuseSound;
         this.ytActive = true;
         state.lastPlayedTrack = track;
+
+        // Activer le keepalive de façon synchrone dans le geste utilisateur
+        this.startKeepAlive();
+
+        // Nettoyer le fadeOut
+        if (this.fadeOutInterval) {
+            clearInterval(this.fadeOutInterval);
+            this.fadeOutInterval = null;
+        }
+        this.isFadingOut = false;
         
         if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
             this.ytPlayer.setVolume(state.volume);
@@ -242,17 +279,6 @@ export const player = {
         ui.updateNowPlaying(track);
         this.updateMediaSession(track);
         ui.setLoading(false);
-    },
-
-    _startKeepAliveOnInteraction() {
-        const start = () => {
-            this.startKeepAlive();
-            document.removeEventListener('pointerdown', start);
-            document.removeEventListener('touchstart', start);
-        };
-        document.addEventListener('pointerdown', start, { once: true });
-        document.addEventListener('touchstart', start, { once: true });
-        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
     },
 
     _onVisibilityChange() {
@@ -368,7 +394,6 @@ export const player = {
         } else if (state.currentPlaylist.length > 0) {
             this.nextPlaylist();
         } else {
-            // Autoplay Radio par défaut si aucune liste n'est chargée
             this.triggerRadioMix();
         }
         localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
@@ -389,7 +414,6 @@ export const player = {
                     const nextIdx = Math.floor(Math.random() * state.queue.length);
                     this.playQueueTrack(nextIdx);
                 } else {
-                    // Autoplay Radio permanent en fin de queue avec Shuffle
                     this.triggerRadioMix();
                 }
             } else {
@@ -409,7 +433,6 @@ export const player = {
                 state.playingQueueIndex = -1;
                 localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
                 ui.renderQueue();
-                // Autoplay Radio permanent en fin de queue linéaire
                 this.triggerRadioMix();
             }
         }
@@ -431,7 +454,6 @@ export const player = {
                     const nextIdx = Math.floor(Math.random() * state.currentPlaylist.length);
                     this.playTrack(nextIdx);
                 } else {
-                    // Autoplay Radio permanent en fin de playlist avec Shuffle
                     this.triggerRadioMix();
                 }
             } else {
@@ -445,7 +467,6 @@ export const player = {
                 if (state.repeat === 'all') {
                     nextIndex = 0;
                 } else {
-                    // Autoplay Radio permanent en fin de playlist linéaire
                     this.triggerRadioMix();
                     this.saveShuffleHistory();
                     return;
