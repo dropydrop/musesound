@@ -103,6 +103,12 @@ export const player = {
                 bestMatch = candidates[0];
             }
 
+            // Vérifier que le candidat est sémantiquement lié au morceau d'origine
+            if (!this._isCandidateRelevant(track, bestMatch.snippet)) {
+                console.log("Fallback : la meilleure alternative trouvée n'est pas pertinente, passage au suivant.");
+                throw new Error("Alternative non pertinente");
+            }
+
             const alternativeTrack = {
                 id: bestMatch.id.videoId,
                 title: bestMatch.snippet.title,
@@ -262,6 +268,22 @@ export const player = {
     startKeepAlive() {
         if (this.keepAliveAudio) return;
         this._initKeepAlive();
+    },
+
+    _isCandidateRelevant(originalTrack, snippet) {
+        const origTitle = (originalTrack.title || '').toLowerCase();
+        const origArtist = (originalTrack.author || '').toLowerCase();
+        const candTitle = (snippet.title || '').toLowerCase();
+        const candChannel = (snippet.channelTitle || '').toLowerCase();
+        const tokenize = s => s.split(/[^a-z0-9]+/).filter(w => w.length > 2 && !['the','and','for','are','not','but','you','all','can','had','her','was','one','our','out','has','his','its','les','des','pas','une','que','est','sur','dans','avec','cet','aux','fait','cette','sont','leur','tout','dont','sans','rien','alors','mais','fait','bien','très','plus','très','aucun','avec'].includes(w));
+        const origWords = tokenize(origTitle);
+        const candWords = tokenize(candTitle);
+        const artistWords = tokenize(origArtist);
+        const channelWords = tokenize(candChannel);
+        const hasCommonWord = (a, b) => a.length > 0 && b.length > 0 && a.some(w => b.includes(w));
+        const titleMatch = hasCommonWord(origWords, candWords);
+        const artistMatch = hasCommonWord(artistWords, channelWords);
+        return titleMatch || artistMatch;
     },
 
     updateMediaSession(track) {
