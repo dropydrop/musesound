@@ -31,6 +31,15 @@ window.MuseSound = {
     supabase: null,
     
     async init() {
+        // Viewport hack pour contrer le dé-zoom de "Version ordinateur" sur mobile
+        if (window.innerWidth >= 768 && navigator.maxTouchPoints > 1) {
+            document.querySelectorAll('meta[name="viewport"]').forEach(el => el.remove());
+            const meta = document.createElement('meta');
+            meta.name = "viewport";
+            meta.content = "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no";
+            document.head.appendChild(meta);
+        }
+
         console.log("MuseSound V7.5 - Modular (ES6)");
         
         // Initialisation sécurisée du client Supabase
