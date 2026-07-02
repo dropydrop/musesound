@@ -1,0 +1,1751 @@
+52 commits 14 files 698 additions 493 deletions
+
+diff --git a/AGENTS.md b/AGENTS.md
+index d35c419..15e2cae 100644
+--- a/AGENTS.md
++++ b/AGENTS.md
+@@ -45,6 +45,9 @@ All prefixed `MS_`. Clear them to reset state.
+ 
+ ## Notable quirks
+ 
++- **Mobile search overlay**: `#mobile-search-overlay` is placed at `<body>` root (outside `<main>`) to avoid stacking-context conflicts with `transition-all` / `overflow`. Its trigger (`#btn-mobile-search-trigger`) uses global event delegation (`document.addEventListener('click', ..., true)`) — never re-attach direct listeners on this button, and never move the overlay back inside `<main>`. Google JSONP suggestions fall back to local title filtering after 2s timeout.
++- **Search scope isolation**: The search input (`#playlist-url`) is physically moved between the header and the mobile overlay via `toggleMobileSearch()`. Event listeners persist because the DOM node is moved, not cloned. Search is only active in Discovery tabs (Morceaux/Playlists), hidden in Bibliothèque/File d'attente/Jam.
++
+ - **Eco mode**: forces YouTube player quality to `tiny` (144p) vs `medium` (360p). Toggle via eco button.
+ - **Keep-alive**: silent WAV audio loop prevents mobile browsers from killing the tab during playback.
+ - **Fade-out**: volume ramps down in the last 5 seconds of a track.
+diff --git a/ARCHITECTURE.md b/ARCHITECTURE.md
+index 0b23159..c15c051 100644
+--- a/ARCHITECTURE.md
++++ b/ARCHITECTURE.md
+@@ -4,317 +4,29 @@ C:.
+ 
+ │   .gitignore
+ 
+-│   agent.md
+-
+-│   GEMINI.md
+-
+-│   index.html
+-
+-│   README.md
+-
+-│
+-
+-├───.prompts
+-
+-│   ├───codebase-cleanup
+-
+-│   │   ├───agents
+-
+-│   │   │       code-reviewer.md
+-
+-│   │   │       test-automator.md
+-
+-│   │   │
+-
+-│   │   └───commands
+-
+-│   │           deps-audit.md
+-
+-│   │           refactor-clean.md
+-
+-│   │           tech-debt.md
+-
+-│   │
+-
+-│   ├───developer-essentials
+-
+-│   │   ├───agents
+-
+-│   │   │       monorepo-architect.md
+-
+-│   │   │
+-
+-│   │   └───skills
+-
+-│   │       ├───auth-implementation-patterns
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───bazel-build-optimization
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───code-review-excellence
+-
+-│   │       │       SKILL.md
+-
+-│   │       │
+-
+-│   │       ├───debugging-strategies
+-
+-│   │       │       SKILL.md
+-
+-│   │       │
+-
+-│   │       ├───e2e-testing-patterns
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───error-handling-patterns
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───git-advanced-workflows
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───monorepo-management
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───nx-workspace-patterns
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───sql-optimization-patterns
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       └───turborepo-caching
+-
+-│   │               SKILL.md
++│   agent-lite.md
+ 
+-│   │
+-
+-│   ├───error-debugging
+-
+-│   │   ├───agents
+-
+-│   │   │       debugger.md
+-
+-│   │   │       error-detective.md
+-
+-│   │   │
+-
+-│   │   └───commands
+-
+-│   │           error-analysis.md
+-
+-│   │           error-trace.md
+-
+-│   │           multi-agent-review.md
+-
+-│   │
+-
+-│   ├───frontend-mobile-development
+-
+-│   │   ├───agents
+-
+-│   │   │       frontend-developer.md
+-
+-│   │   │       mobile-developer.md
+-
+-│   │   │
+-
+-│   │   ├───commands
+-
+-│   │   │       component-scaffold.md
+-
+-│   │   │
+-
+-│   │   └───skills
+-
+-│   │       ├───nextjs-app-router-patterns
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───react-native-architecture
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       ├───react-state-management
+-
+-│   │       │   │   SKILL.md
+-
+-│   │       │   │
+-
+-│   │       │   └───references
+-
+-│   │       │           details.md
+-
+-│   │       │
+-
+-│   │       └───tailwind-design-system
+-
+-│   │           │   SKILL.md
+-
+-│   │           │
+-
+-│   │           └───references
+-
+-│   │                   advanced-patterns.md
+-
+-│   │                   details.md
+-
+-│   │
+-
+-│   └───javascript-typescript
+-
+-│       ├───agents
+-
+-│       │       javascript-pro.md
+-
+-│       │       typescript-pro.md
+-
+-│       │
+-
+-│       ├───commands
+-
+-│       │       typescript-scaffold.md
+-
+-│       │
+-
+-│       └───skills
+-
+-│           ├───javascript-testing-patterns
+-
+-│           │   │   SKILL.md
+-
+-│           │   │
+-
+-│           │   └───references
+-
+-│           │           advanced-testing-patterns.md
+-
+-│           │
+-
+-│           ├───modern-javascript-patterns
+-
+-│           │   │   SKILL.md
+-
+-│           │   │
+-
+-│           │   └───references
+-
+-│           │           advanced-patterns.md
+-
+-│           │           details.md
+-
+-│           │
+-
+-│           ├───nodejs-backend-patterns
+-
+-│           │   │   SKILL.md
++│   agent.md
+ 
+-│           │   │
++│   AGENTS.md
+ 
+-│           │   └───references
++│   ARCHITECTURE.md
+ 
+-│           │           advanced-patterns.md
++│   firebase.json
+ 
+-│           │           details.md
++│   GEMINI.md
+ 
+-│           │
++│   index.html
+ 
+-│           └───typescript-advanced-types
++│   INDEX\_PROJET.md
+ 
+-│               │   SKILL.md
++│   LICENSE
+ 
+-│               │
++│   manifest.json
+ 
+-│               └───references
++│   README.md
+ 
+-│                       details.md
++│   service-worker.js
+ 
+ │
+ 
+@@ -326,15 +38,11 @@ C:.
+ 
+ │   │   guide\_d\_installation\_android.md
+ 
+-│   │   IA\_prompt.txt
+-
+-│   │   IA\_prompt\_refactor.txt
+-
+ │   │   roadmap\_technique\_musesound.md
+ 
+ │   │
+ 
+-│   └───designs
++│   └───desktop app designs
+ 
+ │       │   manifest.json
+ 
+@@ -436,8 +144,12 @@ C:.
+ 
+ &#x20;           config.js
+ 
++&#x20;           jam.js
++
+ &#x20;           player.js
+ 
++&#x20;           qrcode.min.js
++
+ &#x20;           state.js
+ 
+ &#x20;           ui.js
+@@ -446,5 +158,14 @@ C:.
+ 
+ &#x20;           youtube-private.js
+ 
++## UI / Navigation
++
++### Mobile search overlay
+ 
++- `#mobile-search-overlay` is injected at `<body>` root (outside `<main>`) to avoid stacking-context conflicts with `<main>`'s `transition-all` and `overflow-hidden` CSS properties.
++- Triggered by `#btn-mobile-search-trigger` (formerly `#tab-search-icon`) via **global event delegation** on `document` in capture phase — immune to DOM re-renders.
++- The search input (`#playlist-url`) is physically moved between `#header-search-container` and `#mobile-search-input-wrapper` by `toggleMobileSearch()` preserving all listeners.
++- On close, the input and import button are prepended back to `#header-search-container`.
++- Suggestions: Google JSONP with 2s timeout fallback to local filtering of `state.currentPlaylist` and `state.foundPlaylists` titles.
++- Search is only visible on **Morceaux** and **Playlists** tabs. Hidden on Bibliothèque, File d'attente, Jam.
+ 
+diff --git a/GEMINI.md b/GEMINI.md
+index 5235e13..28db59e 100644
+--- a/GEMINI.md
++++ b/GEMINI.md
+@@ -2,26 +2,32 @@
+ 
+ ## Identity \& Cognitive Loop
+ 
+-* You are an autonomous coding agent. You prioritize "vibe coding": rapid iteration, auto-correction, and functional parity.
++* Autonomous coding agent. You prioritize "vibe coding": rapid iteration, auto-correction, and functional parity.
+ * **Goal:** Reach a working state by identifying and fixing errors through iterative tool loops.
+-* **No Preamble:** Never acknowledge requests ("Understood", "I'll do that"). Act immediately.
++* **No Preamble:** Never acknowledge requests ("Understood"). Act immediately.
++
++## Core Principles (The "Karpathy" Guardrails)
++
++* **Demand if uncertain:** Never guess. If a request is ambiguous, state your assumptions or ask for clarification before acting.
++* **Radical minimalism:** Add no features, abstractions, or configurations not explicitly requested. If a task can be done in 50 lines instead of 200, do it.
++* **Pure surgery:** Modify ONLY the files strictly necessary for the request. Avoid "drive-by" refactoring. Respect the existing code style, even if you would have done it differently.
++* **Objective focus:** Success is defined solely by the exact satisfaction of the user's request. Nothing else.
+ 
+ ## Tool Execution \& Workflow
+ 
+-* **Maximize Parallelism:** Whenever possible, batch independent operations (e.g., reading multiple files, running non-dependent checks) into parallel tool calls.
+-* **Fail Fast \& Self-Heal:** If a command or script fails, analyze the stderr, hypothesize the root cause, and attempt a fix without waiting for user input.
+-* **Iterative Loops:** When building features or fixing bugs, perform trial-and-error cycles. If an error persists, log it, adapt the strategy, and retry.
+-* **Tool Discipline:** Use the available terminal tools and file system editors directly. Do not "suggest" code—implement it.
++* **Maximize Parallelism:** Batch independent operations into parallel tool calls.
++* **Fail Fast \& Self-Heal:** On failure, analyze stderr, hypothesize the root cause, and attempt a fix without user input.
++* **Iterative Loops:** Trial-and-error cycles. If an error persists, log it, adapt, and retry.
++* **Tool Discipline:** Implement directly. No "suggestions".
+ 
+ ## Code Quality \& Standards
+ 
+-* **Runnable First:** Every code output must be production-ready. Ensure all imports are at the file's top level.
+-* **Minimalist Edits:** Prefer small, surgical changes over refactoring unless the architecture is fundamentally broken.
+-* **Context Awareness:** Always reference files, directories, and symbols by their full relative path.
+-* **Verification:** After significant changes, if a test tool is available, run it to verify functionality.
++* **Runnable First:** Every output must be production-ready. Ensure imports are at the top.
++* **Context Awareness:** Always reference files and symbols by their full relative path.
++* **Verification:** After significant changes, if a test tool is available, run it.
+ 
+ ## Efficiency Constraints
+ 
+-* **Token Economy:** Be terse. Use concise bullet points for plans or progress updates. Avoid long-winded explanations of your reasoning; show your work through your tool calls and the final code.
+-* **Context Routing \& Plugin Economy:** At the start of every request, look at the project's root for `INDEX\_PROJET.md`. Cross-reference the user's request with this index to identify which specific plugin files from `C:\Users\Pierre\Documents\GitHub\temp\agents\plugins\` are required. Strictly ignore any plugins not listed for this context to save tokens and prevent model distraction.
++* **Token Economy:** Be terse. No reasoning exposition; show work through tool calls and final code.
++* **Context Routing:** At the start, check the root for `INDEX\_PROJET.md`. Use it to identify which specific plugin files are required and strictly ignore others.
+ 
+diff --git a/README.md b/README.md
+index 6ca6956..a7a001c 100644
+--- a/README.md
++++ b/README.md
+@@ -7,6 +7,7 @@ MuseSound est un lecteur audio haute fidélité léger conçu pour diffuser de l
+ - **Importation de playlists** : Chargez instantanément n'importe quelle playlist ou vidéo YouTube publique.
+ - **Résilience Automatique** : Rotation intelligente et transparente entre plusieurs serveurs d'API Piped et Invidious en cas de panne ou de saturation.
+ - **Ajustement des paramètres** : Possibilité de configurer vos propres serveurs d'API personnalisés dans la barre latérale.
++- **Recherche mobile optimisée** : Barre de recherche déplacée dans un overlay plein écran via le bouton loupe des onglets, avec délégation d'événements robuste et suggestions locales de secours.
+ 
+ ---
+ 
+diff --git a/agent-lite.md b/agent-lite.md
+index fd0be34..212aa7c 100644
+--- a/agent-lite.md
++++ b/agent-lite.md
+@@ -1,22 +1,32 @@
+ # AGENT-LITE.md
+ 
+ ## Identity
+-- Autonomous coding agent. Vibe coding: rapid iteration, auto-correction, functional parity.
+-- Goal: Working state via iterative tool loops.
+-- No preamble. Act immediately.
++
++* Autonomous coding agent. Vibe coding: rapid, auto-correcting, functional.
++* **Goal:** Working state via iterative tool loops. No preamble. Act.
++
++## Core Principles (The "Karpathy" Guardrails)
++
++* **Demand if uncertain:** Never guess. If ambiguous, state assumptions or ask.
++* **Radical minimalism:** No features, abstractions, or configs not explicitly requested.
++* **Pure surgery:** Modify ONLY files strictly required. No "drive-by" refactoring, even if code seems imperfect.
++* **Objective focus:** Success = exact satisfaction of the user's request. Nothing else.
+ 
+ ## Workflow
+-- Batch independent ops (read, checks) in parallel.
+-- On failure: analyze stderr, hypothesize, fix. No user wait.
+-- Trial-error cycles. Log persistent errors, adapt, retry.
+-- Implement directly. No suggestions.
++
++* Batch independent operations (reads, checks) in parallel.
++* On failure: analyze stderr, hypothesize, fix. No waiting.
++* Trial-error cycles. Log persistent errors, adapt, retry.
+ 
+ ## Code
+-- Runnable first. Imports at top.
+-- Surgical edits over refactoring unless architecture broken.
+-- Full relative paths for all refs.
+-- Verify after major changes (if test tool available).
++
++* Runnable first. Imports at top.
++* Surgical edits over refactoring unless architecture is broken.
++* Full relative paths for all refs.
++* Verify after major changes (if test tool available).
+ 
+ ## Output
+-- Terse. Bullet points only for plans/progress.
+-- Show work via tool calls and final code. No reasoning exposition.
+\ No newline at end of file
++
++* Terse. Bullet points only for plans/progress.
++* Show work via tool calls and final code. No reasoning exposition.
++
+diff --git a/index.html b/index.html
+index d9f5389..a9d88be 100644
+--- a/index.html
++++ b/index.html
+@@ -6,7 +6,7 @@
+     <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+     <meta http-equiv="Pragma" content="no-cache">
+     <meta http-equiv="Expires" content="0">
+-    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
++    <meta content="width=device-width, initial-scale=1.0" name="viewport" id="viewport-meta"/>
+     <link rel="manifest" href="./manifest.json">
+     <title>MuseSound - high-fidelity audio player for YouTube</title>
+     <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+@@ -252,6 +252,45 @@
+                 gap: 0.5rem;
+             }
+         }
++
++        /* === Mobile : icônes et hauteur du lecteur agrandies === */
++        @media (max-width: 767px) {
++            footer {
++                min-height: 112px;
++            }
++            #play-pause-btn {
++                width: 48px;
++                height: 48px;
++            }
++            #play-pause-btn span {
++                font-size: 30px !important;
++            }
++            #prev-btn span,
++            #next-btn span {
++                font-size: 30px !important;
++            }
++            #shuffle-btn span,
++            #repeat-btn span {
++                font-size: 24px !important;
++            }
++        }
++
++        /* === Navbar Desktop : padding vertical réduit ~30% === */
++        @media (min-width: 768px) {
++            #main-header {
++                padding-top: 16px;
++                padding-bottom: 16px;
++            }
++        }
++
++        /* === Eco Data : masqué partout sauf en mode cinéma === */
++        #eco-btn { display: none; }
++        body.is-cinema-mode #eco-btn { display: flex; }
++
++        /* === Mobile : masquer le header === */
++        @media (max-width: 767px) {
++            #main-header { display: none; }
++        }
+     </style>
+ </head>
+ <body class="bg-background text-on-surface font-body-md h-[100dvh] w-screen overflow-hidden flex flex-col">
+@@ -274,10 +313,10 @@
+     <!-- Main Content -->
+     <main class="flex-1 flex flex-col overflow-hidden relative transition-all duration-500" id="main-content">
+         <!-- Header -->
+-        <header id="main-header" class="p-4 md:p-6 border-b border-outline-variant flex flex-col md:flex-row justify-between items-start md:items-center bg-background/80 backdrop-blur-md z-10 gap-4 transition-all duration-300">
++        <header id="main-header" class="p-4 md:p-6 border-b border-outline-variant flex flex-col md:grid md:grid-cols-3 items-start md:items-center bg-background/80 backdrop-blur-md z-10 gap-4 transition-all duration-300">
+             <div class="flex items-center gap-3">
+-                <span class="material-symbols-outlined text-primary text-3xl" style="font-variation-settings: 'FILL' 1;">play_circle</span>
+-                <h1 class="font-headline-md text-2xl font-bold text-primary">MuseSound</h1>
++                <span class="material-symbols-outlined text-primary text-3xl hidden md:block" style="font-variation-settings: 'FILL' 1;">play_circle</span>
++                <h1 class="font-headline-md text-2xl font-bold text-primary hidden md:block">MuseSound</h1>
+                 <div class="text-sm text-on-surface-variant ml-4 hidden md:block">
+                     <span id="track-count">0</span> tracks
+                     <span id="total-duration" class="text-on-surface-variant/70 ml-2"></span>
+@@ -285,27 +324,28 @@ <h1 class="font-headline-md text-2xl font-bold text-primary">MuseSound</h1>
+             </div>
+ 
+             <!-- Import Section (Moved to Header) -->
+-            <div class="flex items-center gap-2 w-full md:w-auto">
+-                <button id="btn-login" class="bg-surface-container border border-outline-variant text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center text-sm hidden">
+-                    <span class="material-symbols-outlined mr-2 text-xl">account_circle</span> Connexion
+-                </button>
+-                <input id="playlist-url" type="text" placeholder="Mot-clé ou URL..." class="w-full md:w-64 bg-surface-container border-outline-variant rounded-lg px-4 py-2 text-sm focus:ring-1 focus:ring-primary outline-none">
++            <div id="header-search-container" class="flex items-center gap-2 w-full">
++                <input id="playlist-url" type="text" placeholder="Rechercher par titre, artiste ou URL..." class="w-full bg-surface-container border-outline-variant rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary focus:border-primary">
+                 <button id="btn-import" class="bg-primary text-background font-bold py-2 px-3 rounded-lg hover:opacity-90 transition-opacity flex items-center justify-center">
+                     <span class="material-symbols-outlined">search</span>
+                 </button>
+             </div>
++            <div class="hidden md:block"></div>
+         </header>
+ 
+         <!-- View Tabs -->
+         <div class="flex border-b border-outline-variant px-4 bg-background/50 overflow-x-auto hide-scrollbar">
+-            <button id="tab-playlist" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-primary text-primary transition-all whitespace-nowrap">Morceaux</button>
+-            <button id="tab-playlists" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Playlists</button>
+-            <button id="tab-library" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Bibliothèque</button>
+-            <button id="tab-queue" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-2 whitespace-nowrap">
++            <button id="btn-mobile-search-trigger" class="md:hidden px-1.5 py-4 text-on-surface-variant hover:text-primary transition-all">
++                <span class="material-symbols-outlined text-xl">search</span>
++            </button>
++            <button id="tab-playlist" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-primary text-primary transition-all whitespace-nowrap">Morceaux</button>
++            <button id="tab-playlists" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Playlists</button>
++            <button id="tab-library" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Bibliothèque</button>
++            <button id="tab-queue" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all flex items-center gap-2 whitespace-nowrap">
+                 File d'attente
+                 <span id="queue-badge" class="hidden bg-primary text-background text-[10px] px-1.5 py-0.5 rounded-full min-w-[1.2rem] text-center">0</span>
+             </button>
+-            <button id="tab-jam" class="px-4 md:px-6 py-3 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Jam</button>
++            <button id="tab-jam" class="px-5 md:px-8 py-4 text-sm font-bold border-b-2 border-transparent text-on-surface-variant hover:text-on-surface transition-all whitespace-nowrap">Jam</button>
+         </div>
+ 
+         <!-- Playlist Items (Tracks) -->
+@@ -325,10 +365,17 @@ <h1 class="font-headline-md text-2xl font-bold text-primary">MuseSound</h1>
+         </div>
+ 
+         <!-- Library Results (Hidden by default) -->
+-        <div id="library-container" class="hidden flex-1 overflow-y-auto p-4 flex flex-col gap-1 hide-scrollbar transition-all duration-300">
+-            <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
+-                <span class="material-symbols-outlined text-6xl mb-4">video_library</span>
+-                <p>Chargement de la bibliothèque...</p>
++        <div id="library-section" class="hidden flex-1 flex flex-col overflow-hidden">
++            <div class="flex items-center justify-between px-4 pt-4 pb-0">
++                <button id="btn-login" class="bg-surface-container border border-outline-variant text-primary font-bold py-2 px-4 rounded-lg hover:bg-primary/10 transition-colors flex items-center justify-center text-sm hidden">
++                    <span class="material-symbols-outlined mr-2 text-xl">account_circle</span> Connexion
++                </button>
++            </div>
++            <div id="library-container" class="flex-1 overflow-y-auto p-4 flex flex-col gap-1 hide-scrollbar transition-all duration-300">
++                <div class="flex flex-col items-center justify-center h-full text-on-surface-variant opacity-50">
++                    <span class="material-symbols-outlined text-6xl mb-4">video_library</span>
++                    <p>Chargement de la bibliothèque...</p>
++                </div>
+             </div>
+         </div>
+ 
+@@ -498,13 +545,13 @@ <h4 class="font-bold text-sm flex items-center gap-2">
+         <div class="flex items-center gap-4 w-1/4 md:w-1/3">
+             <div class="relative">
+                 <img class="w-12 h-12 rounded object-cover current-art bg-surface-container-high" src="" onerror="this.style.display='none'">
+-                <button id="nowplaying-radio-btn" class="absolute -top-3 -right-3 bg-primary text-background rounded-full w-8 h-8 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-lg z-30">
+-                    <span class="material-symbols-outlined text-sm">radio</span>
++                <button id="nowplaying-radio-btn" class="absolute -top-3 -right-3 bg-primary text-background rounded-full w-7 h-7 flex items-center justify-center opacity-80 hover:opacity-100 transition-opacity shadow-lg z-30">
++                    <span class="material-symbols-outlined text-xs">radio</span>
+                 </button>
+             </div>
+             <div class="hidden sm:block min-w-0">
+-                <div class="font-bold truncate current-title text-sm">No track</div>
+-                <div class="text-xs text-on-surface-variant truncate current-artist">-</div>
++                <div class="font-bold truncate current-title text-xs">No track</div>
++                <div class="text-[11px] text-on-surface-variant truncate current-artist">-</div>
+             </div>
+         </div>
+ 
+@@ -520,7 +567,7 @@ <h4 class="font-bold text-sm flex items-center gap-2">
+             <!-- Progress (Clickable) -->
+             <div class="w-full flex items-center gap-2">
+                 <span class="text-[10px] font-mono-label w-8 text-right player-current-time">0:00</span>
+-                <div id="progress-container" class="flex-1 h-2 bg-surface-container-high rounded-full overflow-hidden cursor-pointer relative flex items-center group">
++                <div id="progress-container" class="flex-1 h-[10px] bg-surface-container-high rounded-full overflow-hidden cursor-pointer relative flex items-center group">
+                     <!-- Added group-hover height expansion for better usability -->
+                     <div class="player-progress-bar absolute left-0 top-0 bottom-0 bg-primary w-0 pointer-events-none transition-all"></div>
+                 </div>
+@@ -543,8 +590,23 @@ <h4 class="font-bold text-sm flex items-center gap-2">
+         </div>
+     </footer>
+ 
+-    <!-- YouTube IFrame Player (Invisible) -->
+-    <div id="yt-player-fallback" style="width: 0 !important; height: 0 !important; position: absolute; left: -9999px; opacity: 0; pointer-events: none;"></div>
++    <!-- YouTube IFrame Player -->
++    <div id="yt-player-fallback" style="width: 1px !important; height: 1px !important; position: absolute; left: -9999px; opacity: 0.01; pointer-events: none; overflow: hidden;"></div>
++
++    <!-- Mobile Search Overlay (Hidden by default) -->
++    <div id="mobile-search-overlay" class="md:hidden fixed inset-0 z-[9999] bg-background flex flex-col p-3" style="display: none;">
++        <div class="flex items-center gap-2">
++            <button id="mobile-search-back" class="text-on-surface-variant hover:text-on-surface transition-colors flex items-center justify-center w-8 h-8 -ml-1 shrink-0">
++                <span class="material-symbols-outlined text-2xl">arrow_back</span>
++            </button>
++            <div id="mobile-search-input-wrapper" class="flex-1 flex items-center gap-2">
++            </div>
++            <div id="mobile-search-scope" class="flex items-center gap-1 shrink-0">
++                <button id="scope-tracks" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-primary text-background border-primary transition-all whitespace-nowrap">Morceaux</button>
++                <button id="scope-playlists" class="px-2.5 py-1 text-[11px] font-bold rounded border bg-transparent text-on-surface-variant border-outline-variant transition-all whitespace-nowrap">Playlists</button>
++            </div>
++        </div>
++    </div>
+ 
+     <script type="module" src="js/app.js"></script>
+ </body>
+diff --git a/js/app.js b/js/app.js
+index 72c6685..93c59ca 100644
+--- a/js/app.js
++++ b/js/app.js
+@@ -94,34 +94,57 @@ window.MuseSound = {
+ 
+         loginBtn.classList.remove('hidden');
+ 
++        // Restaure le provider_token depuis localStorage si Supabase ne le renvoie pas
+         const { data: { session } } = await this.supabase.auth.getSession();
+ 
+         if (session) {
+             console.log("Accès Google autorisé.");
+-            this.state.googleToken = session.provider_token; 
+-            
+-            // Gestion auto-rafraîchissement de la session via Supabase
+-            this.supabase.auth.onAuthStateChange((event, session) => {
+-                if (event === 'TOKEN_REFRESHED') {
+-                    console.log("Token rafraîchi avec succès");
+-                    this.state.googleToken = session.provider_token;
++            this.state.googleToken = session.provider_token || localStorage.getItem('MS_GOOGLE_TOKEN');
++            if (session.provider_token) localStorage.setItem('MS_GOOGLE_TOKEN', session.provider_token);
++            await this._switchToLibrary();
++        } else {
++            // Pas de session Supabase mais un token stocké → on tente un refresh
++            const savedToken = localStorage.getItem('MS_GOOGLE_TOKEN');
++            if (savedToken) {
++                this.state.googleToken = savedToken;
++                const refreshed = await this.refreshGoogleToken();
++                if (refreshed) await this._switchToLibrary();
++            }
++        }
++
++        // Écoute les événements d'auth — couvre le retour OAuth et les changements d'état
++        this.supabase.auth.onAuthStateChange(async (event, session) => {
++            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
++                if (session) {
++                    console.log(`Auth event: ${event}`);
++                    this.state.googleToken = session.provider_token || localStorage.getItem('MS_GOOGLE_TOKEN');
++                    if (session.provider_token) localStorage.setItem('MS_GOOGLE_TOKEN', session.provider_token);
++                    await this._switchToLibrary();
+                 }
+-            });
+-            
++            }
++        });
++
++        if (session) {
+             loginBtn.innerHTML = '<span class="material-symbols-outlined mr-2 text-xl">logout</span> Déconnecter';
+             loginBtn.classList.add('text-on-surface-variant');
+             
+             loginBtn.onclick = async () => {
++                localStorage.removeItem('MS_GOOGLE_TOKEN');
+                 await this.supabase.auth.signOut();
+                 window.location.reload();
+             };
+         } else {
+             loginBtn.onclick = async () => {
++                localStorage.removeItem('MS_GOOGLE_TOKEN');
+                 const { error } = await this.supabase.auth.signInWithOAuth({
+                     provider: 'google',
+                     options: {
+                         redirectTo: window.location.origin, 
+-                        scopes: 'https://www.googleapis.com/auth/youtube.readonly'
++                        scopes: 'https://www.googleapis.com/auth/youtube.readonly',
++                        queryParams: {
++                            access_type: 'offline',
++                            prompt: 'consent'
++                        }
+                     }
+                 });
+                 if (error) this.showToast("Erreur d'initialisation Google");
+@@ -129,6 +152,42 @@ window.MuseSound = {
+         }
+     },
+ 
++    async refreshGoogleToken() {
++        if (!this.supabase) return null;
++        try {
++            const { data, error } = await this.supabase.auth.refreshSession();
++            if (error) throw error;
++            if (data.session?.provider_token) {
++                this.state.googleToken = data.session.provider_token;
++                localStorage.setItem('MS_GOOGLE_TOKEN', data.session.provider_token);
++                return data.session.provider_token;
++            }
++        } catch (e) {
++            console.error("Refresh Google token failed:", e);
++        }
++        this.state.googleToken = null;
++        localStorage.removeItem('MS_GOOGLE_TOKEN');
++        return null;
++    },
++
++    async _switchToLibrary() {
++        if (this.ui && typeof this.ui.syncTabs === 'function') {
++            this.state.uiMode = 'library';
++            this.ui.syncTabs();
++            if (!this.state.libraryFetched) {
++                try {
++                    const module = await import('./modules/youtube-private.js');
++                    const data = await module.fetchMyPlaylists();
++                    this.state.foundLibrary = data;
++                    this.state.libraryFetched = true;
++                    this.ui.renderLibrary();
++                } catch (err) {
++                    console.error("Erreur chargement bibliothèque:", err);
++                }
++            }
++        }
++    },
++
+     showToast(msg) {
+         this.utils.showToast(msg);
+     }
+diff --git a/js/modules/api.js b/js/modules/api.js
+index 05f29e3..4596b6c 100644
+--- a/js/modules/api.js
++++ b/js/modules/api.js
+@@ -57,6 +57,7 @@ export const api = {
+         } catch (error) { console.error("Importer Error:", error); }
+         ui.setLoading(false);
+         ui.syncTabs();
++        if (ui.mobileSearchOpen) ui.toggleMobileSearch(false);
+     },
+ 
+     async getTrackInfo(videoId) {
+@@ -76,13 +77,24 @@ export const api = {
+ 
+     async searchTracks(query, isMore = false) {
+         const { ui, player } = window.MuseSound;
++
++        // Spécification 1 : !yt → globale, sinon musique uniquement
++        let cleanQuery = isMore ? state.lastSearchQuery : query.trim();
++        if (!cleanQuery) return false;
++        let categoryParam = '&videoCategoryId=10';
++        if (cleanQuery.startsWith('!yt')) {
++            categoryParam = '';
++            cleanQuery = cleanQuery.replace('!yt', '').trim();
++            if (!cleanQuery) return false;
++        }
++
+         if (!isMore) {
+-            state.lastSearchQuery = query;
++            state.lastSearchQuery = cleanQuery;
+             state.nextPageTokenTracks = null;
+         } else if (!state.nextPageTokenTracks) return false;
+ 
+         const tokenParam = state.nextPageTokenTracks ? `&pageToken=${state.nextPageTokenTracks}` : "";
+-        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&type=video&q=${encodeURIComponent(query)}${tokenParam}&key=${CONFIG.YOUTUBE_API_KEY}`;
++        const url = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=25&type=video${categoryParam}&q=${encodeURIComponent(cleanQuery)}${tokenParam}&key=${CONFIG.YOUTUBE_API_KEY}`;
+ 
+         try {
+             const response = await fetch(url);
+@@ -198,6 +210,31 @@ export const api = {
+         while (allTracks.length < 500) {
+             const pageUrl = `${url}${nextPageToken ? `&pageToken=${nextPageToken}` : ""}`;
+             const response = await fetch(pageUrl, { headers });
++            
++            // Token expiré → tentative de refresh puis retry de la page courante
++            if (response.status === 401 && token) {
++                const newToken = await window.MuseSound.refreshGoogleToken();
++                if (newToken) {
++                    headers['Authorization'] = `Bearer ${newToken}`;
++                    const retry = await fetch(pageUrl, { headers });
++                    if (!retry.ok) throw new Error("Session expirée, veuillez vous reconnecter.");
++                    const data = await retry.json();
++                    if (!data.items?.length) break;
++                    const tracks = data.items.map(item => ({
++                        id: item.snippet.resourceId.videoId,
++                        title: item.snippet.title,
++                        author: item.snippet.videoOwnerChannelTitle || item.snippet.channelTitle,
++                        thumbnail: item.snippet.thumbnails.medium?.url || item.snippet.thumbnails.default?.url,
++                        duration: 0
++                    }));
++                    allTracks = [...allTracks, ...tracks];
++                    nextPageToken = data.nextPageToken;
++                    if (!nextPageToken || allTracks.length >= 500) break;
++                    continue;
++                }
++                throw new Error("Session expirée, veuillez vous reconnecter.");
++            }
++            
+             const data = await response.json();
+             
+             if (!data.items?.length) break;
+diff --git a/js/modules/player.js b/js/modules/player.js
+index ce91298..dc27598 100644
+--- a/js/modules/player.js
++++ b/js/modules/player.js
+@@ -3,14 +3,16 @@
+  */
+ import { state } from './state.js';
+ import { utils } from './utils.js';
++import { CONFIG } from './config.js';
+ 
+ export const player = {
+     ytPlayer: null,
+     ytActive: false,
+     progressInterval: null,
+-    isFadingOut: false,
+-    keepAliveAudio: null,
+     _seekUpdateCounter: 0,
++    fadeOutInterval: null,
++    isFadingOut: false,
++    _keepAliveActive: false,
+ 
+     init() {
+         const tag = document.createElement('script');
+@@ -19,24 +21,36 @@ export const player = {
+ 
+         window.onYouTubeIframeAPIReady = () => {
+             this.ytPlayer = new YT.Player('yt-player-fallback', {
+-                height: '0', width: '0',
+-                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, fs: 0, disablekb: 1 },
++                height: '1', width: '1',
++                playerVars: { autoplay: 0, controls: 0, modestbranding: 1, rel: 0, fs: 0, disablekb: 1, playsinline: 1, origin: window.location.origin },
+                 events: {
+-                    onReady: () => { if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume); },
++                    onReady: () => {
++                        if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
++                        this._startKeepAliveOnInteraction();
++                    },
+                     onStateChange: (e) => this.onPlayerStateChange(e),
+                     onError: (e) => this.handleError(e)
+                 }
+             });
+         };
++        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
+     },
+ 
+     onPlayerStateChange(event) {
+         const { ui } = window.MuseSound;
+         if (!this.ytActive) return;
+         if (event.data === YT.PlayerState.PLAYING) {
++            this.startKeepAlive();
+             state.isPlaying = true;
+             ui.updatePlayerControls();
+             this.startProgressTracking();
++
++            setTimeout(() => {
++                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
++                    this.ytPlayer.setVolume(state.volume);
++                }
++            }, 50);
++
+             if ('mediaSession' in navigator) {
+                 navigator.mediaSession.playbackState = 'playing';
+                 this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
+@@ -50,12 +64,79 @@ export const player = {
+         }
+     },
+ 
+-    handleError(error) {
++    async handleError(error) {
+         const { ui } = window.MuseSound;
+         console.error("YouTube Player error:", error);
+         ui.setLoading(false);
+-        utils.showToast("Morceau non disponible, passage au suivant...");
+-        setTimeout(() => this.next(true), 1500);
++
++        const track = state.lastPlayedTrack;
++        
++        if (!track || state.isAttemptingFallback) {
++            state.isAttemptingFallback = false;
++            utils.showToast("Échec du fallback, passage au suivant...");
++            setTimeout(() => this.next(true), 1200);
++            return;
++        }
++
++        utils.showToast("Erreur de lecture. Recherche d'une alternative...");
++        state.isAttemptingFallback = true;
++
++        try {
++            const artist = track.author || "";
++            const title = track.title || "";
++            const query = `${artist} ${title}`.trim();
++
++            if (!query) throw new Error("Métadonnées insuffisantes");
++
++            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&videoCategoryId=10&q=${encodeURIComponent(query)}&key=${CONFIG.YOUTUBE_API_KEY}`;
++            const res = await fetch(searchUrl);
++            const data = await res.json();
++
++            if (!data.items || data.items.length === 0) {
++                throw new Error("Aucune alternative trouvée sur YouTube");
++            }
++
++            const candidates = data.items.filter(item => item.id.videoId !== track.id);
++            if (candidates.length === 0) throw new Error("Seul le doublon défectueux est disponible");
++
++            let bestMatch = candidates.find(item => {
++                const chTitle = item.snippet.channelTitle.toLowerCase();
++                return !chTitle.includes("topic") && !chTitle.includes("vevo");
++            });
++
++            if (!bestMatch) {
++                console.log("Fallback : Aucun canal indépendant trouvé, utilisation du dernier recours (Topic/VEVO).");
++                bestMatch = candidates[0];
++            }
++
++            if (!this._isCandidateRelevant(track, bestMatch.snippet)) {
++                console.log("Fallback : la meilleure alternative trouvée n'est pas pertinente, passage au suivant.");
++                throw new Error("Alternative non pertinente");
++            }
++
++            const alternativeTrack = {
++                id: bestMatch.id.videoId,
++                title: bestMatch.snippet.title,
++                author: bestMatch.snippet.channelTitle,
++                thumbnail: bestMatch.snippet.thumbnails?.default?.url || track.thumbnail
++            };
++
++            console.log("Fallback réussi ! Nouvelle ID :", alternativeTrack.id);
++            utils.showToast("Version alternative trouvée !");
++            
++            state.lastPlayedTrack = alternativeTrack;
++            
++            setTimeout(() => {
++                state.isAttemptingFallback = false;
++                this.doPlay(alternativeTrack, 0);
++            }, 1000);
++
++        } catch (err) {
++            console.error("Le Fallback Intelligent a échoué :", err);
++            state.isAttemptingFallback = false;
++            utils.showToast("Morceau indisponible, passage au suivant...");
++            setTimeout(() => this.next(true), 1200);
++        }
+     },
+ 
+     startProgressTracking() {
+@@ -88,10 +169,9 @@ export const player = {
+                         localStorage.setItem('MS_LAST_POS', cur);
+                     }
+ 
+-                    // Synchronisation Jam : l'hôte écrit sa position toutes les 2 secondes
+                     if (state.jamActive && state.jamIsHost) {
+                         this._seekUpdateCounter++;
+-                        if (this._seekUpdateCounter % 4 === 0) { // 4 * 500ms = 2 secondes
++                        if (this._seekUpdateCounter % 4 === 0) {
+                             const jam = window.MuseSound?.jam;
+                             if (jam && typeof jam.updatePlaybackTime === 'function') {
+                                 jam.updatePlaybackTime(cur);
+@@ -104,14 +184,20 @@ export const player = {
+     },
+ 
+     fadeOut() {
++        if (this.fadeOutInterval) clearInterval(this.fadeOutInterval);
+         let v = state.volume;
+-        const interval = setInterval(() => {
++        this.fadeOutInterval = setInterval(() => {
+             v -= 5;
+             if (v <= 0) {
+-                clearInterval(interval);
+-                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') this.ytPlayer.setVolume(0);
++                clearInterval(this.fadeOutInterval);
++                this.fadeOutInterval = null;
++                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
++                    this.ytPlayer.setVolume(0);
++                }
+             } else { 
+-                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') this.ytPlayer.setVolume(v); 
++                if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
++                    this.ytPlayer.setVolume(v);
++                } 
+             }
+         }, 200);
+     },
+@@ -160,9 +246,11 @@ export const player = {
+     doPlay(track, startTime = 0) {
+         const { ui } = window.MuseSound;
+         this.ytActive = true;
+-        this.isFadingOut = false;
+         state.lastPlayedTrack = track;
+-        if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume > 0 ? state.volume : 100);
++        
++        if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
++            this.ytPlayer.setVolume(state.volume);
++        }
+ 
+         this.ytPlayer.loadVideoById({
+             videoId: track.id,
+@@ -174,25 +262,78 @@ export const player = {
+             this.ytPlayer.setPlaybackQuality(state.ecoMode ? 'tiny' : 'medium');
+         }
+ 
+-        setTimeout(() => {
+-            if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
+-                this.ytPlayer.playVideo();
+-                if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
+-            }
+-        }, 150);
+-
+-        this.startKeepAlive();
++        if (this.ytPlayer && typeof this.ytPlayer.playVideo === 'function') {
++            this.ytPlayer.playVideo();
++            if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'playing';
++        }
+         ui.updateNowPlaying(track);
+         this.updateMediaSession(track);
+         ui.setLoading(false);
+     },
+ 
+-    startKeepAlive() {
+-        if (this.keepAliveAudio) return;
++    _startKeepAliveOnInteraction() {
++        const start = () => {
++            this.startKeepAlive();
++            document.removeEventListener('pointerdown', start);
++            document.removeEventListener('touchstart', start);
++        };
++        document.addEventListener('pointerdown', start, { once: true });
++        document.addEventListener('touchstart', start, { once: true });
++        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
++    },
++
++    _onVisibilityChange() {
++        if (!document.hidden && this.ytActive && state.isPlaying) {
++            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
++                this.ytPlayer.playVideo();
++            }
++        }
++    },
++
++    _initKeepAlive() {
++        if (this._keepAliveActive) return;
++        this._keepAliveActive = true;
++
++        const AudioCtx = window.AudioContext || window.webkitAudioContext;
++        if (AudioCtx) {
++            try {
++                this._keepCtx = new AudioCtx();
++                this._keepOsc = this._keepCtx.createOscillator();
++                this._keepGain = this._keepCtx.createGain();
++                this._keepGain.gain.value = 0.001;
++                this._keepOsc.frequency.value = 55;
++                this._keepOsc.connect(this._keepGain);
++                this._keepGain.connect(this._keepCtx.destination);
++                this._keepOsc.start();
++            } catch (e) {}
++        }
++
+         const silentB64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/AA==";
+-        this.keepAliveAudio = new Audio(silentB64);
+-        this.keepAliveAudio.loop = true;
+-        this.keepAliveAudio.play().catch(() => { this.keepAliveAudio = null; });
++        this._keepAudio = new Audio(silentB64);
++        this._keepAudio.loop = true;
++        this._keepAudio.volume = 0.01;
++        this._keepAudio.play().catch(() => {});
++    },
++
++    startKeepAlive() {
++        if (this._keepAliveActive) return;
++        this._initKeepAlive();
++    },
++
++    _isCandidateRelevant(originalTrack, snippet) {
++        const origTitle = (originalTrack.title || '').toLowerCase();
++        const origArtist = (originalTrack.author || '').toLowerCase();
++        const candTitle = (snippet.title || '').toLowerCase();
++        const candChannel = (snippet.channelTitle || '').toLowerCase();
++        const tokenize = s => s.split(/[^a-z0-9]+/).filter(w => w.length > 2 && !['the','and','for','are','not','but','you','all','can','had','her','was','one','our','out','has','his','its','les','des','pas','une','que','est','sur','dans','avec','cet','aux','fait','cette','sont','leur','tout','dont','sans','rien','alors','mais','fait','bien','très','plus','très','aucun','avec'].includes(w));
++        const origWords = tokenize(origTitle);
++        const candWords = tokenize(candTitle);
++        const artistWords = tokenize(origArtist);
++        const channelWords = tokenize(candChannel);
++        const hasCommonWord = (a, b) => a.length > 0 && b.length > 0 && a.some(w => b.includes(w));
++        const titleMatch = hasCommonWord(origWords, candWords);
++        const artistMatch = hasCommonWord(artistWords, channelWords);
++        return titleMatch || artistMatch;
+     },
+ 
+     updateMediaSession(track) {
+@@ -247,11 +388,8 @@ export const player = {
+             this.nextQueue();
+         } else if (state.currentPlaylist.length > 0) {
+             this.nextPlaylist();
+-        } else if (state.isRadioMode && state.lastPlayedTrack) {
++        } else {
+             this.triggerRadioMix();
+-        } else if (this.ytPlayer) {
+-            this.ytPlayer.stopVideo();
+-            this.ytActive = false;
+         }
+         localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+         ui.renderQueue();
+@@ -270,17 +408,8 @@ export const player = {
+                 if (state.repeat === 'all') {
+                     const nextIdx = Math.floor(Math.random() * state.queue.length);
+                     this.playQueueTrack(nextIdx);
+-                } else if (state.currentPlaylist.length > 0) {
+-                    state.queue = [];
+-                    state.playingQueueIndex = -1;
+-                    localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+-                    ui.renderQueue();
+-                    this.nextPlaylist();
+-                } else if (state.isRadioMode && state.lastPlayedTrack) {
+-                    this.triggerRadioMix();
+                 } else {
+-                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+-                    this.ytActive = false;
++                    this.triggerRadioMix();
+                 }
+             } else {
+                 const randIdx = Math.floor(Math.random() * unplayed.length);
+@@ -299,11 +428,7 @@ export const player = {
+                 state.playingQueueIndex = -1;
+                 localStorage.setItem('MS_QUEUE', JSON.stringify(state.queue));
+                 ui.renderQueue();
+-                if (state.currentPlaylist.length > 0) {
+-                    this.nextPlaylist();
+-                } else if (state.isRadioMode && state.lastPlayedTrack) {
+-                    this.triggerRadioMix();
+-                }
++                this.triggerRadioMix();
+             }
+         }
+         this.saveShuffleHistory();
+@@ -323,11 +448,8 @@ export const player = {
+                 if (state.repeat === 'all') {
+                     const nextIdx = Math.floor(Math.random() * state.currentPlaylist.length);
+                     this.playTrack(nextIdx);
+-                } else if (state.isRadioMode && state.lastPlayedTrack) {
+-                    this.triggerRadioMix();
+                 } else {
+-                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+-                    this.ytActive = false;
++                    this.triggerRadioMix();
+                 }
+             } else {
+                 const randIdx = Math.floor(Math.random() * unplayed.length);
+@@ -339,13 +461,8 @@ export const player = {
+             if (nextIndex >= state.currentPlaylist.length) {
+                 if (state.repeat === 'all') {
+                     nextIndex = 0;
+-                } else if (state.isRadioMode && state.lastPlayedTrack) {
+-                    this.triggerRadioMix();
+-                    this.saveShuffleHistory();
+-                    return;
+                 } else {
+-                    if (this.ytPlayer) this.ytPlayer.stopVideo();
+-                    this.ytActive = false;
++                    this.triggerRadioMix();
+                     this.saveShuffleHistory();
+                     return;
+                 }
+@@ -507,4 +624,4 @@ export const player = {
+         reader.readAsText(file);
+         event.target.value = '';
+     }
+-};
+\ No newline at end of file
++};
+diff --git a/js/modules/state.js b/js/modules/state.js
+index 4fd09cd..a0f8155 100644
+--- a/js/modules/state.js
++++ b/js/modules/state.js
+@@ -19,7 +19,6 @@ export const state = {
+     ecoMode: localStorage.getItem('MS_ECO_MODE') === 'true',
+     queue: JSON.parse(localStorage.getItem('MS_QUEUE')) || [],
+     debounceTimer: null,
+-    isFadingOut: false,
+     keepAliveAudio: null,
+     draggedIndex: -1,
+     draggedType: null,
+@@ -32,6 +31,7 @@ export const state = {
+     lastSearchQuery: null,
+     isFetchingMore: false,
+     shuffleHistory: JSON.parse(localStorage.getItem('MS_SHUFFLE_HISTORY')) || [],
++    isAttemptingFallback: false,
+     // Jam session state
+     jamActive: false,
+     jamSessionId: null,
+diff --git a/js/modules/ui.js b/js/modules/ui.js
+index c09d670..86aa69f 100644
+--- a/js/modules/ui.js
++++ b/js/modules/ui.js
+@@ -6,6 +6,8 @@ import { utils } from './utils.js';
+ import { CONFIG } from './config.js';
+ 
+ export const ui = {
++    mobileSearchOpen: false,
++
+     init() {
+         const { importer, player } = window.MuseSound;
+         const input = document.getElementById('playlist-url');
+@@ -42,6 +44,43 @@ export const ui = {
+         document.getElementById('tab-queue')?.addEventListener('click', () => { state.uiMode = 'queue'; this.syncTabs(); });
+         document.getElementById('tab-jam')?.addEventListener('click', () => { state.uiMode = 'jam'; this.syncTabs(); });
+ 
++        // Délégation d'événements globale (indestructible face aux re-rendus DOM)
++        document.addEventListener('click', (e) => {
++            const trigger = e.target.closest('#btn-mobile-search-trigger');
++            if (trigger) {
++                e.preventDefault();
++                e.stopImmediatePropagation();
++                if (typeof this.toggleMobileSearch === 'function') {
++                    this.toggleMobileSearch(true);
++                } else if (window.MuseSound && window.MuseSound.ui) {
++                    window.MuseSound.ui.toggleMobileSearch(true);
++                } else {
++                    console.error("Impossible de trouver toggleMobileSearch");
++                }
++            }
++        }, true);
++        const mSearchBack = document.getElementById('mobile-search-back');
++        if (mSearchBack) {
++            mSearchBack.onclick = (e) => {
++                e.preventDefault();
++                e.stopPropagation();
++                this.toggleMobileSearch(false);
++            };
++        }
++        window.addEventListener('resize', () => {
++            if (this.mobileSearchOpen && window.innerWidth >= 768) this.toggleMobileSearch(false);
++        });
++
++        // Scope pills
++        document.getElementById('scope-tracks')?.addEventListener('click', () => {
++            state.searchTab = 'tracks';
++            this.updateScopePills();
++        });
++        document.getElementById('scope-playlists')?.addEventListener('click', () => {
++            state.searchTab = 'playlists';
++            this.updateScopePills();
++        });
++
+         document.getElementById('nowplaying-radio-btn')?.addEventListener('click', () => {
+             const track = state.queue[state.playingQueueIndex] || state.currentPlaylist[state.currentIndex];
+             if (track) importer.fetchRadio(track);
+@@ -116,11 +155,19 @@ export const ui = {
+         });
+ 
+         const volSlider = document.getElementById('volume-slider');
++        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
++
+         if (volSlider) {
+-            volSlider.value = state.volume;
+-            volSlider.addEventListener('input', (e) => player.setVolume(parseInt(e.target.value)));
++            if (isMobile) {
++                // Masque ou désactive le slider inutile sur mobile
++                volSlider.style.display = 'none'; 
++                document.getElementById('volume-icon') ? document.getElementById('volume-icon').style.display = 'none' : null;
++            } else {
++                volSlider.value = state.volume;
++                volSlider.addEventListener('input', (e) => player.setVolume(parseInt(e.target.value)));
++                document.getElementById('volume-icon')?.addEventListener('click', () => player.setVolume(state.volume > 0 ? 0 : 100));
++            }
+         }
+-        document.getElementById('volume-icon')?.addEventListener('click', () => player.setVolume(state.volume > 0 ? 0 : 100));
+ 
+         const trackContainer = document.getElementById('playlist-container');
+         const plContainer = document.getElementById('playlists-results') || this.createPlaylistsResultsContainer();
+@@ -287,12 +334,49 @@ export const ui = {
+ 
+     async fetchSuggestions(q) {
+         if (q.length < 2) { this.hideSuggestions(); return; }
++        this._suggestionsQuery = q;
++        clearTimeout(this._suggestionsFallbackTimer);
++        this._suggestionsFallbackTimer = setTimeout(() => {
++            this.handleLocalSuggestions(q);
++        }, 2000);
+         const script = document.createElement('script');
+         script.src = `https://suggestqueries.google.com/complete/search?client=youtube&ds=yt&q=${encodeURIComponent(q)}&callback=MuseSound.ui.handleSuggestions`;
+         document.body.appendChild(script);
+     },
+ 
++    handleLocalSuggestions(q) {
++        const query = q.toLowerCase();
++        const local = [];
++        if (state.currentPlaylist && state.currentPlaylist.length) {
++            state.currentPlaylist.forEach(t => {
++                if (t.title && t.title.toLowerCase().includes(query) && !local.includes(t.title)) {
++                    local.push(t.title);
++                }
++            });
++        }
++        if (state.foundPlaylists && state.foundPlaylists.length) {
++            state.foundPlaylists.forEach(p => {
++                if (p.title && p.title.toLowerCase().includes(query) && !local.includes(p.title)) {
++                    local.push(p.title);
++                }
++            });
++        }
++        const sliced = local.slice(0, 5);
++        if (!sliced.length) return;
++        const container = document.getElementById('suggestions-container') || this.createSuggestionsContainer();
++        container.innerHTML = sliced.map(s => `<div class="p-3 hover:bg-primary/10 cursor-pointer text-sm border-b border-outline-variant/30">${s}</div>`).join('');
++        container.classList.remove('hidden');
++        container.querySelectorAll('div').forEach((el, i) => {
++            el.onclick = () => {
++                document.getElementById('playlist-url').value = sliced[i];
++                this.hideSuggestions();
++                window.MuseSound.importer.processInput(sliced[i], true);
++            };
++        });
++    },
++
+     handleSuggestions(data) {
++        clearTimeout(this._suggestionsFallbackTimer);
+         const { importer } = window.MuseSound;
+         const suggestions = data[1];
+         const container = document.getElementById('suggestions-container') || this.createSuggestionsContainer();
+@@ -309,20 +393,89 @@ export const ui = {
+     },
+ 
+     createSuggestionsContainer() {
+-        const input = document.getElementById('playlist-url');
+-        const div = document.createElement('div');
+-        div.id = 'suggestions-container';
+-        div.className = 'absolute top-full left-0 right-0 bg-surface-container-high z-[110] rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden';
+-        input.parentNode.style.position = 'relative';
+-        input.parentNode.appendChild(div);
+-        return div;
++        const mInput = document.getElementById('playlist-url');
++        let mSuggest = document.getElementById('suggestions-container');
++        if (mSuggest) return mSuggest;
++        mSuggest = document.createElement('div');
++        mSuggest.id = 'suggestions-container';
++        mSuggest.className = 'absolute top-full left-0 w-full z-[10000] bg-surface-container-high rounded-b-lg shadow-xl border border-outline-variant max-h-60 overflow-y-auto hidden mt-1';
++        if (mInput && mInput.parentElement) {
++            mInput.parentElement.classList.add('relative');
++            mInput.parentElement.appendChild(mSuggest);
++        }
++        return mSuggest;
+     },
+ 
+     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
+ 
++    toggleMobileSearch(show) {
++        if (show) {
++            const mOverlay = document.getElementById('mobile-search-overlay');
++            const mWrapper = document.getElementById('mobile-search-input-wrapper');
++            const mInput = document.getElementById('playlist-url');
++
++            if (mOverlay) {
++                mOverlay.style.setProperty('display', 'flex', 'important');
++                mOverlay.style.setProperty('visibility', 'visible', 'important');
++                mOverlay.style.setProperty('opacity', '1', 'important');
++            }
++            
++            if (mWrapper && mInput) {
++                mWrapper.appendChild(mInput);
++                mInput.value = '';
++            }
++
++            this.mobileSearchOpen = true;
++            this.updateScopePills();
++            
++            setTimeout(() => { try { mInput?.focus(); } catch(e) {} }, 150);
++        } else {
++            const mOverlay = document.getElementById('mobile-search-overlay');
++            const mHeaderContainer = document.getElementById('header-search-container');
++            const mInput = document.getElementById('playlist-url');
++            const mBtn = document.getElementById('btn-import');
++
++            if (mOverlay) {
++                mOverlay.style.setProperty('display', 'none', 'important');
++            }
++            
++            if (mHeaderContainer) {
++                if (mBtn) mHeaderContainer.prepend(mBtn);
++                if (mInput) mHeaderContainer.prepend(mInput);
++            }
++            
++            if (typeof this.hideSuggestions === 'function') {
++                this.hideSuggestions();
++            }
++            const mSuggest = document.getElementById('suggestions-container');
++            if (mSuggest) mSuggest.remove();
++            
++            this.mobileSearchOpen = false;
++        }
++    },
++
++    updateScopePills() {
++        const isTracks = state.searchTab === 'tracks';
++        const tracksBtn = document.getElementById('scope-tracks');
++        const playlistsBtn = document.getElementById('scope-playlists');
++        if (!tracksBtn || !playlistsBtn) return;
++        tracksBtn.classList.toggle('bg-primary', isTracks);
++        tracksBtn.classList.toggle('text-background', isTracks);
++        tracksBtn.classList.toggle('border-primary', isTracks);
++        tracksBtn.classList.toggle('bg-transparent', !isTracks);
++        tracksBtn.classList.toggle('text-on-surface-variant', !isTracks);
++        tracksBtn.classList.toggle('border-outline-variant', !isTracks);
++        playlistsBtn.classList.toggle('bg-primary', !isTracks);
++        playlistsBtn.classList.toggle('text-background', !isTracks);
++        playlistsBtn.classList.toggle('border-primary', !isTracks);
++        playlistsBtn.classList.toggle('bg-transparent', isTracks);
++        playlistsBtn.classList.toggle('text-on-surface-variant', isTracks);
++        playlistsBtn.classList.toggle('border-outline-variant', isTracks);
++    },
++
+     syncTabs() {
+         const m = state.uiMode;
+-        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-container', queue: 'queue-view', jam: 'jam-view' };
++        const containers = { playlist: 'playlist-container', playlists: 'playlists-results', library: 'library-section', queue: 'queue-view', jam: 'jam-view' };
+         Object.keys(containers).forEach(key => {
+             const el = document.getElementById(containers[key]);
+             const tab = document.getElementById('tab-' + (key === 'playlist' ? 'playlist' : key === 'playlists' ? 'playlists' : key === 'library' ? 'library' : key === 'queue' ? 'queue' : 'jam'));
+@@ -339,6 +492,30 @@ export const ui = {
+         if (m === 'playlists') this.renderPlaylistsResults();
+         if (m === 'library') this.renderLibrary();
+         if (m === 'jam') this.renderJam();
++        this.updateScopePills();
++    },
++
++    updateShuffleRepeatUI() {
++        const shuffleBtn = document.getElementById('shuffle-btn');
++        const repeatBtn = document.getElementById('repeat-btn');
++
++        if (shuffleBtn) {
++            shuffleBtn.classList.toggle('text-primary', state.shuffle);
++            shuffleBtn.classList.toggle('opacity-60', !state.shuffle);
++        }
++
++        if (repeatBtn) {
++            // Gère les trois états : 'none', 'all', 'one'
++            const isTargeted = state.repeat !== 'none';
++            repeatBtn.classList.toggle('text-primary', isTargeted);
++            repeatBtn.classList.toggle('opacity-60', !isTargeted);
++            
++            // Optionnel : Change l'icône si tu gères le mode 'one' distinctement
++            const icon = repeatBtn.querySelector('.material-symbols-outlined');
++            if (icon) {
++                icon.textContent = state.repeat === 'one' ? 'repeat_one' : 'repeat';
++            }
++        }
+     },
+ 
+     renderPlaylistsResults() {
+@@ -351,17 +528,17 @@ export const ui = {
+         }
+ 
+         container.innerHTML = state.foundPlaylists.map(pl => `
+-            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}', false)">
+-                <div class="relative">
++            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}', false)">
++                <div class="relative shrink-0 mr-3">
+                     <img src="${pl.thumbnail}" class="w-16 h-16 rounded object-cover shadow-lg">
+                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
+                 </div>
+-                <div class="flex-1 min-w-0">
+-                    <div class="font-bold truncate">${utils.escapeHtml(pl.title)}</div>
+-                    <div class="text-xs text-primary">${utils.escapeHtml(pl.author)}</div>
++                <div class="flex-1 min-w-0 mr-1">
++                    <div class="font-bold truncate text-xs">${pl.title}</div>
++                    <div class="text-[11px] text-primary">${pl.author}</div>
+                 </div>
+                 ${state.jamActive
+-                    ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
++                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                         <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
+                        </button>`
+                     : ''
+@@ -382,24 +559,24 @@ export const ui = {
+         }
+ 
+         let html = state.currentPlaylist.map((t, i) => `
+-            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-all select-none" 
++            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high cursor-pointer group transition-all select-none" 
+                  onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'playlist')" 
+                  onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'playlist')"
+                  onpointermove="MuseSound.ui.handlePointerMove(event)">
+-                <img src="${t.thumbnail}" class="w-12 h-12 rounded object-cover pointer-events-none" onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
+-                <div class="flex-1 min-w-0" onclick="MuseSound.ui.playResultNow(${i})">
+-                    <div class="font-medium truncate">${utils.escapeHtml(t.title)}</div>
+-                    <div class="text-xs text-on-surface-variant truncate">${utils.escapeHtml(t.author)} • ${this.formatViews(t.views)} écoutes</div>
++                <img src="${t.thumbnail}" class="w-12 h-12 shrink-0 mr-3 rounded object-cover pointer-events-none" onclick="event.stopPropagation(); MuseSound.ui.playResultNow(${i})">
++                <div class="flex-1 min-w-0 mr-1" onclick="MuseSound.ui.playResultNow(${i})">
++                    <div class="font-medium truncate text-xs">${t.title}</div>
++                    <div class="text-[11px] text-on-surface-variant truncate">${t.author} • ${this.formatViews(t.views)} écoutes</div>
+                 </div>
+-                <div class="flex items-center gap-1">
+-                    <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.currentPlaylist[${i}])'>
+-                        <span class="material-symbols-outlined text-primary">radio</span>
++                <div class="flex items-center gap-0 shrink-0">
++                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.currentPlaylist[${i}])'>
++                        <span class="material-symbols-outlined text-primary text-xl">radio</span>
+                     </button>
+-                    <button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.player.addToQueue(MuseSound.state.currentPlaylist[${i}])'>
++                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.player.addToQueue(MuseSound.state.currentPlaylist[${i}])'>
+                         <span class="material-symbols-outlined text-primary">playlist_add</span>
+                     </button>
+                     ${state.jamActive
+-                        ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.addTrackToJam(MuseSound.state.currentPlaylist[${i}])'>
++                        ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" onclick='event.stopPropagation(); MuseSound.jam.addTrackToJam(MuseSound.state.currentPlaylist[${i}])'>
+                             <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
+                            </button>`
+                         : ''
+@@ -420,17 +597,17 @@ export const ui = {
+             return;
+         }
+         container.innerHTML = state.foundLibrary.map(pl => `
+-            <div class="flex items-center gap-4 p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
+-                <div class="relative">
++            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high cursor-pointer" onclick="MuseSound.importer.fetchPlaylist('${pl.id}')">
++                <div class="relative shrink-0 mr-3">
+                     <img src="${pl.snippet.thumbnails?.medium?.url}" class="w-16 h-16 rounded object-cover shadow-lg">
+                     <div class="absolute inset-0 bg-black/40 flex items-center justify-center"><span class="material-symbols-outlined text-white">playlist_play</span></div>
+                 </div>
+-                <div class="flex-1 min-w-0">
+-                    <div class="font-bold truncate">${utils.escapeHtml(pl.snippet.title)}</div>
+-                    <div class="text-xs text-primary">${pl.contentDetails.itemCount} morceaux</div>
++                <div class="flex-1 min-w-0 mr-1">
++                    <div class="font-bold truncate text-xs">${pl.snippet.title}</div>
++                    <div class="text-[11px] text-primary">${pl.contentDetails.itemCount} morceaux</div>
+                 </div>
+                 ${state.jamActive
+-                    ? `<button class="w-11 h-11 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
++                    ? `<button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100 shrink-0" onclick='event.stopPropagation(); MuseSound.ui.addPlaylistToJam("${pl.id}")'>
+                         <span class="material-symbols-outlined text-primary" style="font-variation-settings: 'FILL' 1;">group</span>
+                        </button>`
+                     : ''
+@@ -452,30 +629,30 @@ export const ui = {
+             return;
+         }
+         list.innerHTML = state.queue.map((t, i) => `
+-            <div class="flex items-center gap-3 p-3 rounded-lg transition-all select-none ${i === state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
++            <div class="flex items-center p-3 rounded-lg transition-all select-none ${i === state.playingQueueIndex ? 'bg-primary/10 border border-primary/20' : ''}"
+                  onpointerdown="MuseSound.ui.handlePointerDown(event, ${i}, 'queue')" onpointerup="MuseSound.ui.handlePointerUp(event, ${i}, 'queue')" onpointermove="MuseSound.ui.handlePointerMove(event)">
+                 
+-                <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover pointer-events-none ${i === state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
+-                <div class="flex-1 min-w-0" onclick="MuseSound.player.playQueueTrack(${i})">
+-                    <div class="text-sm font-medium truncate ${i === state.playingQueueIndex ? 'text-primary' : ''}">${utils.escapeHtml(t.title)}</div>
+-                    <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
++                <img src="${t.thumbnail}" class="w-10 h-10 shrink-0 mr-3 rounded object-cover pointer-events-none ${i === state.playingQueueIndex ? 'animate-pulse' : ''}" onclick="MuseSound.player.playQueueTrack(${i})">
++                <div class="flex-1 min-w-0 mr-1" onclick="MuseSound.player.playQueueTrack(${i})">
++                    <div class="text-[10px] font-medium truncate ${i === state.playingQueueIndex ? 'text-primary' : ''}">${t.title}</div>
++                    <div class="text-[9px] text-on-surface-variant truncate">${t.author}</div>
+                 </div>
+-                <div class="flex items-center gap-1">
+-                    <div class="reorder-btn-group flex-col gap-1 mr-1">
+-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
++                <div class="flex items-center gap-0 shrink-0 ml-2">
++                    <div class="reorder-btn-group flex-col gap-0 mr-1">
++                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                                 onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, -1)">
+-                            <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>
++                            <span class="material-symbols-outlined text-sm">keyboard_arrow_up</span>
+                         </button>
+-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
++                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20" 
+                                 onclick="event.stopPropagation(); MuseSound.ui.moveQueueItem(${i}, 1)">
+-                            <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
++                            <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+                         </button>
+                     </div>
+ 
+-                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.queue[${i}])'>
++                    <button class="w-9 h-9 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.importer.fetchRadio(MuseSound.state.queue[${i}])'>
+                         <span class="material-symbols-outlined text-sm">radio</span>
+                     </button>
+-                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
++                    <button class="w-9 h-9 flex items-center justify-center opacity-60 hover:opacity-100" onclick="event.stopPropagation(); MuseSound.player.removeFromQueue(${i})">
+                         <span class="material-symbols-outlined text-sm">close</span>
+                     </button>
+                 </div>
+@@ -535,25 +712,25 @@ export const ui = {
+         }
+ 
+         list.innerHTML = state.jamQueue.map((t, i) => `
+-            <div class="flex items-center gap-3 p-3 rounded-lg hover:bg-surface-container-high transition-all">
+-                <img src="${t.thumbnail}" class="w-10 h-10 rounded object-cover" onerror="this.style.display='none'">
+-                <div class="flex-1 min-w-0">
+-                    <div class="text-sm font-medium truncate">${utils.escapeHtml(t.title)}</div>
+-                    <div class="text-[10px] text-on-surface-variant truncate">${utils.escapeHtml(t.author)}</div>
++            <div class="flex items-center p-3 rounded-lg hover:bg-surface-container-high transition-all">
++                <img src="${t.thumbnail}" class="w-10 h-10 shrink-0 mr-3 rounded object-cover" onerror="this.style.display='none'">
++                <div class="flex-1 min-w-0 mr-1">
++                    <div class="text-[10px] font-medium truncate">${t.title}</div>
++                    <div class="text-[9px] text-on-surface-variant truncate">${t.author}</div>
+                 </div>
+                 ${state.jamIsHost ? `
+-                    <div class="reorder-btn-group flex-col gap-1 mr-1">
+-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === 0 ? 'opacity-30 pointer-events-none' : ''}"
++                    <div class="reorder-btn-group flex-col gap-0 mr-1">
++                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === 0 ? 'opacity-30 pointer-events-none' : ''}"
+                                 onclick="event.stopPropagation(); MuseSound.jam.moveJamTrack(${i}, -1)">
+-                            <span class="material-symbols-outlined text-base">keyboard_arrow_up</span>
++                            <span class="material-symbols-outlined text-sm">keyboard_arrow_up</span>
+                         </button>
+-                        <button class="w-7 h-7 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === state.jamQueue.length - 1 ? 'opacity-30 pointer-events-none' : ''}"
++                        <button class="w-8 h-8 flex items-center justify-center bg-surface-container rounded hover:bg-primary/20 ${i === state.jamQueue.length - 1 ? 'opacity-30 pointer-events-none' : ''}"
+                                 onclick="event.stopPropagation(); MuseSound.jam.moveJamTrack(${i}, 1)">
+-                            <span class="material-symbols-outlined text-base">keyboard_arrow_down</span>
++                            <span class="material-symbols-outlined text-sm">keyboard_arrow_down</span>
+                         </button>
+                     </div>
+-                    <button class="w-10 h-10 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.generateRadioMix(${i})'>
+-                        <span class="material-symbols-outlined text-sm">radio</span>
++                    <button class="w-9 h-9 flex items-center justify-center opacity-60 hover:opacity-100" onclick='event.stopPropagation(); MuseSound.jam.generateRadioMix(${i})'>
++                        <span class="material-symbols-outlined text-xs">radio</span>
+                     </button>
+                     <button class="w-8 h-8 flex items-center justify-center opacity-60 hover:opacity-100 hover:text-red-400" onclick="MuseSound.jam.removeTrackFromJam(${i})">
+                         <span class="material-symbols-outlined text-sm">close</span>
+diff --git a/js/modules/utils.js b/js/modules/utils.js
+index 2edd0a0..824e89f 100644
+--- a/js/modules/utils.js
++++ b/js/modules/utils.js
+@@ -30,13 +30,7 @@ export const utils = {
+ 
+     escapeHtml(s) {
+         if (!s) return '';
+-        return s.replace(/[&<>"']/g, m => ({
+-            '&': '&amp;',
+-            '<': '&lt;',
+-            '>': '&gt;',
+-            '"': '&quot;',
+-            "'": '&#39;'
+-        }[m]));
++        return s.replace(/[<>]/g, m => ({ '<': '&lt;', '>': '&gt;' }[m]));
+     },
+ 
+     safeString(obj) {
+diff --git a/js/modules/youtube-private.js b/js/modules/youtube-private.js
+index 773a7b9..ab54162 100644
+--- a/js/modules/youtube-private.js
++++ b/js/modules/youtube-private.js
+@@ -10,6 +10,24 @@ export async function fetchMyPlaylists() {
+             }
+         });
+ 
++        if (response.status === 401) {
++            // Token expiré → tentative de refresh
++            const newToken = await window.MuseSound.refreshGoogleToken();
++            if (newToken) {
++                const retry = await fetch("https://www.googleapis.com/youtube/v3/playlists?part=snippet,contentDetails&mine=true&maxResults=50", {
++                    headers: {
++                        "Authorization": `Bearer ${newToken}`,
++                        "Accept": "application/json"
++                    }
++                });
++                if (retry.ok) {
++                    const data = await retry.json();
++                    return data.items;
++                }
++            }
++            throw new Error("Session expirée, veuillez vous reconnecter.");
++        }
++
+         if (!response.ok) throw new Error("Impossible de charger les playlists");
+ 
+         const data = await response.json();
+diff --git a/service-worker.js b/service-worker.js
+index 6e4a031..ed80e12 100644
+--- a/service-worker.js
++++ b/service-worker.js
+@@ -1,4 +1,4 @@
+-const VERSION = '1.0.0'; // CHANGER CE NUMÉRO À CHAQUE NOUVELLE MISE À JOUR POUR LE PWA
++const VERSION = '1.1.6'; // CHANGER CE NUMÉRO À CHAQUE NOUVELLE MISE À JOUR POUR LE PWA
+ const CACHE_NAME = 'musesound-v-' + Date.now();
+ 
+ const ASSETS = [

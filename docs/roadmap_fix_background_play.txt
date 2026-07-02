@@ -1,0 +1,70 @@
+🧠 SYNTHÈSE TECHNIQUE COMPLÈTE – MuseSound (52 commits)
+Contexte Général
+MuseSound est un lecteur audio web basé sur l'API YouTube IFrame. La lecture en arrière-plan sur mobile (iOS/Android) est cassée. L'analyse des 52 derniers commits identifie 8 régressions majeures.
+
+1. Keep-Alive & Geste Utilisateur (player.js)
+Problème	Détail	Impact
+Perte du jeton d'interaction	startKeepAlive() déplacé de doPlay() (synchrone, clic utilisateur) vers onPlayerStateChange (asynchrone, callback postMessage).	Le navigateur mobile bloque l'audio avec NotAllowedError.
+Scroll Trap	Écouteur global touchstart/pointerdown (_startKeepAliveOnInteraction) initialise le keepalive au scroll.	Le keepalive échoue silencieusement, mais le verrou _keepAliveActive passe à true. Au clic sur "Play", le système croit tourner et ne se relance pas.
+Usine à gaz Web Audio	Remplacement du fichier .wav silencieux en boucle (HTML5 <audio>) par un AudioContext avec oscillateur 55 Hz.	Sur iOS, l'AudioContext reste en suspended. Les OS coupent le thread Web Audio en arrière-plan.
+2. État Global & Réseau (state.js, api.js, app.js)
+Problème	Détail	Impact
+Purge destructive du token	Dans refreshGoogleToken, en cas d'échec, le catch vide le token et déconnecte l'utilisateur.	L'application bascule en mode déconnecté sans action utilisateur.
+Blocage asynchrone	Le drapeau state.isAttemptingFallback = true lie la transition entre pistes à un fetch sur l'API Google.	Si la requête est suspendue en arrière-plan, le passage à la piste suivante se fige.
+3. DOM & Événements (ui.js, player.js)
+Problème	Détail	Impact
+Destruction du contexte de saisie	L'input #playlist-url est physiquement déplacé dans le DOM (déplacé entre conteneurs).	Destruction du focus et du clavier virtuel natif, contournements instables (setTimeout).
+Visibilitychange agressif	L'écouteur force playVideo() dès que l'app revient au premier plan, sans respecter les pauses légitimes.	Écrase les pauses OS (appel entrant, écouteurs débranchés) et crée des conflits de buffering.
+Interception agressive des clics	L'écouteur global utilise la phase de capture (true) et stopImmediatePropagation().	Tue l'interactivité des éléments enfants / adjacents.
+4. Gestion des Erreurs (player.js, ui.js)
+Problème	Détail	Impact
+Catch silencieux	this._keepAudio.play().catch(() => {}) avale l'erreur.	Le système ne sait pas que le keepalive est mort. _keepAliveActive reste true.
+Focus asynchrone	setTimeout(() => { try { mInput?.focus(); } catch(e) {} }, 150); cache le refus d'iOS.	Cache le problème, le focus échoue silencieusement.
+5. Timers & CPU Throttling
+Problème	Détail	Impact
+Fadeout par setInterval	setInterval(() => { v -= 5; }, 200) est bridé à 1s en arrière-plan.	Le fondu passe de 4s à 20s, décalant l'événement de fin de piste.
+Race Condition JSONP	Timer de 2s (this._suggestionsFallbackTimer) gère les lenteurs JSONP.	Si le JSONP se résout après 2s, il écrase les données sans vérification.
+Fallback lourd	Parsing lexical, tokenisation avec stop-words, calculs de correspondance.	En arrière-plan (CPU bridé), surcharge synchrone → OOM Killer.
+📋 PLAN HIÉRARCHISÉ (Priorités)
+🔴 Priorité 1 – Keep-Alive & Geste Utilisateur (URGENT)
+Objectif : Restaurer le keepalive dans doPlay().
+
+Actions :
+
+Remettre this.startKeepAlive() dans doPlay() (après this.ytActive = true).
+Supprimer _startKeepAliveOnInteraction() et tout écouteur touchstart/pointerdown global.
+Remplacer l'AudioContext par un <audio> HTML5 avec le silence WAV en boucle.
+🟠 Priorité 2 – Transition Automatique (ENDED)
+Objectif : Maintenir le privilège audio entre les pistes.
+
+Actions :
+
+Dans onPlayerStateChange(ENDED), jouer le silence WAV avant d'appeler this.next().
+🟡 Priorité 3 – Fadeout (Timers)
+Objectif : Supprimer ou remplacer le setInterval du fadeout.
+
+Actions :
+
+Supprimer setInterval du fadeout. Remplacer par requestAnimationFrame ou une approche plus légère.
+🟢 Priorité 4 – Token OAuth & Réseau
+Objectif : Éviter la déconnexion brutale.
+
+Actions :
+
+Ne pas vider localStorage en cas d'échec de refresh. Ajouter un retry avec backoff.
+🔵 Priorité 5 – DOM & Événements (UX)
+Objectif : Corriger les régressions UX.
+
+Actions :
+
+Éviter le déplacement DOM de #playlist-url. Utiliser un overlay avec display:none/block.
+Ajouter une condition dans visibilitychange : ne pas forcer playVideo() si la pause est récente (< 2s) ou déclenchée par l'utilisateur.
+Remplacer stopImmediatePropagation() par stopPropagation().
+🟣 Priorité 6 – Fallback & Optimisation
+Objectif : Alléger le fallback (le garder, mais plus léger).
+
+Actions :
+
+Simplifier le fallback : supprimer la tokenisation lexicale lourde. Une recherche simple par titre suffit.
+📌 RAPPEL POUR L'AGENT
+"Le fallback doit rester, mais être allégé. La logique de recherche alternative est conservée, sans le parsing lexical lourd."
