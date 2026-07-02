@@ -226,6 +226,15 @@ export const player = {
         ui.updateNowPlaying(track);
         this.updateMediaSession(track);
         ui.setLoading(false);
+
+        if (!state.jamActive && !state.isCinemaMode) {
+            state.isCinemaMode = true;
+            document.body.classList.add('is-cinema-mode');
+            const fsBtn = document.getElementById('fullscreen-btn');
+            if (fsBtn) fsBtn.textContent = 'close_fullscreen';
+            if (!document.fullscreenElement)
+                document.documentElement.requestFullscreen().catch(() => {});
+        }
     },
 
     startKeepAlive() {
