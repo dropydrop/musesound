@@ -114,7 +114,7 @@ window.MuseSound = {
 
         // Écoute les événements d'auth — couvre le retour OAuth et les changements d'état
         this.supabase.auth.onAuthStateChange(async (event, session) => {
-            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+            if (event === 'INITIAL_SESSION' || event === 'SIGNED_IN') {
                 if (session) {
                     console.log(`Auth event: ${event}`);
                     this.state.googleToken = session.provider_token || localStorage.getItem('MS_GOOGLE_TOKEN');
