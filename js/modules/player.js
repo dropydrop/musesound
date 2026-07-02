@@ -58,6 +58,9 @@ export const player = {
             ui.updatePlayerControls();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else if (event.data === YT.PlayerState.ENDED) {
+            if (this.keepAliveAudio) {
+                this.keepAliveAudio.play().catch(() => {});
+            }
             this.next(false);
         }
     },
