@@ -11,6 +11,7 @@ export const player = {
     progressInterval: null,
     _seekUpdateCounter: 0,
     _keepAliveActive: false,
+    _lastUserPause: 0,
 
     init() {
         const tag = document.createElement('script');
@@ -30,6 +31,7 @@ export const player = {
                 }
             });
         };
+        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
     },
 
     onPlayerStateChange(event) {
@@ -187,6 +189,15 @@ export const player = {
         this.keepAliveAudio = new Audio(silentB64);
         this.keepAliveAudio.loop = true;
         this.keepAliveAudio.play().catch(() => { this.keepAliveAudio = null; });
+    },
+
+    _onVisibilityChange() {
+        if (!document.hidden && this.ytActive && state.isPlaying) {
+            if (Date.now() - this._lastUserPause < 2000) return;
+            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
+                this.ytPlayer.playVideo();
+            }
+        }
     },
 
     updateMediaSession(track) {
@@ -376,6 +387,7 @@ export const player = {
         const wasPlaying = s === 1;
         if (wasPlaying) {
             this.ytPlayer.pauseVideo();
+            this._lastUserPause = Date.now();
             if ('mediaSession' in navigator) navigator.mediaSession.playbackState = 'paused';
         } else {
             this.ytPlayer.playVideo();

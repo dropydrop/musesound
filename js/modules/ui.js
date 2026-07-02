@@ -401,47 +401,39 @@ export const ui = {
     hideSuggestions() { document.getElementById('suggestions-container')?.classList.add('hidden'); },
 
     toggleMobileSearch(show) {
+        const overlay = document.getElementById('mobile-search-overlay');
+        const input = document.getElementById('playlist-url');
+        const headerContainer = document.getElementById('header-search-container');
+        const wrapper = document.getElementById('mobile-search-input-wrapper');
+
         if (show) {
-            const mOverlay = document.getElementById('mobile-search-overlay');
-            const mWrapper = document.getElementById('mobile-search-input-wrapper');
-            const mInput = document.getElementById('playlist-url');
-
-            if (mOverlay) {
-                mOverlay.style.setProperty('display', 'flex', 'important');
-                mOverlay.style.setProperty('visibility', 'visible', 'important');
-                mOverlay.style.setProperty('opacity', '1', 'important');
-            }
-            
-            if (mWrapper && mInput) {
-                mWrapper.appendChild(mInput);
-                mInput.value = '';
-            }
-
+            headerContainer.style.display = 'none';
+            overlay.style.display = 'flex';
+            const clone = input.cloneNode(true);
+            clone.id = 'mobile-search-input';
+            clone.placeholder = 'Rechercher...';
+            wrapper.appendChild(clone);
             this.mobileSearchOpen = true;
             this.updateScopePills();
-            
-            setTimeout(() => { try { mInput?.focus(); } catch(e) {} }, 150);
+            clone.addEventListener('input', (e) => {
+                clearTimeout(state.debounceTimer);
+                state.debounceTimer = setTimeout(() => this.fetchSuggestions(e.target.value), 444);
+            });
+            clone.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    this.hideSuggestions();
+                    const { importer } = window.MuseSound;
+                    importer.processInput(e.target.value);
+                }
+            });
+            setTimeout(() => { try { clone.focus(); } catch(e) {} }, 150);
         } else {
-            const mOverlay = document.getElementById('mobile-search-overlay');
-            const mHeaderContainer = document.getElementById('header-search-container');
-            const mInput = document.getElementById('playlist-url');
-            const mBtn = document.getElementById('btn-import');
-
-            if (mOverlay) {
-                mOverlay.style.setProperty('display', 'none', 'important');
-            }
-            
-            if (mHeaderContainer) {
-                if (mBtn) mHeaderContainer.prepend(mBtn);
-                if (mInput) mHeaderContainer.prepend(mInput);
-            }
-            
-            if (typeof this.hideSuggestions === 'function') {
-                this.hideSuggestions();
-            }
+            headerContainer.style.display = 'flex';
+            overlay.style.display = 'none';
+            const clone = document.getElementById('mobile-search-input');
+            if (clone) clone.remove();
             const mSuggest = document.getElementById('suggestions-container');
             if (mSuggest) mSuggest.remove();
-            
             this.mobileSearchOpen = false;
         }
     },

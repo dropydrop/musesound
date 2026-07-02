@@ -152,8 +152,10 @@ window.MuseSound = {
         }
     },
 
-    async refreshGoogleToken() {
+    async refreshGoogleToken(retryCount = 0) {
         if (!this.supabase) return null;
+        const maxRetries = 3;
+        const delay = Math.min(1000 * Math.pow(2, retryCount), 5000);
         try {
             const { data, error } = await this.supabase.auth.refreshSession();
             if (error) throw error;
@@ -164,7 +166,11 @@ window.MuseSound = {
             }
         } catch (e) {
             console.error("Refresh Google token failed:", e);
-            if (e.message && !e.message.includes("fetch")) {
+            if (retryCount < maxRetries && e.message && !e.message.includes("401") && !e.message.includes("403")) {
+                await new Promise(r => setTimeout(r, delay));
+                return this.refreshGoogleToken(retryCount + 1);
+            }
+            if (e.message && (e.message.includes("401") || e.message.includes("403") || e.message.includes("invalid"))) {
                 this.state.googleToken = null;
                 localStorage.removeItem('MS_GOOGLE_TOKEN');
             }
