@@ -26,14 +26,12 @@ export const player = {
                 events: {
                     onReady: () => {
                         if (this.ytPlayer?.setVolume) this.ytPlayer.setVolume(state.volume);
-                        this._startKeepAliveOnInteraction();
                     },
                     onStateChange: (e) => this.onPlayerStateChange(e),
                     onError: (e) => this.handleError(e)
                 }
             });
         };
-        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
     },
 
     onPlayerStateChange(event) {
@@ -64,79 +62,12 @@ export const player = {
         }
     },
 
-    async handleError(error) {
+    handleError(error) {
         const { ui } = window.MuseSound;
         console.error("YouTube Player error:", error);
         ui.setLoading(false);
-
-        const track = state.lastPlayedTrack;
-        
-        if (!track || state.isAttemptingFallback) {
-            state.isAttemptingFallback = false;
-            utils.showToast("Échec du fallback, passage au suivant...");
-            setTimeout(() => this.next(true), 1200);
-            return;
-        }
-
-        utils.showToast("Erreur de lecture. Recherche d'une alternative...");
-        state.isAttemptingFallback = true;
-
-        try {
-            const artist = track.author || "";
-            const title = track.title || "";
-            const query = `${artist} ${title}`.trim();
-
-            if (!query) throw new Error("Métadonnées insuffisantes");
-
-            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&videoCategoryId=10&q=${encodeURIComponent(query)}&key=${CONFIG.YOUTUBE_API_KEY}`;
-            const res = await fetch(searchUrl);
-            const data = await res.json();
-
-            if (!data.items || data.items.length === 0) {
-                throw new Error("Aucune alternative trouvée sur YouTube");
-            }
-
-            const candidates = data.items.filter(item => item.id.videoId !== track.id);
-            if (candidates.length === 0) throw new Error("Seul le doublon défectueux est disponible");
-
-            let bestMatch = candidates.find(item => {
-                const chTitle = item.snippet.channelTitle.toLowerCase();
-                return !chTitle.includes("topic") && !chTitle.includes("vevo");
-            });
-
-            if (!bestMatch) {
-                console.log("Fallback : Aucun canal indépendant trouvé, utilisation du dernier recours (Topic/VEVO).");
-                bestMatch = candidates[0];
-            }
-
-            if (!this._isCandidateRelevant(track, bestMatch.snippet)) {
-                console.log("Fallback : la meilleure alternative trouvée n'est pas pertinente, passage au suivant.");
-                throw new Error("Alternative non pertinente");
-            }
-
-            const alternativeTrack = {
-                id: bestMatch.id.videoId,
-                title: bestMatch.snippet.title,
-                author: bestMatch.snippet.channelTitle,
-                thumbnail: bestMatch.snippet.thumbnails?.default?.url || track.thumbnail
-            };
-
-            console.log("Fallback réussi ! Nouvelle ID :", alternativeTrack.id);
-            utils.showToast("Version alternative trouvée !");
-            
-            state.lastPlayedTrack = alternativeTrack;
-            
-            setTimeout(() => {
-                state.isAttemptingFallback = false;
-                this.doPlay(alternativeTrack, 0);
-            }, 1000);
-
-        } catch (err) {
-            console.error("Le Fallback Intelligent a échoué :", err);
-            state.isAttemptingFallback = false;
-            utils.showToast("Morceau indisponible, passage au suivant...");
-            setTimeout(() => this.next(true), 1200);
-        }
+        utils.showToast("Morceau indisponible, passage au suivant...");
+        setTimeout(() => this.next(true), 1500);
     },
 
     startProgressTracking() {
@@ -246,6 +177,7 @@ export const player = {
     doPlay(track, startTime = 0) {
         const { ui } = window.MuseSound;
         this.ytActive = true;
+        this.startKeepAlive();
         state.lastPlayedTrack = track;
         
         if (this.ytPlayer && typeof this.ytPlayer.setVolume === 'function') {
@@ -271,69 +203,12 @@ export const player = {
         ui.setLoading(false);
     },
 
-    _startKeepAliveOnInteraction() {
-        const start = () => {
-            this.startKeepAlive();
-            document.removeEventListener('pointerdown', start);
-            document.removeEventListener('touchstart', start);
-        };
-        document.addEventListener('pointerdown', start, { once: true });
-        document.addEventListener('touchstart', start, { once: true });
-        document.addEventListener('visibilitychange', () => this._onVisibilityChange());
-    },
-
-    _onVisibilityChange() {
-        if (!document.hidden && this.ytActive && state.isPlaying) {
-            if (this.ytPlayer && this.ytPlayer.getPlayerState() !== YT.PlayerState.PLAYING) {
-                this.ytPlayer.playVideo();
-            }
-        }
-    },
-
-    _initKeepAlive() {
-        if (this._keepAliveActive) return;
-        this._keepAliveActive = true;
-
-        const AudioCtx = window.AudioContext || window.webkitAudioContext;
-        if (AudioCtx) {
-            try {
-                this._keepCtx = new AudioCtx();
-                this._keepOsc = this._keepCtx.createOscillator();
-                this._keepGain = this._keepCtx.createGain();
-                this._keepGain.gain.value = 0.001;
-                this._keepOsc.frequency.value = 55;
-                this._keepOsc.connect(this._keepGain);
-                this._keepGain.connect(this._keepCtx.destination);
-                this._keepOsc.start();
-            } catch (e) {}
-        }
-
-        const silentB64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/AA==";
-        this._keepAudio = new Audio(silentB64);
-        this._keepAudio.loop = true;
-        this._keepAudio.volume = 0.01;
-        this._keepAudio.play().catch(() => {});
-    },
-
     startKeepAlive() {
-        if (this._keepAliveActive) return;
-        this._initKeepAlive();
-    },
-
-    _isCandidateRelevant(originalTrack, snippet) {
-        const origTitle = (originalTrack.title || '').toLowerCase();
-        const origArtist = (originalTrack.author || '').toLowerCase();
-        const candTitle = (snippet.title || '').toLowerCase();
-        const candChannel = (snippet.channelTitle || '').toLowerCase();
-        const tokenize = s => s.split(/[^a-z0-9]+/).filter(w => w.length > 2 && !['the','and','for','are','not','but','you','all','can','had','her','was','one','our','out','has','his','its','les','des','pas','une','que','est','sur','dans','avec','cet','aux','fait','cette','sont','leur','tout','dont','sans','rien','alors','mais','fait','bien','très','plus','très','aucun','avec'].includes(w));
-        const origWords = tokenize(origTitle);
-        const candWords = tokenize(candTitle);
-        const artistWords = tokenize(origArtist);
-        const channelWords = tokenize(candChannel);
-        const hasCommonWord = (a, b) => a.length > 0 && b.length > 0 && a.some(w => b.includes(w));
-        const titleMatch = hasCommonWord(origWords, candWords);
-        const artistMatch = hasCommonWord(artistWords, channelWords);
-        return titleMatch || artistMatch;
+        if (this.keepAliveAudio) return;
+        const silentB64 = "data:audio/wav;base64,UklGRigAAABXQVZFZm10IBAAAAABAAEARKwAAIhYAQACABAAZGF0YQQAAAAAAP8A/wD/AA==";
+        this.keepAliveAudio = new Audio(silentB64);
+        this.keepAliveAudio.loop = true;
+        this.keepAliveAudio.play().catch(() => { this.keepAliveAudio = null; });
     },
 
     updateMediaSession(track) {

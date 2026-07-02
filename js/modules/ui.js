@@ -44,21 +44,13 @@ export const ui = {
         document.getElementById('tab-queue')?.addEventListener('click', () => { state.uiMode = 'queue'; this.syncTabs(); });
         document.getElementById('tab-jam')?.addEventListener('click', () => { state.uiMode = 'jam'; this.syncTabs(); });
 
-        // Délégation d'événements globale (indestructible face aux re-rendus DOM)
-        document.addEventListener('click', (e) => {
-            const trigger = e.target.closest('#btn-mobile-search-trigger');
-            if (trigger) {
+        const searchTrigger = document.getElementById('btn-mobile-search-trigger');
+        if (searchTrigger) {
+            searchTrigger.onclick = (e) => {
                 e.preventDefault();
-                e.stopImmediatePropagation();
-                if (typeof this.toggleMobileSearch === 'function') {
-                    this.toggleMobileSearch(true);
-                } else if (window.MuseSound && window.MuseSound.ui) {
-                    window.MuseSound.ui.toggleMobileSearch(true);
-                } else {
-                    console.error("Impossible de trouver toggleMobileSearch");
-                }
-            }
-        }, true);
+                this.toggleMobileSearch(true);
+            };
+        }
         const mSearchBack = document.getElementById('mobile-search-back');
         if (mSearchBack) {
             mSearchBack.onclick = (e) => {

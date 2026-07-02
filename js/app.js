@@ -164,10 +164,12 @@ window.MuseSound = {
             }
         } catch (e) {
             console.error("Refresh Google token failed:", e);
+            if (e.message && !e.message.includes("fetch")) {
+                this.state.googleToken = null;
+                localStorage.removeItem('MS_GOOGLE_TOKEN');
+            }
+            return null;
         }
-        this.state.googleToken = null;
-        localStorage.removeItem('MS_GOOGLE_TOKEN');
-        return null;
     },
 
     async _switchToLibrary() {
