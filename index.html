@@ -591,7 +591,8 @@
     </footer>
 
     <!-- YouTube IFrame Player -->
-    <div id="yt-player-fallback" style="width: 1px !important; height: 1px !important; position: fixed; bottom: 0; right: 0; pointer-events: none; overflow: hidden; z-index: -1;"></div>
+    <div id="yt-player-fallback" style="position: fixed; bottom: 0; right: 0; width: 200px; height: 200px; z-index: 1; pointer-events: none; opacity: 0.99;"></div>
+    <div id="yt-player-cover" style="position: fixed; bottom: 0; right: 0; width: 200px; height: 200px; z-index: 2; background: #121414; pointer-events: none;"></div>
 
     <!-- Mobile Search Overlay (Hidden by default) -->
     <div id="mobile-search-overlay" class="md:hidden fixed inset-0 z-[9999] bg-background flex flex-col p-3" style="display: none;">
