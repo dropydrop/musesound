@@ -65,12 +65,57 @@ export const player = {
         }
     },
 
-    handleError(error) {
+    async handleError(error) {
         const { ui } = window.MuseSound;
         console.error("YouTube Player error:", error);
         ui.setLoading(false);
-        utils.showToast("Morceau indisponible, passage au suivant...");
-        setTimeout(() => this.next(true), 1500);
+
+        const track = state.lastPlayedTrack;
+        if (!track || state.isAttemptingFallback) {
+            state.isAttemptingFallback = false;
+            utils.showToast("Échec du fallback, passage au suivant...");
+            setTimeout(() => this.next(true), 1200);
+            return;
+        }
+
+        utils.showToast("Erreur de lecture. Recherche d'une alternative...");
+        state.isAttemptingFallback = true;
+
+        try {
+            const query = `${track.author} ${track.title}`.trim();
+            if (!query) throw new Error("Métadonnées insuffisantes");
+
+            const searchUrl = `https://www.googleapis.com/youtube/v3/search?part=snippet&maxResults=5&type=video&videoCategoryId=10&q=${encodeURIComponent(query)}&key=${CONFIG.YOUTUBE_API_KEY}`;
+            const res = await fetch(searchUrl);
+            const data = await res.json();
+
+            if (!data.items?.length) throw new Error("Aucune alternative");
+
+            const candidates = data.items.filter(item => item.id.videoId !== track.id);
+            const bestMatch = candidates.find(item => 
+                !item.snippet.channelTitle.toLowerCase().includes("topic")
+            ) || candidates[0];
+
+            if (!bestMatch) throw new Error("Aucune alternative valide");
+
+            const alternativeTrack = {
+                id: bestMatch.id.videoId,
+                title: bestMatch.snippet.title,
+                author: bestMatch.snippet.channelTitle,
+                thumbnail: bestMatch.snippet.thumbnails?.default?.url || track.thumbnail
+            };
+
+            utils.showToast("Version alternative trouvée !");
+            state.lastPlayedTrack = alternativeTrack;
+            state.isAttemptingFallback = false;
+            this.doPlay(alternativeTrack, 0);
+
+        } catch (err) {
+            console.error("Fallback échoué:", err);
+            state.isAttemptingFallback = false;
+            utils.showToast("Morceau indisponible, passage au suivant...");
+            setTimeout(() => this.next(true), 1200);
+        }
     },
 
     startProgressTracking() {
