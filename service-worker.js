@@ -1,4 +1,4 @@
-const VERSION = '1.2.5'; // CHANGER CE NUMÉRO À CHAQUE NOUVELLE MISE À JOUR POUR LE PWA
+const VERSION = '1.2.6'; // CHANGER CE NUMÉRO À CHAQUE NOUVELLE MISE À JOUR POUR LE PWA
 const CACHE_NAME = 'musesound-v-' + Date.now();
 
 const ASSETS = [
