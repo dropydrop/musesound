@@ -54,6 +54,6 @@ musesound/
 
 ## 💻 Comment le lancer ?
 
-1. Double-cliquez simplement sur le fichier [index.html](file:///C:/Users/Pierre/Documents/GitHub/musesound/index.html) pour l'ouvrir directement dans votre navigateur web préféré.
-2. Saisissez ou collez l'URL d'une playlist YouTube dans le champ dédié de la barre latérale.
+1. Ouvrez l'URL de Vercel ou double-cliquez simplement sur le fichier [index.html](file:///C:/Users/Pierre/Documents/GitHub/musesound/index.html) pour l'ouvrir directement dans votre navigateur web préféré.
+2. Saisissez ou collez l'URL d'une playlist YouTube dans le champ dédié de recherche de la barre latérale.
 3. Cliquez sur **Import** et profitez de votre musique !
